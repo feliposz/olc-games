@@ -12,26 +12,26 @@ int main()
 
     char *screen = new char[nScreenWidth * nScreenHeight];
 
-    const int nMapWidth = 16;
+    const int nMapWidth = 32;
     const int nMapHeight = 16;
 
     string map;
-    map += "################";
-    map += "#..............#";
-    map += "#..............#";
-    map += "#..............#";
-    map += "#.......###....#";
-    map += "#.........#....#";
-    map += "#.........#....#";
-    map += "#...............";
-    map += "#...............";
-    map += "#..............#";
-    map += "#..............#";
-    map += "#..#...........#";
-    map += "#..#...........#";
-    map += "#..#..#........#";
-    map += "#..#..#..#.....#";
-    map += "################";
+    map += "################################";
+    map += "#..............#...............#";
+    map += "#..............##..............#";
+    map += "#..............#...............#";
+    map += "#.......###....##......##......#";
+    map += "#.........#....#...............#";
+    map += "#.........#....##..............#";
+    map += "#..............................#";
+    map += "#..............................#";
+    map += "#..............##..............#";
+    map += "#..............#...............#";
+    map += "#..#...........##..............#";
+    map += "#..#...........#.......##......#";
+    map += "#..#..#........##..............#";
+    map += "#..#..#..#.....#...............#";
+    map += "################################";
 
     float fPlayerX = 8.0f;
     float fPlayerY = 8.0f;
@@ -64,8 +64,8 @@ int main()
 
         float delta = elapsed.count();
 
-        float fTurnSpeed = 0.7f;
-        float fPlayerSpeed = 2.0f;
+        float fTurnSpeed = 2.0f;
+        float fPlayerSpeed = 4.0f;
 
         // Player rotation
         if (GetAsyncKeyState(VK_LEFT) & 0x8000) {
@@ -76,25 +76,37 @@ int main()
             fPlayerA += fTurnSpeed * delta;
         }
 
+        float fDeltaX = 0.0f;
+        float fDeltaY = 0.0f;
+
         // Player movement
         if (GetAsyncKeyState(VK_UP) & 0x8000 || GetAsyncKeyState('W') & 0x8000) {
-            fPlayerX += fPlayerSpeed * sinf(fPlayerA) * delta;
-            fPlayerY += fPlayerSpeed * cosf(fPlayerA) * delta;
+            fDeltaX += fPlayerSpeed * sinf(fPlayerA) * delta;
+            fDeltaY += fPlayerSpeed * cosf(fPlayerA) * delta;
         }
 
         if (GetAsyncKeyState(VK_DOWN) & 0x8000 || GetAsyncKeyState('S') & 0x8000) {
-            fPlayerX -= fPlayerSpeed * sinf(fPlayerA) * delta;
-            fPlayerY -= fPlayerSpeed * cosf(fPlayerA) * delta;
+            fDeltaX -= fPlayerSpeed * sinf(fPlayerA) * delta;
+            fDeltaY -= fPlayerSpeed * cosf(fPlayerA) * delta;
         }
 
         if (GetAsyncKeyState('A') & 0x8000) {
-            fPlayerX += fPlayerSpeed * sinf(fPlayerA - PI_2) * delta;
-            fPlayerY += fPlayerSpeed * cosf(fPlayerA - PI_2) * delta;
+            fDeltaX += fPlayerSpeed * sinf(fPlayerA - PI_2) * delta;
+            fDeltaY += fPlayerSpeed * cosf(fPlayerA - PI_2) * delta;
         }
 
         if (GetAsyncKeyState('D') & 0x8000) {
-            fPlayerX += fPlayerSpeed * sinf(fPlayerA + PI_2) * delta;
-            fPlayerY += fPlayerSpeed * cosf(fPlayerA + PI_2) * delta;
+            fDeltaX += fPlayerSpeed * sinf(fPlayerA + PI_2) * delta;
+            fDeltaY += fPlayerSpeed * cosf(fPlayerA + PI_2) * delta;
+        }
+
+        // Test for wall collision
+        int nTestPlayerX = (int)(fPlayerX + fDeltaX);
+        int nTestPlayerY = (int)(fPlayerY + fDeltaY);
+
+        if (map[nTestPlayerY * nMapWidth + nTestPlayerX] != '#') {
+            fPlayerX += fDeltaX;
+            fPlayerY += fDeltaY;
         }
 
         for (int x = 0; x < nScreenWidth; x++) {
@@ -152,6 +164,24 @@ int main()
 
             for (int y = 0; y < nScreenHeight; y++) {
                 int pos = y * nScreenWidth + x;
+                float fFloorDist = 1.0f - ((float)y - nScreenHeight / 2.0f) / (nScreenHeight / 2.0f);
+                char nFloorShade = ' ';
+                if (fFloorDist < 0.2f) {
+                    nFloorShade = '#';
+                }
+                else if (fFloorDist < 0.4f) {
+                    nFloorShade = 'x';
+                }
+                else if (fFloorDist < 0.6f) {
+                    nFloorShade = ':';
+                }
+                else if (fFloorDist < 0.8f) {
+                    nFloorShade = '-';
+                }
+                else {
+                    nFloorShade = ' ';
+                }
+
                 if (y < nCeiling) {
                     screen[pos] = ' ';
                 }
@@ -159,7 +189,37 @@ int main()
                     screen[pos] = nShade;
                 }
                 else {
-                    screen[pos] = '.';
+                    screen[pos] = nFloorShade;
+                }
+            }
+        }
+
+        for (int x = 0; x < nMapWidth; x++) {
+            for (int y = 0; y < nMapHeight; y++) {
+                // Y is reversed when displayed
+                int pos = (nMapHeight - y - 1) * nScreenWidth + x;
+                if (x == (int)fPlayerX && y == (int)fPlayerY) {
+                    float fDirX = sinf(fPlayerA);
+                    float fDirY = cosf(fPlayerA);
+                    if (fabs(fDirX) > fabs(fDirY)) {
+                        if (fDirX < 0) {
+                            screen[pos] = '<';
+                        }
+                        else {
+                            screen[pos] = '>';
+                        }
+                    }
+                    else {
+                        if (fDirY < 0) {
+                            screen[pos] = 'v';
+                        }
+                        else {
+                            screen[pos] = '^';
+                        }
+                    }
+                }
+                else {
+                    screen[pos] = map[y * nMapWidth + x];
                 }
             }
         }
