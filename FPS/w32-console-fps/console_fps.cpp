@@ -224,6 +224,8 @@ int main()
             }
         }
 
+        sprintf_s(screen+50, 50, "X=%4.2f, Y=%4.2f, A=%5.2f, FPS=%8.2f", fPlayerX, fPlayerY, fPlayerA, 1.0 / elapsed.count());
+
         DWORD dwWritten = 0;
         WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth*nScreenHeight, { 0, 0 }, &dwWritten);
     }
