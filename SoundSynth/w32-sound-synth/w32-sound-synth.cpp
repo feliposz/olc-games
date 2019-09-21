@@ -145,7 +145,6 @@ double Oscillator(double dHertz, double dTime, int nType, double dLFOHertz = 0.0
 }
 
 atomic<double> dHertz = 0.0;
-int nType = 0;
 
 struct SInstrument {
     double dVolume = 1.0;
@@ -232,7 +231,7 @@ int main()
     cout << "  |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |" << endl;
     cout << "  | Z | X | C | V | B | N | M | Q | W | E | R | T | Y | U | I | O | P |" << endl;
     cout << "  |___|___|___|___|___|___|___|___|___|___|___|___|___|___|___|___|___|" << endl << endl;
-    cout << "<F1> Sine  <F2> Square  <F3> Triangle  <F4> Saw 1  <F5> Saw 2  <F6> Noise  <ESC> Quit" << endl << endl;
+    cout << "<ESC> Quit" << endl << endl;
 
     double twoRoot12 = pow(2.0, 1.0 / 12.0);
 
@@ -257,24 +256,7 @@ int main()
         if (GetAsyncKeyState(VK_ESCAPE) & 0x8000) {
             break;
         }
-        if (GetAsyncKeyState(VK_F1) & 0x8000) {
-            nType = OSC_SINE;
-        }
-        if (GetAsyncKeyState(VK_F2) & 0x8000) {
-            nType = OSC_SQUARE;
-        }
-        if (GetAsyncKeyState(VK_F3) & 0x8000) {
-            nType = OSC_TRIANGLE;
-        }
-        if (GetAsyncKeyState(VK_F4) & 0x8000) {
-            nType = OSC_SAW_ANALOG;
-        }
-        if (GetAsyncKeyState(VK_F5) & 0x8000) {
-            nType = OSC_SAW_DIGITAL;
-        }
-        if (GetAsyncKeyState(VK_F6) & 0x8000) {
-            nType = OSC_NOISE;
-        }
+        
     }
 
     sound.Stop();
