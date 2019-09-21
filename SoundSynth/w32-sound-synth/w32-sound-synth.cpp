@@ -6,189 +6,193 @@
 
 using namespace std;
 
-enum {
-    OSC_SINE,
-    OSC_SQUARE,
-    OSC_TRIANGLE,
-    OSC_SAW_ANALOG,
-    OSC_SAW_DIGITAL,
-    OSC_NOISE
-};
+namespace synth {
 
-struct SEnvelopeADSR {
-    double dAttackTime;
-    double dDecayTime;
-    double dReleaseTime;
-    double dSustainAmplitude;
-    double dStartAmplitude;
-    double dTriggerOnTime;
-    double dTriggerOffTime;
-    bool bNoteOn;
+    enum {
+        OSC_SINE,
+        OSC_SQUARE,
+        OSC_TRIANGLE,
+        OSC_SAW_ANALOG,
+        OSC_SAW_DIGITAL,
+        OSC_NOISE
+    };
 
-    SEnvelopeADSR()
-    {
-        dAttackTime = 0.1;
-        dDecayTime = 0.01;
-        dReleaseTime = 0.2;
-        dSustainAmplitude = 0.8;
-        dStartAmplitude = 1.0;
-        dTriggerOnTime = 0.0;
-        dTriggerOffTime = 0.0;
-        bNoteOn = false;
-    }
+    struct envelope_adsr {
+        double dAttackTime;
+        double dDecayTime;
+        double dReleaseTime;
+        double dSustainAmplitude;
+        double dStartAmplitude;
+        double dTriggerOnTime;
+        double dTriggerOffTime;
+        bool bNoteOn;
 
-    void NoteOn(double dTime)
-    {
-        if (!bNoteOn) {
-            dTriggerOnTime = dTime;
-            bNoteOn = true;
-        }
-    }
-
-    void NoteOff(double dTime)
-    {
-        if (bNoteOn) {
-            dTriggerOffTime = dTime;
+        envelope_adsr()
+        {
+            dAttackTime = 0.1;
+            dDecayTime = 0.01;
+            dReleaseTime = 0.2;
+            dSustainAmplitude = 0.8;
+            dStartAmplitude = 1.0;
+            dTriggerOnTime = 0.0;
+            dTriggerOffTime = 0.0;
             bNoteOn = false;
         }
+
+        void NoteOn(double dTime)
+        {
+            if (!bNoteOn) {
+                dTriggerOnTime = dTime;
+                bNoteOn = true;
+            }
+        }
+
+        void NoteOff(double dTime)
+        {
+            if (bNoteOn) {
+                dTriggerOffTime = dTime;
+                bNoteOn = false;
+            }
+        }
+
+        double GetAmplitude(double dTime)
+        {
+            double dAmplitude = 0.0;
+
+            if (bNoteOn) {
+                double dLifeTime = dTime - dTriggerOnTime;
+                if (dLifeTime <= dAttackTime) {
+                    dAmplitude = (dLifeTime / dAttackTime) * dStartAmplitude;
+                }
+                else if (dLifeTime <= (dAttackTime + dDecayTime)) {
+                    dAmplitude = ((dLifeTime - dAttackTime) / dDecayTime) * (dSustainAmplitude - dStartAmplitude) + dStartAmplitude;
+                }
+                else {
+                    dAmplitude = dSustainAmplitude;
+                }
+            }
+            else {
+                double dLifeTime = dTime - dTriggerOnTime;
+                double dReleaseAmplitude = 0.0;
+
+                if (dLifeTime <= dAttackTime) {
+                    dReleaseAmplitude = (dLifeTime / dAttackTime) * dStartAmplitude;
+                }
+                else if (dLifeTime <= (dAttackTime + dDecayTime)) {
+                    dReleaseAmplitude = ((dLifeTime - dAttackTime) / dDecayTime) * (dSustainAmplitude - dStartAmplitude) + dStartAmplitude;
+                }
+                else {
+                    dReleaseAmplitude = dSustainAmplitude;
+                }
+
+                dAmplitude = dReleaseAmplitude - dReleaseAmplitude * ((dTime - dTriggerOffTime) / dReleaseTime);
+            }
+
+            if (dAmplitude <= 0.0001) {
+                dAmplitude = 0.0;
+            }
+
+            //cout << dTime << " -> " << dAmplitude << endl;
+
+            return dAmplitude;
+        }
+    };
+
+    double ToRad(double angle) {
+        return angle * 2.0 * PI;
     }
 
-    double GetAmplitude(double dTime)
+    double Oscillator(double dHertz, double dTime, int nType, double dLFOHertz = 0.0, double dLFOAmplitude = 0.0)
     {
-        double dAmplitude = 0.0;
+        double dValue = 0.0;
+        double dFreq = ToRad(dHertz) * dTime + (dLFOAmplitude * dHertz * sin(ToRad(dLFOHertz) * dTime));
 
-        if (bNoteOn) {
-            double dLifeTime = dTime - dTriggerOnTime;
-            if (dLifeTime <= dAttackTime) {
-                dAmplitude = (dLifeTime / dAttackTime) * dStartAmplitude;
+        switch (nType) {
+
+        case OSC_SINE:
+            dValue = sin(dFreq);
+            dValue *= 1.0;
+            break;
+
+        case OSC_SQUARE:
+            dValue = sin(dFreq) > 0.0 ? 0.5 : -0.5;
+            break;
+
+        case OSC_TRIANGLE:
+            dValue = asin(sin(dFreq)) * 2.0 / PI;
+            break;
+
+        case OSC_SAW_ANALOG:
+            for (int i = 1; i < 40; i++) {
+                dValue += sin(dFreq * i) * 1.0 / i;
             }
-            else if (dLifeTime <= (dAttackTime + dDecayTime)) {
-                dAmplitude = ((dLifeTime - dAttackTime) / dDecayTime) * (dSustainAmplitude - dStartAmplitude) + dStartAmplitude;
-            }
-            else {
-                dAmplitude = dSustainAmplitude;
-            }
+            dValue *= 1.0 / PI;
+            break;
+
+        case OSC_SAW_DIGITAL:
+            // TODO: Make LFO work with this wave type also
+            dValue = (1.0 / PI) * (dHertz * PI * fmod(dTime, 1.0 / dHertz) - (PI / 2.0));
+            break;
+
+        case OSC_NOISE:
+            dValue = 2.0 * ((double)rand() / (double)RAND_MAX) - 1.0;
+            break;
+
+        default:
+            dValue = 0;
+            break;
         }
-        else {
-            double dLifeTime = dTime - dTriggerOnTime;
-            double dReleaseAmplitude = 0.0;
 
-            if (dLifeTime <= dAttackTime) {
-                dReleaseAmplitude = (dLifeTime / dAttackTime) * dStartAmplitude;
-            }
-            else if (dLifeTime <= (dAttackTime + dDecayTime)) {
-                dReleaseAmplitude = ((dLifeTime - dAttackTime) / dDecayTime) * (dSustainAmplitude - dStartAmplitude) + dStartAmplitude;
-            }
-            else {
-                dReleaseAmplitude = dSustainAmplitude;
-            }
-
-            dAmplitude = dReleaseAmplitude - dReleaseAmplitude * ((dTime - dTriggerOffTime) / dReleaseTime);
-        }
-
-        if (dAmplitude <= 0.0001) {
-            dAmplitude = 0.0;
-        }
-
-        //cout << dTime << " -> " << dAmplitude << endl;
-
-        return dAmplitude;
-    }
-};
-
-double ToRad(double angle) {
-    return angle * 2.0 * PI;
-}
-
-double Oscillator(double dHertz, double dTime, int nType, double dLFOHertz = 0.0, double dLFOAmplitude = 0.0)
-{
-    double dValue = 0.0;
-    double dFreq = ToRad(dHertz) * dTime + (dLFOAmplitude * dHertz * sin(ToRad(dLFOHertz) * dTime));
-
-    switch (nType) {
-
-    case OSC_SINE:
-        dValue = sin(dFreq);
-        dValue *= 1.0;
-        break;
-
-    case OSC_SQUARE:
-        dValue = sin(dFreq) > 0.0 ? 0.5 : -0.5;
-        break;
-
-    case OSC_TRIANGLE:
-        dValue = asin(sin(dFreq)) * 2.0 / PI;
-        break;
-
-    case OSC_SAW_ANALOG:
-        for (int i = 1; i < 40; i++) {
-            dValue += sin(dFreq * i) * 1.0 / i;
-        }
-        dValue *= 1.0 / PI;
-        break;
-
-    case OSC_SAW_DIGITAL:
-        // TODO: Make LFO work with this wave type also
-        dValue = (1.0 / PI) * (dHertz * PI * fmod(dTime, 1.0 / dHertz) - (PI / 2.0));
-        break;
-
-    case OSC_NOISE:
-        dValue = 2.0 * ((double)rand() / (double)RAND_MAX) - 1.0;
-        break;
-
-    default:
-        dValue = 0;
-        break;
+        return dValue;
     }
 
-    return dValue;
+    struct instrument_base {
+        double dVolume = 1.0;
+        envelope_adsr envelope;
+
+        virtual double GetSound(double dHertz, double dTime) = 0;
+    };
+
+    struct instrument_harm : public instrument_base {
+        instrument_harm()
+        {
+            dVolume = 0.5;
+        }
+
+        virtual double GetSound(double dHertz, double dTime)
+        {
+            return dVolume * envelope.GetAmplitude(dTime) * (1.0 * Oscillator(dHertz, dTime, OSC_SQUARE, 5.0, 0.001)
+                + 0.5 * Oscillator(1.5 * dHertz, dTime, OSC_SQUARE)
+                + 0.25 * Oscillator(2.0 * dHertz, dTime, OSC_SQUARE)
+                + 0.05 * Oscillator(0, dTime, OSC_NOISE));
+        }
+    };
+
+    struct instrument_bell : public instrument_base {
+        instrument_bell()
+        {
+            dVolume = 0.5;
+            envelope.dAttackTime = 0.01;
+            envelope.dDecayTime = 1.0;
+            envelope.dReleaseTime = 1.0;
+            envelope.dSustainAmplitude = 0.0;
+        }
+
+        virtual double GetSound(double dHertz, double dTime)
+        {
+            return dVolume * envelope.GetAmplitude(dTime) * (1.0 * Oscillator(2.0 * dHertz, dTime, OSC_SINE, 5.0, 0.001)
+                + 0.5 * Oscillator(3.0 * dHertz, dTime, OSC_SINE)
+                + 0.25 * Oscillator(4.0 * dHertz, dTime, OSC_SINE));
+        }
+    };
+
+
 }
 
 atomic<double> dHertz = 0.0;
 
-struct SInstrument {
-    double dVolume = 1.0;
-    SEnvelopeADSR envelope;
-
-    virtual double GetSound(double dHertz, double dTime) = 0;
-};
-
-struct Harmonica : public SInstrument {
-    Harmonica()
-    {
-        dVolume = 0.5;
-    }
-
-    virtual double GetSound(double dHertz, double dTime)
-    {
-        return dVolume * envelope.GetAmplitude(dTime) * (1.0 * Oscillator(dHertz, dTime, OSC_SQUARE, 5.0, 0.001)
-            + 0.5 * Oscillator(1.5 * dHertz, dTime, OSC_SQUARE)
-            + 0.25 * Oscillator(2.0 * dHertz, dTime, OSC_SQUARE)
-            + 0.05 * Oscillator(0, dTime, OSC_NOISE));
-    }
-};
-
-
-struct Bell : public SInstrument {
-    Bell()
-    {
-        dVolume = 0.5;
-        envelope.dAttackTime = 0.01;
-        envelope.dDecayTime = 1.0;
-        envelope.dReleaseTime = 1.0;
-        envelope.dSustainAmplitude = 0.0;
-    }
-
-    virtual double GetSound(double dHertz, double dTime)
-    {
-        return dVolume * envelope.GetAmplitude(dTime) * (1.0 * Oscillator(2.0 * dHertz, dTime, OSC_SINE, 5.0, 0.001)
-            + 0.5 * Oscillator(3.0 * dHertz, dTime, OSC_SINE)
-            + 0.25 * Oscillator(4.0 * dHertz, dTime, OSC_SINE));
-    }
-};
-
-Harmonica instrument;
-//Bell instrument;
+synth::instrument_harm instrument;
+//synth::instrument_bell instrument;
 
 double SynthWave(double dTime) {
     return instrument.GetSound(dHertz, dTime);
