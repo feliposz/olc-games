@@ -45,7 +45,9 @@ int main()
     SetConsoleWindowInfo(hStdOutput, true, &rect);
 
     int nHealth = 1000;
-    int nDistance = 0;
+    float fSpeed = 10.0f;
+    float fAccel = 1.0f;
+    float fDistance = 0.0f;
     float fPosition = nScrWidth / 2;
 
     for (int y = 0; y < nScrHeight; y++) {
@@ -58,20 +60,50 @@ int main()
     int nCaveCol = nScrWidth / 2;
     int nGapWidth = 15;
 
+    auto tp1 = chrono::system_clock::now();
+    auto tp2 = tp1;
+
     while (nHealth >= 0) {
+        // Timing
         this_thread::sleep_for(10ms);
+        tp2 = chrono::system_clock::now();
+        chrono::duration<float> elapsed = tp2 - tp1;
+        tp1 = tp2;
 
         // Handle player movement
         if (GetAsyncKeyState(VK_LEFT) & 0x8000) {
-            fPosition -= 1;
+            fPosition -= 40.0f * elapsed.count();
         }
 
         if (GetAsyncKeyState(VK_RIGHT) & 0x8000) {
-            fPosition += 1;
+            fPosition += 40.0f * elapsed.count();
         }
 
+        // Collision left
+        if (sb[(int)fPosition] == '#') {
+            nHealth -= 3;
+            fPosition += 1;
+        }
+        else if (sb[(int)fPosition] == '.') {
+            nHealth -= 10;
+            fPosition += 2;
+        }
+
+        // Collision right
+        if (sb[(int)fPosition + 4] == '#') {
+            nHealth -= 3;
+            fPosition -= 1;
+        }
+        else if (sb[(int)fPosition + 4] == '.') {
+            nHealth -= 10;
+            fPosition -= 2;
+        }
+
+        fSpeed += elapsed.count() * fAccel;
+        fDistance += elapsed.count() * fSpeed;
+
         // Position to draw cave
-        nCaveCol = 1 + nScrWidth / 2 + (nScrWidth / 2 - nGapWidth - 2) * sin(nDistance * 0.01) + 1.0 * sin(nDistance * 0.2);
+        nCaveCol = 1 + nScrWidth / 2 + (nScrWidth / 2 - nGapWidth - 2) * sin(fDistance * 0.01) + 1.0 * sin(fDistance * 0.2);
 
         // Scrool screen buffer
         memmove(sb, sb + nScrWidth, nScrWidth*nMaxRow);
@@ -95,15 +127,11 @@ int main()
         draw_player((int)fPosition);
 
         printxy("< Cave Diver > - ", 1, nScrHeight - 1);
-        printf("Health: %4d - Distance travelled: %6d      ", nHealth, nDistance);
-
-        // Test
-        nHealth--;
-        nDistance++;
+        printf("Health: %4d - Distance travelled: %.2f      ", nHealth, fDistance);
     }
 
     printxy("Game Over! ", 1, nScrHeight);
-    printf("Distance travelled: %d\n", nDistance);
+    printf("Distance travelled: %f.2\n", fDistance);
 
     printf("Press ENTER to quit!");
     while (true) {
