@@ -21,28 +21,30 @@ namespace synth {
         int nID;
         double dTimeOn;
         double dTimeOff;
-        bool bNoteOn;
+        bool bNotePressed;
+        bool bNoteErase;
 
         note()
         {
             dTimeOn = 0.0;
             dTimeOff = 0.0;
-            bNoteOn = false;
+            bNotePressed = false;
+            bNoteErase = false;
         }
 
         void NoteOn(double dTime)
         {
-            if (!bNoteOn) {
+            if (!bNotePressed) {
                 dTimeOn = dTime;
-                bNoteOn = true;
+                bNotePressed = true;
             }
         }
 
         void NoteOff(double dTime)
         {
-            if (bNoteOn) {
+            if (bNotePressed) {
                 dTimeOff = dTime;
-                bNoteOn = false;
+                bNotePressed = false;
             }
         }
     };
@@ -162,7 +164,7 @@ namespace synth {
         double dVolume = 1.0;
         envelope_adsr envelope;
 
-        virtual double GetSound(double dTime, note n) = 0;
+        virtual double GetSound(double dTime, note &n) = 0;
     };
 
     struct instrument_harm : public instrument_base {
@@ -171,10 +173,14 @@ namespace synth {
             dVolume = 0.5;
         }
 
-        virtual double GetSound(double dTime, note n)
+        virtual double GetSound(double dTime, note &n)
         {
             double dHertz = GetNoteFreq(n.nID);
-            return dVolume * envelope.GetAmplitude(dTime, n.dTimeOn, n.dTimeOff) *
+            double dAmp = envelope.GetAmplitude(dTime, n.dTimeOn, n.dTimeOff);
+            if (!n.bNotePressed && dTime > n.dTimeOff && dAmp <= 0.0) {
+                n.bNoteErase = true;
+            }
+            return dVolume * dAmp *
                 (1.0 * Oscillator(dHertz, dTime, OSC_SQUARE, 5.0, 0.001)
                     + 0.5 * Oscillator(1.5 * dHertz, dTime, OSC_SQUARE)
                     + 0.25 * Oscillator(2.0 * dHertz, dTime, OSC_SQUARE)
@@ -192,10 +198,14 @@ namespace synth {
             envelope.dSustainAmplitude = 0.0;
         }
 
-        virtual double GetSound(double dTime, note n)
+        virtual double GetSound(double dTime, note &n)
         {
             double dHertz = GetNoteFreq(n.nID);
-            return dVolume * envelope.GetAmplitude(dTime, n.dTimeOn, n.dTimeOff) *
+            double dAmp = envelope.GetAmplitude(dTime, n.dTimeOn, n.dTimeOff);
+            if (!n.bNotePressed && dTime > n.dTimeOff && dAmp <= 0.0) {
+                n.bNoteErase = true;
+            }
+            return dVolume * dAmp *
                 (1.0 * Oscillator(2.0 * dHertz, dTime, OSC_SINE, 5.0, 0.001)
                     + 0.5 * Oscillator(3.0 * dHertz, dTime, OSC_SINE)
                     + 0.25 * Oscillator(4.0 * dHertz, dTime, OSC_SINE));
@@ -204,12 +214,16 @@ namespace synth {
 
 }
 
-synth::note note;
+vector<synth::note> notes;
 synth::instrument_harm instrument;
 //synth::instrument_bell instrument;
 
 double SynthWave(double dTime) {
-    return instrument.GetSound(dTime, note);
+    double dOutput = 0.0;
+    for (auto &note : notes) {
+        dOutput += instrument.GetSound(dTime, note);
+    }
+    return dOutput;
 }
 
 int main()
@@ -251,24 +265,46 @@ int main()
     cout << "  |___|___|___|___|___|___|___|___|___|___|___|___|___|___|___|___|___|" << endl << endl;
     cout << "<ESC> Quit" << endl << endl;
 
-    
-
     while (true) {
         char keys[] = "ZSXCFVGBNJMKQ2WE4R5TY7U8I9OP";
 
-        bool bPressed = false;
         for (int i = 0; i < 28; i++) {
             if (GetAsyncKeyState(keys[i]) & 0x8000) {
-                note.nID = i;
-                note.NoteOn(sound.GetTime());
-                cout << "\r" << "Pressed: " << keys[i] << "                   ";
-                bPressed = true;
+                bool bAlreadyPressed = false;
+                for (auto n : notes) {
+                    if (i == n.nID && n.bNotePressed) {
+                        bAlreadyPressed = true;
+                        break;
+                    }
+                }
+                if (!bAlreadyPressed) {
+                    synth::note n;
+                    n.nID = i;
+                    n.NoteOn(sound.GetTime());
+                    notes.push_back(n);
+                }
+            }
+            else {
+                for (auto &n : notes) {
+                    if (i == n.nID && n.bNotePressed) {
+                        n.NoteOff(sound.GetTime());
+                        break;
+                    }
+                }
             }
         }
 
-        if (!bPressed) {
-            cout << "\r" << "No key pressed.                   ";
-            note.NoteOff(sound.GetTime());
+        cout << "\r" << "Notes playing: " << notes.size() << "                   ";
+
+        auto it = notes.begin();
+        while (it != notes.end()) {
+            //cout << it->nID << ' ' << it->dTimeOn << it->dTimeOff << endl;
+            if (it->bNoteErase) {
+                it = notes.erase(it);
+            }
+            else {
+                ++it;
+            }
         }
 
         if (GetAsyncKeyState(VK_ESCAPE) & 0x8000) {
