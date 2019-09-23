@@ -18,6 +18,7 @@ namespace synth {
     };
 
     struct note {
+        int nID;
         double dTimeOn;
         double dTimeOff;
         bool bNoteOn;
@@ -151,11 +152,17 @@ namespace synth {
         return dValue;
     }
 
+    double GetNoteFreq(int n) {
+        double twoRoot12 = pow(2.0, 1.0 / 12.0);
+        double dHertz = pow(twoRoot12, n - 12) * 440.0;
+        return dHertz;
+    }
+
     struct instrument_base {
         double dVolume = 1.0;
         envelope_adsr envelope;
 
-        virtual double GetSound(double dHertz, double dTime, note n) = 0;
+        virtual double GetSound(double dTime, note n) = 0;
     };
 
     struct instrument_harm : public instrument_base {
@@ -164,8 +171,9 @@ namespace synth {
             dVolume = 0.5;
         }
 
-        virtual double GetSound(double dHertz, double dTime, note n)
+        virtual double GetSound(double dTime, note n)
         {
+            double dHertz = GetNoteFreq(n.nID);
             return dVolume * envelope.GetAmplitude(dTime, n.dTimeOn, n.dTimeOff) *
                 (1.0 * Oscillator(dHertz, dTime, OSC_SQUARE, 5.0, 0.001)
                     + 0.5 * Oscillator(1.5 * dHertz, dTime, OSC_SQUARE)
@@ -184,8 +192,9 @@ namespace synth {
             envelope.dSustainAmplitude = 0.0;
         }
 
-        virtual double GetSound(double dHertz, double dTime, note n)
+        virtual double GetSound(double dTime, note n)
         {
+            double dHertz = GetNoteFreq(n.nID);
             return dVolume * envelope.GetAmplitude(dTime, n.dTimeOn, n.dTimeOff) *
                 (1.0 * Oscillator(2.0 * dHertz, dTime, OSC_SINE, 5.0, 0.001)
                     + 0.5 * Oscillator(3.0 * dHertz, dTime, OSC_SINE)
@@ -195,14 +204,12 @@ namespace synth {
 
 }
 
-atomic<double> dHertz = 0.0;
-
 synth::note note;
 synth::instrument_harm instrument;
 //synth::instrument_bell instrument;
 
 double SynthWave(double dTime) {
-    return instrument.GetSound(dHertz, dTime, note);
+    return instrument.GetSound(dTime, note);
 }
 
 int main()
@@ -244,7 +251,7 @@ int main()
     cout << "  |___|___|___|___|___|___|___|___|___|___|___|___|___|___|___|___|___|" << endl << endl;
     cout << "<ESC> Quit" << endl << endl;
 
-    double twoRoot12 = pow(2.0, 1.0 / 12.0);
+    
 
     while (true) {
         char keys[] = "ZSXCFVGBNJMKQ2WE4R5TY7U8I9OP";
@@ -252,9 +259,9 @@ int main()
         bool bPressed = false;
         for (int i = 0; i < 28; i++) {
             if (GetAsyncKeyState(keys[i]) & 0x8000) {
+                note.nID = i;
                 note.NoteOn(sound.GetTime());
-                dHertz = pow(twoRoot12, i - 12) * 440.0;
-                cout << "\r" << "Pressed: " << keys[i] << " Playing: " << dHertz << "hz                   ";
+                cout << "\r" << "Pressed: " << keys[i] << "                   ";
                 bPressed = true;
             }
         }
