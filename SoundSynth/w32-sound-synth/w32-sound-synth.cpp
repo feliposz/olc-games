@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "olcNoiseMaker.h"
+#include <mutex>
 
 using namespace std;
 
@@ -214,15 +215,18 @@ namespace synth {
 
 }
 
+mutex mtx;
 vector<synth::note> notes;
 synth::instrument_harm instrument;
 //synth::instrument_bell instrument;
 
 double SynthWave(double dTime) {
     double dOutput = 0.0;
+    mtx.lock();
     for (auto &note : notes) {
         dOutput += instrument.GetSound(dTime, note);
     }
+    mtx.unlock();
     return dOutput;
 }
 
@@ -268,6 +272,7 @@ int main()
     while (true) {
         char keys[] = "ZSXCFVGBNJMKQ2WE4R5TY7U8I9OP";
 
+        mtx.lock();
         for (int i = 0; i < 28; i++) {
             if (GetAsyncKeyState(keys[i]) & 0x8000) {
                 bool bAlreadyPressed = false;
@@ -294,8 +299,6 @@ int main()
             }
         }
 
-        cout << "\r" << "Notes playing: " << notes.size() << "                   ";
-
         auto it = notes.begin();
         while (it != notes.end()) {
             //cout << it->nID << ' ' << it->dTimeOn << it->dTimeOff << endl;
@@ -306,6 +309,9 @@ int main()
                 ++it;
             }
         }
+        mtx.unlock();
+
+        cout << "\r" << "Notes playing: " << notes.size() << "                   ";
 
         if (GetAsyncKeyState(VK_ESCAPE) & 0x8000) {
             break;
