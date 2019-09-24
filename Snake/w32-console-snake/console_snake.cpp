@@ -36,6 +36,8 @@ int main()
 
     int nSnakeX = nScreenWidth / 2;
     int nSnakeY = nScreenHeight;
+    int nFoodX = nSnakeX;
+    int nFoodY = nScreenHeight / 2;
     int nSnakeDir = 0;
 
     for (int i = 0; i < 5; i++) {
@@ -83,12 +85,37 @@ int main()
         if (nSnakeX < 0) nSnakeX = nScreenWidth - 1;
         if (nSnakeX >= nScreenWidth) nSnakeX = 0;
 
+        // Check food collision
+        if (nSnakeX == nFoodX && nSnakeY == nFoodY) {
+            int nTailX = snake.back().x;
+            int nTailY = snake.back().y;
+            // grow snake tail
+            for (int i = 0; i < 5; i++) {
+                snake.push_back({ nTailX, nTailY });
+            }
+            while (true) {
+                // place new food
+                nFoodX = rand() % nScreenWidth;
+                nFoodY = rand() % (nScreenHeight * 2);
+                // check if place is empty
+                if (screen[nFoodY/2 * nScreenWidth + nFoodX] == ' ') {
+                    break;
+                }
+            }
+        }
+
         // Rotate snake segments
         snake.push_front({ nSnakeX, nSnakeY });
         snake.pop_back();
 
         // Clear buffer
         memset(screen, ' ', sizeof(screen));
+
+        // Draw food
+        for (auto s : snake) {
+            int p = nFoodY / 2 * nScreenWidth + nFoodX;
+            screen[p] = (nFoodY % 2 == 0) ? '\xdf' : '\xdc';
+        }
 
         // Draw snake
         for (auto s : snake) {
@@ -106,8 +133,6 @@ int main()
                 screen[p] = '\xdb';
             }
         }
-
-
 
         WriteConsoleOutputCharacter(hStdOut, screen, nScreenWidth*nScreenHeight, { 0, 0 }, &dwWritten);
     }
