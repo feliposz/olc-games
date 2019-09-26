@@ -30,11 +30,11 @@ public:
         m_nMazeHeight = 25;
         m_nTotal = m_nMazeWidth * m_nMazeHeight;
         m_maze = new int[m_nTotal];
-        m_nVisited = 0;
 
         memset(m_maze, 0, m_nTotal * sizeof(int));
 
         m_stack.push(make_pair(0, 0));
+        m_nVisited = 1;
 
         return true;
     }
@@ -92,6 +92,7 @@ public:
                     m_maze[nTopY * m_nMazeWidth + nTopX + 1] |= MAZE_WEST;
                     break;
                 }
+                m_nVisited++;
             }
             else {
                 m_stack.pop();
