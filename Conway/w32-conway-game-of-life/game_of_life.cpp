@@ -8,7 +8,7 @@ class GameOfLife : public olcConsoleGameEngine {
     // Inherited via olcConsoleGameEngine
     virtual bool OnUserCreate() override
     {
-        int nSize = ScreenWidth() * ScreenHeight();
+        int nSize = m_nScreenWidth * m_nScreenHeight;
         m_state = new int[nSize];
         m_output = new int[nSize];
         memset(m_state, 0, sizeof(int) * nSize);
@@ -23,30 +23,42 @@ class GameOfLife : public olcConsoleGameEngine {
 
     virtual bool OnUserUpdate(float fElapsedTime) override
     {
-        int nSize = ScreenWidth() * ScreenHeight();
+        int nSize = m_nScreenWidth * m_nScreenHeight;
         for (int i = 0; i < nSize; i++) {
             m_state[i] = m_output[i];
+            if (rand() % (nSize*10) == 0) { // Random mutation!
+                m_state[i] = !m_state[i];
+            }
         }
 
         auto cell = [&](int x, int y) {
-            return m_state[y * ScreenWidth() + x];
+            if (x < 0) x = m_nScreenWidth - 1;
+            if (y < 0) y = m_nScreenHeight - 1;
+            if (x == m_nScreenWidth) x = 0;
+            if (y == m_nScreenHeight) y = 0;
+            return m_state[y * m_nScreenWidth + x];
         };
 
-        for (int y = 1; y < ScreenHeight()-1; y++) {
-            for (int x = 1; x < ScreenWidth()-1; x++) {
+        for (int y = 0; y < m_nScreenHeight; y++) {
+            for (int x = 0; x < m_nScreenWidth; x++) {
                 int nNeighbors =
                     cell(x - 1, y - 1) + cell(x, y - 1) + cell(x + 1, y - 1) +
                     cell(x - 1, y) + 0 + cell(x + 1, y) +
                     cell(x - 1, y + 1) + cell(x, y + 1) + cell(x + 1, y + 1);
 
                 if (cell(x, y)) {
-                    m_output[y * ScreenWidth() + x] = nNeighbors == 2 || nNeighbors == 3;
+                    m_output[y * m_nScreenWidth + x] = nNeighbors == 2 || nNeighbors == 3;
                 }
                 else {
-                    m_output[y * ScreenWidth() + x] = nNeighbors == 3;
+                    m_output[y * m_nScreenWidth + x] = nNeighbors == 3;
                 }
 
-                Draw(x, y, PIXEL_SOLID, m_output[y * ScreenWidth() + x] ? FG_WHITE : FG_BLACK);
+                if (m_output[y * m_nScreenWidth + x] == m_state[y * m_nScreenWidth + x]) {
+                    Draw(x, y, PIXEL_SOLID, m_output[y * m_nScreenWidth + x] ? FG_WHITE : FG_BLACK);
+                }
+                else {
+                    Draw(x, y, PIXEL_SOLID, m_output[y * m_nScreenWidth + x] ? FG_YELLOW : FG_DARK_GREY);
+                }
             }
         }
 
