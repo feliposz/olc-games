@@ -41,7 +41,10 @@ public:
 
     virtual bool OnUserUpdate(float fElapsedTime) override
     {
-        //this_thread::sleep_for(10ms);
+        chrono::milliseconds sleep_time(5);
+        chrono::duration<float> elapsed(fElapsedTime);
+
+        this_thread::sleep_for(sleep_time - elapsed);
         int nTopX = 0;
         int nTopY = 0;
 
@@ -103,7 +106,10 @@ public:
                 for (int py = 0; py < nBlockSize; py++) {
                     for (int px = 0; px < nBlockSize; px++) {
                         short color = FG_DARK_BLUE;
-                        if (py == nBlockSize - 1 && !(m_maze[nMazePos] & MAZE_SOUTH)) {
+                        if (py == nBlockSize - 1 && px == nBlockSize - 1) {
+                            color = FG_BLACK;
+                        }
+                        else if (py == nBlockSize - 1 && !(m_maze[nMazePos] & MAZE_SOUTH)) {
                             color = FG_BLACK;
                         }
                         else if (px == nBlockSize - 1 && !(m_maze[nMazePos] & MAZE_EAST)) {
