@@ -160,12 +160,13 @@ namespace synth {
 
     double GetNoteFreq(int n) {
         double twoRoot12 = pow(2.0, 1.0 / 12.0);
-        double dHertz = pow(twoRoot12, n - 12) * 440.0;
+        double dHertz = pow(twoRoot12, n) * 8.0;
         return dHertz;
     }
 
     struct instrument_base {
         double dVolume = 1.0;
+        double dMaxLifeTime = 0.0;
         envelope_adsr envelope;
 
         virtual double GetSound(double dTime, note &n) = 0;
@@ -179,7 +180,7 @@ namespace synth {
 
         virtual double GetSound(double dTime, note &n)
         {
-            double dHertz = GetNoteFreq(n.nID);
+            double dHertz = GetNoteFreq(n.nID + 36);
             double dAmp = envelope.GetAmplitude(dTime, n.dTimeOn, n.dTimeOff);
             if (!n.bNotePressed && dTime > n.dTimeOff && dAmp <= 0.0) {
                 n.bNoteErase = true;
@@ -216,18 +217,154 @@ namespace synth {
         }
     };
 
+    struct instrument_drumkick : public instrument_base {
+        instrument_drumkick()
+        {
+            dVolume = 0.8;
+            dMaxLifeTime = 0.15;
+            envelope.dAttackTime = 0.01;
+            envelope.dDecayTime = 0.15;
+            envelope.dReleaseTime = 0.0;
+            envelope.dSustainAmplitude = 0.0;
+        }
+
+        virtual double GetSound(double dTime, note &n)
+        {
+            double dHertz = GetNoteFreq(n.nID - 36);
+            double dAmp = envelope.GetAmplitude(dTime, n.dTimeOn, n.dTimeOff);
+            if (dMaxLifeTime > 0 && dTime - n.dTimeOn > dMaxLifeTime) {
+                n.bNoteErase = true;
+            }
+            return dVolume * dAmp *
+                (0.99 * Oscillator(1.0 * dHertz, dTime - n.dTimeOn, OSC_SINE, 1.0, 1.0)
+                    + 0.01 * Oscillator(0, dTime - n.dTimeOn, OSC_NOISE));
+        }
+    };
+
+    struct instrument_drumsnare : public instrument_base {
+        instrument_drumsnare()
+        {
+            dVolume = 0.5;
+            dMaxLifeTime = 1.5;
+            envelope.dAttackTime = 0.01;
+            envelope.dDecayTime = 0.2;
+            envelope.dReleaseTime = 0.0;
+            envelope.dSustainAmplitude = 0.0;
+        }
+
+        virtual double GetSound(double dTime, note &n)
+        {
+            double dHertz = GetNoteFreq(n.nID - 24);
+            double dAmp = envelope.GetAmplitude(dTime, n.dTimeOn, n.dTimeOff);
+            if (dMaxLifeTime > 0 && dTime - n.dTimeOn > dMaxLifeTime) {
+                n.bNoteErase = true;
+            }
+            return dVolume * dAmp *
+                (0.5 * Oscillator(1.0 * dHertz, dTime - n.dTimeOn, OSC_SINE, 0.5, 1.0)
+                    + 0.5 * Oscillator(0, dTime - n.dTimeOn, OSC_NOISE));
+        }
+    };
+
+    struct instrument_drumhihat : public instrument_base {
+        instrument_drumhihat()
+        {
+            dVolume = 0.5;
+            dMaxLifeTime = 1.5;
+            envelope.dAttackTime = 0.01;
+            envelope.dDecayTime = 0.05;
+            envelope.dReleaseTime = 0.0;
+            envelope.dSustainAmplitude = 0.0;
+        }
+
+        virtual double GetSound(double dTime, note &n)
+        {
+            double dHertz = GetNoteFreq(n.nID - 12);
+            double dAmp = envelope.GetAmplitude(dTime, n.dTimeOn, n.dTimeOff);
+            if (dMaxLifeTime > 0 && dTime - n.dTimeOn > dMaxLifeTime) {
+                n.bNoteErase = true;
+            }
+            return dVolume * dAmp *
+                (0.1 * Oscillator(1.0 * dHertz, dTime - n.dTimeOn, OSC_SQUARE, 1.5, 1.0)
+                    + 0.9 * Oscillator(0, dTime - n.dTimeOn, OSC_NOISE));
+        }
+    };
+
+    struct sequencer 
+    {
+        float accumulated;
+        float beattime;
+        int current_beat;
+        int total_beats;
+
+        struct channel {
+            instrument_base *instrument;
+            string sBeat;
+        };
+
+        vector<channel> m_channels;
+        vector<note> notes;
+
+        sequencer(float tempo = 120.0f, int beats = 4, int sub_beats = 4) 
+        {
+            accumulated = 0.0f;
+            beattime = (60.f / tempo) / (float)sub_beats;
+            current_beat = 0;
+            total_beats = beats * sub_beats;
+        }
+
+        void add_channel(instrument_base *instrument, string sBeat)
+        {
+            channel chn;
+            chn.instrument = instrument;
+            chn.sBeat = sBeat;
+            m_channels.push_back(chn);
+        }
+
+        int update(float fElapsedTime)
+        {
+            notes.clear();
+
+            accumulated += fElapsedTime;
+            if (accumulated >= beattime) {
+                accumulated -= beattime;
+
+                current_beat++;
+                if (current_beat >= total_beats) {
+                    current_beat = 0;
+                }
+
+                for (auto c : m_channels) {
+                    if (c.sBeat[current_beat] == 'X') {
+                        note n;
+                        n.instrument = c.instrument;
+                        n.nID = 64;
+                        notes.push_back(n);
+                    }
+                }
+            }
+
+            return notes.size();
+        }
+    };
+
 }
 
 mutex mtx;
 vector<synth::note> notes;
 synth::instrument_harm harmonica;
-//synth::instrument_bell instrument;
+synth::instrument_bell bell;
+synth::instrument_drumkick kick;
+synth::instrument_drumsnare snare;
+synth::instrument_drumhihat hihat;
+
 
 double SynthWave(double dTime) {
     double dOutput = 0.0;
     mtx.lock();
     for (auto &note : notes) {
-        dOutput += note.instrument->GetSound(dTime, note);
+        if (note.instrument != nullptr) {
+            dOutput += note.instrument->GetSound(dTime, note);
+        }
     }
     mtx.unlock();
     return dOutput;
@@ -242,6 +379,11 @@ int main()
     CursorInfo.bVisible = false;
     CursorInfo.dwSize = 1;
     SetConsoleCursorInfo(hStdOut, &CursorInfo);
+
+    synth::sequencer sequencer(90.0f, 4, 4);
+    sequencer.add_channel(&kick, "X...X...X..X.X..");
+    sequencer.add_channel(&snare,"..X...X...X...X.");
+    sequencer.add_channel(&hihat,"X.X.X.X.X.X.X.XX");
 
     vector<wstring> devices = olcNoiseMaker<short>::Enumerate();
 
@@ -272,10 +414,23 @@ int main()
     cout << "  |___|___|___|___|___|___|___|___|___|___|___|___|___|___|___|___|___|" << endl << endl;
     cout << "<ESC> Quit" << endl << endl;
 
+    double t1 = sound.GetTime();
+
     while (true) {
         char keys[] = "ZSXCFVGBNJMKQ2WE4R5TY7U8I9OP";
+        double t2 = sound.GetTime();
+        double elapsed = t2 - t1;
+        t1 = t2;
 
         mtx.lock();
+        int sequencer_notes = sequencer.update(elapsed);
+        if (sequencer_notes > 0) {
+            for (auto n : sequencer.notes) {
+                n.NoteOn(sound.GetTime());
+                notes.push_back(n);
+            }
+        }
+
         for (int i = 0; i < 28; i++) {
             if (GetAsyncKeyState(keys[i]) & 0x8000) {
                 bool bAlreadyPressed = false;
