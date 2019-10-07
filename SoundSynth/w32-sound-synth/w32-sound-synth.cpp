@@ -18,12 +18,15 @@ namespace synth {
         OSC_NOISE
     };
 
+    struct instrument_base;
+
     struct note {
         int nID;
         double dTimeOn;
         double dTimeOff;
         bool bNotePressed;
         bool bNoteErase;
+        instrument_base *instrument = nullptr;
 
         note()
         {
@@ -217,14 +220,14 @@ namespace synth {
 
 mutex mtx;
 vector<synth::note> notes;
-synth::instrument_harm instrument;
+synth::instrument_harm harmonica;
 //synth::instrument_bell instrument;
 
 double SynthWave(double dTime) {
     double dOutput = 0.0;
     mtx.lock();
     for (auto &note : notes) {
-        dOutput += instrument.GetSound(dTime, note);
+        dOutput += note.instrument->GetSound(dTime, note);
     }
     mtx.unlock();
     return dOutput;
@@ -285,6 +288,7 @@ int main()
                 if (!bAlreadyPressed) {
                     synth::note n;
                     n.nID = i;
+                    n.instrument = &harmonica;
                     n.NoteOn(sound.GetTime());
                     notes.push_back(n);
                 }
