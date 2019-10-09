@@ -1,4 +1,7 @@
 #include "olcConsoleGameEngine.h"
+#include <vector>
+#include <utility>
+using namespace std;
 
 class RacingGame : public olcConsoleGameEngine
 {
@@ -6,6 +9,9 @@ class RacingGame : public olcConsoleGameEngine
     float Distance;
     float Speed;
     float Curvature;
+    vector<pair<float, float>> Track; // Curvature/Distance segments
+    float CurrentSegmentDistance;
+    int CurrentSegment;
 
     // Inherited via olcConsoleGameEngine
     virtual bool OnUserCreate() override
@@ -14,6 +20,13 @@ class RacingGame : public olcConsoleGameEngine
         Distance = 0;
         Speed = 0;
         Curvature = 0;
+        CurrentSegment = 0;
+        
+        Track.emplace_back(make_pair(0, 200.0f));
+        Track.emplace_back(make_pair(0.5f, 100.0f));
+        Track.emplace_back(make_pair(0, 200.0f));
+        Track.emplace_back(make_pair(-0.5f, 100.0f));
+
         return true;
     }
 
@@ -29,10 +42,20 @@ class RacingGame : public olcConsoleGameEngine
         if (Speed < 0) Speed = 0;
         if (Speed > 1) Speed = 1;
 
-        Distance += 50.0f * Speed * fElapsedTime;
+        float CalcDist = 50.0f * Speed * fElapsedTime;
+        Distance += CalcDist;
+        CurrentSegmentDistance += CalcDist;
+
+        if (CurrentSegmentDistance >= Track[CurrentSegment].second) {
+            CurrentSegmentDistance -= Track[CurrentSegment].second;
+            CurrentSegment++;
+            if (CurrentSegment >= Track.size()) {
+                CurrentSegment = 0;
+            }
+        }
 
         // Test
-        Curvature = 0.5f;
+        Curvature = Track[CurrentSegment].first;
 
         for (int y = 0; y < ScreenHeight() / 2; y++) {
             int row = y + ScreenHeight() / 2;
