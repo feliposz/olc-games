@@ -4,20 +4,30 @@ class RacingGame : public olcConsoleGameEngine
 {
     float CarPos;
     float Distance;
+    float Speed;
 
     // Inherited via olcConsoleGameEngine
     virtual bool OnUserCreate() override
     {
         CarPos = 0;
         Distance = 0;
+        Speed = 0;
         return true;
     }
 
     virtual bool OnUserUpdate(float fElapsedTime) override
     {
         if (m_keys[VK_UP].bHeld) {
-            Distance += 30.0f * fElapsedTime;
+            Speed += 10.0f * fElapsedTime;
         }
+        else {
+            Speed -= 2.0f * fElapsedTime;
+        }
+
+        if (Speed < 0) Speed = 0;
+        if (Speed > 1) Speed = 1;
+
+        Distance += 50.0f * Speed * fElapsedTime;
 
         for (int y = 0; y < ScreenHeight() / 2; y++) {
             int row = y + ScreenHeight() / 2;
@@ -54,17 +64,17 @@ class RacingGame : public olcConsoleGameEngine
                 }
 
                 Draw(x, row, ' ', color);
-                
+
             }
         }
 
-        DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos)-7), 80, L"   ||####||   ", FG_WHITE | BG_BLACK);
-        DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos)-7), 81, L"      ##      ", FG_WHITE | BG_BLACK);
-        DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos)-7), 82, L"     ####     ", FG_WHITE | BG_BLACK);
-        DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos)-7), 83, L"     ####     ", FG_WHITE | BG_BLACK);
-        DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos)-7), 84, L"|||  ####  |||", FG_WHITE | BG_BLACK);
-        DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos)-7), 85, L"|||########|||", FG_WHITE | BG_BLACK);
-        DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos)-7), 86, L"|||  ####  |||", FG_WHITE | BG_BLACK);
+        DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 80, L"   ||####||   ", FG_WHITE | BG_BLACK);
+        DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 81, L"      ##      ", FG_WHITE | BG_BLACK);
+        DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 82, L"     ####     ", FG_WHITE | BG_BLACK);
+        DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 83, L"     ####     ", FG_WHITE | BG_BLACK);
+        DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 84, L"|||  ####  |||", FG_WHITE | BG_BLACK);
+        DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 85, L"|||########|||", FG_WHITE | BG_BLACK);
+        DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 86, L"|||  ####  |||", FG_WHITE | BG_BLACK);
 
         return true;
     }
