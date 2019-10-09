@@ -2,14 +2,17 @@
 
 class RacingGame : public olcConsoleGameEngine
 {
+    float CarPos;
+
     // Inherited via olcConsoleGameEngine
     virtual bool OnUserCreate() override
     {
+        CarPos = 0;
         return true;
     }
+
     virtual bool OnUserUpdate(float fElapsedTime) override
     {
-
         for (int y = 0; y < ScreenHeight() / 2; y++) {
             int row = y + ScreenHeight() / 2;
             float Perspective = 0.1f + 0.9f * ((float)y / ScreenHeight() * 2.0f);
@@ -42,8 +45,17 @@ class RacingGame : public olcConsoleGameEngine
                 }
 
                 Draw(x, row, ' ', color);
+                
             }
         }
+
+        DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos)-7), 80, L"   ||####||   ", FG_WHITE | BG_BLACK);
+        DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos)-7), 81, L"      ##      ", FG_WHITE | BG_BLACK);
+        DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos)-7), 82, L"     ####     ", FG_WHITE | BG_BLACK);
+        DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos)-7), 83, L"     ####     ", FG_WHITE | BG_BLACK);
+        DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos)-7), 84, L"|||  ####  |||", FG_WHITE | BG_BLACK);
+        DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos)-7), 85, L"|||########|||", FG_WHITE | BG_BLACK);
+        DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos)-7), 86, L"|||  ####  |||", FG_WHITE | BG_BLACK);
 
         return true;
     }
