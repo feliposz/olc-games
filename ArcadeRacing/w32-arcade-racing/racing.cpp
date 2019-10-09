@@ -22,10 +22,15 @@ class RacingGame : public olcConsoleGameEngine
         Curvature = 0;
         CurrentSegment = 0;
         
-        Track.emplace_back(make_pair(0, 200.0f));
+        Track.emplace_back(make_pair(0, 10.0f));
+        Track.emplace_back(make_pair(0, 100.0f));
+        Track.emplace_back(make_pair(0.25f, 100.0f));
+        Track.emplace_back(make_pair(0, 50.0f));
+        Track.emplace_back(make_pair(-0.5, 100.0f));
+        Track.emplace_back(make_pair(0, 150.0f));
+        Track.emplace_back(make_pair(-0.75f, 100.0f));
         Track.emplace_back(make_pair(0.5f, 100.0f));
-        Track.emplace_back(make_pair(0, 200.0f));
-        Track.emplace_back(make_pair(-0.5f, 100.0f));
+        Track.emplace_back(make_pair(0.1f, 100.0f));
 
         return true;
     }
@@ -42,20 +47,22 @@ class RacingGame : public olcConsoleGameEngine
         if (Speed < 0) Speed = 0;
         if (Speed > 1) Speed = 1;
 
+        float TargetCurvature = Track[CurrentSegment].first;
+        float TargetDistance = Track[CurrentSegment].second;
+
         float CalcDist = 50.0f * Speed * fElapsedTime;
         Distance += CalcDist;
         CurrentSegmentDistance += CalcDist;
 
-        if (CurrentSegmentDistance >= Track[CurrentSegment].second) {
-            CurrentSegmentDistance -= Track[CurrentSegment].second;
+        Curvature += (TargetCurvature - Curvature) * Speed * fElapsedTime;
+
+        if (CurrentSegmentDistance >= TargetDistance) {
+            CurrentSegmentDistance -= TargetDistance;
             CurrentSegment++;
             if (CurrentSegment >= Track.size()) {
                 CurrentSegment = 0;
             }
         }
-
-        // Test
-        Curvature = Track[CurrentSegment].first;
 
         for (int y = 0; y < ScreenHeight() / 2; y++) {
             int row = y + ScreenHeight() / 2;
@@ -87,6 +94,9 @@ class RacingGame : public olcConsoleGameEngine
                 else if (x >= RightClip) {
                     color = StripeColor;
                 }
+                else if (CurrentSegment == 0) {
+                    color = ((x&1) != (y&1)) ? BG_WHITE : BG_DARK_GREY;
+                } 
                 else {
                     color = BG_DARK_GREY;
                 }
