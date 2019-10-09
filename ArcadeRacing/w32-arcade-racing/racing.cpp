@@ -9,6 +9,8 @@ class RacingGame : public olcConsoleGameEngine
     float Distance;
     float Speed;
     float Curvature;
+    float PlayerCurvature;
+    float TrackCurvature;
     vector<pair<float, float>> Track; // Curvature/Distance segments
     float CurrentSegmentDistance;
     int CurrentSegment;
@@ -20,8 +22,10 @@ class RacingGame : public olcConsoleGameEngine
         Distance = 0;
         Speed = 0;
         Curvature = 0;
+        PlayerCurvature = 0;
+        TrackCurvature = 0;
         CurrentSegment = 0;
-        
+
         Track.emplace_back(make_pair(0, 10.0f));
         Track.emplace_back(make_pair(0, 100.0f));
         Track.emplace_back(make_pair(0.25f, 100.0f));
@@ -38,10 +42,26 @@ class RacingGame : public olcConsoleGameEngine
     virtual bool OnUserUpdate(float fElapsedTime) override
     {
         if (m_keys[VK_UP].bHeld) {
-            Speed += 10.0f * fElapsedTime;
+            Speed += 2.0f * fElapsedTime;
         }
         else {
-            Speed -= 2.0f * fElapsedTime;
+            Speed -= 1.0f * fElapsedTime;
+        }
+
+        if (fabs(PlayerCurvature - TrackCurvature) > 0.8f) {
+            Speed -= 6.0f * fElapsedTime;
+        }
+
+        int CarDirection = 0;
+
+        if (m_keys[VK_LEFT].bHeld) {
+            PlayerCurvature -= 0.7f * (1.0f - Speed / 2.0f) * fElapsedTime;
+            CarDirection = -1;
+        }
+
+        if (m_keys[VK_RIGHT].bHeld) {
+            PlayerCurvature += 0.7f * (1.0f - Speed / 2.0f) * fElapsedTime;
+            CarDirection = 1;
         }
 
         if (Speed < 0) Speed = 0;
@@ -55,6 +75,8 @@ class RacingGame : public olcConsoleGameEngine
         CurrentSegmentDistance += CalcDist;
 
         Curvature += (TargetCurvature - Curvature) * Speed * fElapsedTime;
+        TrackCurvature += Curvature * Speed * fElapsedTime;
+        CarPos = PlayerCurvature - TrackCurvature;
 
         if (CurrentSegmentDistance >= TargetDistance) {
             CurrentSegmentDistance -= TargetDistance;
@@ -95,8 +117,8 @@ class RacingGame : public olcConsoleGameEngine
                     color = StripeColor;
                 }
                 else if (CurrentSegment == 0) {
-                    color = ((x&1) != (y&1)) ? BG_WHITE : BG_DARK_GREY;
-                } 
+                    color = ((x & 1) != (y & 1)) ? BG_WHITE : BG_DARK_GREY;
+                }
                 else {
                     color = BG_DARK_GREY;
                 }
@@ -106,13 +128,34 @@ class RacingGame : public olcConsoleGameEngine
             }
         }
 
-        DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 80, L"   ||####||   ", FG_WHITE | BG_BLACK);
-        DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 81, L"      ##      ", FG_WHITE | BG_BLACK);
-        DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 82, L"     ####     ", FG_WHITE | BG_BLACK);
-        DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 83, L"     ####     ", FG_WHITE | BG_BLACK);
-        DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 84, L"|||  ####  |||", FG_WHITE | BG_BLACK);
-        DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 85, L"|||########|||", FG_WHITE | BG_BLACK);
-        DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 86, L"|||  ####  |||", FG_WHITE | BG_BLACK);
+        if (CarDirection == -1) {
+            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 80, L"\\\\####\\\\     ", FG_WHITE | BG_BLACK);
+            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 81, L"   ##          ", FG_WHITE | BG_BLACK);
+            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 82, L"   ####        ", FG_WHITE | BG_BLACK);
+            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 83, L"    ####       ", FG_WHITE | BG_BLACK);
+            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 84, L"\\\\\\ ####   \\\\\\", FG_WHITE | BG_BLACK);
+            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 85, L"\\O\\########\\\\\\", FG_WHITE | BG_BLACK);
+            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 86, L"\\\\\\  ####  \\\\\\", FG_WHITE | BG_BLACK);
+        }
+        else if (CarDirection == 1) {
+            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 80, L"      //####//", FG_WHITE | BG_BLACK);
+            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 81, L"         ##   ", FG_WHITE | BG_BLACK);
+            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 82, L"       ####   ", FG_WHITE | BG_BLACK);
+            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 83, L"      ####    ", FG_WHITE | BG_BLACK);
+            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 84, L"///  ####  ///", FG_WHITE | BG_BLACK);
+            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 85, L"///########/O/", FG_WHITE | BG_BLACK);
+            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 86, L"///  ####  ///", FG_WHITE | BG_BLACK);
+        }
+        else {
+            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 80, L"   ||####||   ", FG_WHITE | BG_BLACK);
+            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 81, L"      ##      ", FG_WHITE | BG_BLACK);
+            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 82, L"     ####     ", FG_WHITE | BG_BLACK);
+            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 83, L"     ####     ", FG_WHITE | BG_BLACK);
+            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 84, L"|||  ####  |||", FG_WHITE | BG_BLACK);
+            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 85, L"|||########|||", FG_WHITE | BG_BLACK);
+            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 86, L"|||  ####  |||", FG_WHITE | BG_BLACK);
+        }
+
 
         return true;
     }
