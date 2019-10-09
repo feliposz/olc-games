@@ -3,16 +3,22 @@
 class RacingGame : public olcConsoleGameEngine
 {
     float CarPos;
+    float Distance;
 
     // Inherited via olcConsoleGameEngine
     virtual bool OnUserCreate() override
     {
         CarPos = 0;
+        Distance = 0;
         return true;
     }
 
     virtual bool OnUserUpdate(float fElapsedTime) override
     {
+        if (m_keys[VK_UP].bHeld) {
+            Distance += 30.0f * fElapsedTime;
+        }
+
         for (int y = 0; y < ScreenHeight() / 2; y++) {
             int row = y + ScreenHeight() / 2;
             float Perspective = 0.1f + 0.9f * ((float)y / ScreenHeight() * 2.0f);
@@ -28,17 +34,20 @@ class RacingGame : public olcConsoleGameEngine
                 int RightClip = (int)((RoadCenter + RoadWidth / 2.0f) * ScreenWidth());
                 int RightGrass = (int)((RoadCenter + RoadWidth / 2.0f + ClipWidth) * ScreenWidth());
 
+                float GrassColor = sinf(20.0f * powf(1.0f - Perspective, 3) + Distance * 0.1f) > 0 ? BG_GREEN : BG_DARK_GREEN;
+                float StripeColor = sinf(80.0f * powf(1.0f - Perspective, 2) + Distance) > 0 ? BG_RED : BG_WHITE;
+
                 if (x < LeftGrass) {
-                    color = BG_DARK_GREEN;
+                    color = GrassColor;
                 }
                 else if (x < LeftClip) {
-                    color = BG_RED;
+                    color = StripeColor;
                 }
                 else if (x >= RightGrass) {
-                    color = BG_DARK_GREEN;
+                    color = GrassColor;
                 }
                 else if (x >= RightClip) {
-                    color = BG_RED;
+                    color = StripeColor;
                 }
                 else {
                     color = BG_DARK_GREY;
