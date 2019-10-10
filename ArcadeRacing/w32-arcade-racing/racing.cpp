@@ -123,8 +123,8 @@ class RacingGame : public olcConsoleGameEngine
                 int RightClip = (int)((RoadCenter + RoadWidth) * ScreenWidth());
                 int RightGrass = (int)((RoadCenter + RoadWidth + ClipWidth) * ScreenWidth());
 
-                float GrassColor = sinf(20.0f * powf(1.0f - Perspective, 3) + Distance * 0.1f) > 0 ? BG_GREEN : BG_DARK_GREEN;
-                float StripeColor = sinf(80.0f * powf(1.0f - Perspective, 2) + Distance) > 0 ? BG_RED : BG_WHITE;
+                short GrassColor = sinf(20.0f * powf(1.0f - Perspective, 3) + Distance * 0.1f) > 0 ? BG_GREEN : BG_DARK_GREEN;
+                short StripeColor = sinf(80.0f * powf(1.0f - Perspective, 2) + Distance) > 0 ? BG_RED : BG_WHITE;
 
                 if (x < LeftGrass) {
                     color = GrassColor;
@@ -150,33 +150,37 @@ class RacingGame : public olcConsoleGameEngine
             }
         }
 
+        int CarCol = (int)(ScreenWidth() * (0.5f + CarPos) - 7);
+        int CarRow = 80;
+        short CarColor = FG_WHITE | BG_BLACK;
+
         // Render Car
         if (CarDirection == -1) {
-            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 80, L"\\\\####\\\\     ", FG_WHITE | BG_BLACK);
-            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 81, L"   ##          ", FG_WHITE | BG_BLACK);
-            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 82, L"   ####        ", FG_WHITE | BG_BLACK);
-            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 83, L"    ####       ", FG_WHITE | BG_BLACK);
-            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 84, L"\\\\\\ ####   \\\\\\", FG_WHITE | BG_BLACK);
-            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 85, L"\\O\\########\\\\\\", FG_WHITE | BG_BLACK);
-            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 86, L"\\\\\\  ####  \\\\\\", FG_WHITE | BG_BLACK);
+            DrawStringAlpha(CarCol, CarRow+0, L"\\\\####\\\\     ", CarColor);
+            DrawStringAlpha(CarCol, CarRow+1, L"   ##          ", CarColor);
+            DrawStringAlpha(CarCol, CarRow+2, L"   ####        ", CarColor);
+            DrawStringAlpha(CarCol, CarRow+3, L"    ####       ", CarColor);
+            DrawStringAlpha(CarCol, CarRow+4, L"\\\\\\ ####   \\\\\\", CarColor);
+            DrawStringAlpha(CarCol, CarRow+5, L"\\O\\########\\\\\\", CarColor);
+            DrawStringAlpha(CarCol, CarRow+6, L"\\\\\\  ####  \\\\\\", CarColor);
         }
         else if (CarDirection == 1) {
-            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 80, L"      //####//", FG_WHITE | BG_BLACK);
-            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 81, L"         ##   ", FG_WHITE | BG_BLACK);
-            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 82, L"       ####   ", FG_WHITE | BG_BLACK);
-            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 83, L"      ####    ", FG_WHITE | BG_BLACK);
-            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 84, L"///  ####  ///", FG_WHITE | BG_BLACK);
-            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 85, L"///########/O/", FG_WHITE | BG_BLACK);
-            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 86, L"///  ####  ///", FG_WHITE | BG_BLACK);
+            DrawStringAlpha(CarCol, CarRow+0, L"      //####//", CarColor);
+            DrawStringAlpha(CarCol, CarRow+1, L"         ##   ", CarColor);
+            DrawStringAlpha(CarCol, CarRow+2, L"       ####   ", CarColor);
+            DrawStringAlpha(CarCol, CarRow+3, L"      ####    ", CarColor);
+            DrawStringAlpha(CarCol, CarRow+4, L"///  ####  ///", CarColor);
+            DrawStringAlpha(CarCol, CarRow+5, L"///########/O/", CarColor);
+            DrawStringAlpha(CarCol, CarRow+6, L"///  ####  ///", CarColor);
         }
         else {
-            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 80, L"   ||####||   ", FG_WHITE | BG_BLACK);
-            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 81, L"      ##      ", FG_WHITE | BG_BLACK);
-            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 82, L"     ####     ", FG_WHITE | BG_BLACK);
-            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 83, L"     ####     ", FG_WHITE | BG_BLACK);
-            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 84, L"|||  ####  |||", FG_WHITE | BG_BLACK);
-            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 85, L"|||########|||", FG_WHITE | BG_BLACK);
-            DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 86, L"|||  ####  |||", FG_WHITE | BG_BLACK);
+            DrawStringAlpha(CarCol, CarRow+0, L"   ||####||   ", CarColor);
+            DrawStringAlpha(CarCol, CarRow+1, L"      ##      ", CarColor);
+            DrawStringAlpha(CarCol, CarRow+2, L"     ####     ", CarColor);
+            DrawStringAlpha(CarCol, CarRow+3, L"     ####     ", CarColor);
+            DrawStringAlpha(CarCol, CarRow+4, L"|||  ####  |||", CarColor);
+            DrawStringAlpha(CarCol, CarRow+5, L"|||########|||", CarColor);
+            DrawStringAlpha(CarCol, CarRow+6, L"|||  ####  |||", CarColor);
         }
 
 
