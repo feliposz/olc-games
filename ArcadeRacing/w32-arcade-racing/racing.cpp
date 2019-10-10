@@ -116,11 +116,12 @@ class RacingGame : public olcConsoleGameEngine
                 float RoadCenter = 0.5f + Curvature * powf(1.0f - Perspective, 3);
                 float RoadWidth = 0.6f * Perspective;
                 float ClipWidth = 0.15f * Perspective;
+                RoadWidth *= 0.5f;
 
-                int LeftGrass = (int)((RoadCenter - RoadWidth / 2.0f - ClipWidth) * ScreenWidth());
-                int LeftClip = (int)((RoadCenter - RoadWidth / 2.0f) * ScreenWidth());
-                int RightClip = (int)((RoadCenter + RoadWidth / 2.0f) * ScreenWidth());
-                int RightGrass = (int)((RoadCenter + RoadWidth / 2.0f + ClipWidth) * ScreenWidth());
+                int LeftGrass = (int)((RoadCenter - RoadWidth - ClipWidth) * ScreenWidth());
+                int LeftClip = (int)((RoadCenter - RoadWidth) * ScreenWidth());
+                int RightClip = (int)((RoadCenter + RoadWidth) * ScreenWidth());
+                int RightGrass = (int)((RoadCenter + RoadWidth + ClipWidth) * ScreenWidth());
 
                 float GrassColor = sinf(20.0f * powf(1.0f - Perspective, 3) + Distance * 0.1f) > 0 ? BG_GREEN : BG_DARK_GREEN;
                 float StripeColor = sinf(80.0f * powf(1.0f - Perspective, 2) + Distance) > 0 ? BG_RED : BG_WHITE;
