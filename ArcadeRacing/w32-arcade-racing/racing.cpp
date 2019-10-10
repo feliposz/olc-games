@@ -86,6 +86,27 @@ class RacingGame : public olcConsoleGameEngine
             }
         }
 
+        // Render Sky
+        for (int y = 0; y < ScreenHeight() / 2; y++) {
+            short SkyShades[5] = { PIXEL_SOLID, PIXEL_THREEQUARTERS, PIXEL_HALF, PIXEL_QUARTER, ' ' };
+            int i = (int)y / (ScreenHeight() / 2 / 5);
+            Fill(0, y, ScreenWidth(), y + 1, SkyShades[i], FG_BLUE | BG_DARK_BLUE);
+        }
+
+        // Render Mountains
+        for (int x = 0; x < ScreenWidth(); x++) {
+            int MountainHeight = 10 + ScreenHeight() * 0.1f * (
+                0.5f * sinf(0.04f * (x + 50 * PlayerCurvature))
+                + 0.2f * sinf(0.12f * (x + 50 * PlayerCurvature))
+                + 0.3f * sinf(0.21f * (x + 50 * PlayerCurvature))
+                + 0.1f * sinf(0.07f * (x + 50 * PlayerCurvature))
+                );
+            if (MountainHeight > 0) {
+                Fill(x, ScreenHeight() / 2 - MountainHeight, x + 1, ScreenHeight() / 2, PIXEL_HALF, FG_DARK_RED | BG_DARK_YELLOW);
+            }
+        }
+
+        // Render Track
         for (int y = 0; y < ScreenHeight() / 2; y++) {
             int row = y + ScreenHeight() / 2;
             float Perspective = 0.1f + 0.8f * ((float)y / ScreenHeight() * 2.0f);
@@ -128,6 +149,7 @@ class RacingGame : public olcConsoleGameEngine
             }
         }
 
+        // Render Car
         if (CarDirection == -1) {
             DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 80, L"\\\\####\\\\     ", FG_WHITE | BG_BLACK);
             DrawStringAlpha((int)(ScreenWidth() * (0.5f + CarPos) - 7), 81, L"   ##          ", FG_WHITE | BG_BLACK);
