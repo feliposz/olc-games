@@ -12,6 +12,7 @@ class CatmullRomSplines : public olcConsoleGameEngine
 
     vector<pair<float, float>> Points;
     int Selected = 0;
+    float CurrentGradient = 0;
 
     pair<float, float> Interpolate(float t)
     {        
@@ -32,6 +33,25 @@ class CatmullRomSplines : public olcConsoleGameEngine
         return { x , y };
     }
 
+    pair<float, float> Gradient(float t)
+    {
+        int p1 = ((int)t) % MaxPoints;
+        int p2 = (p1 + 1) % MaxPoints;
+        int p3 = (p2 + 1) % MaxPoints;
+        int p0 = (p1 - 1) >= 0 ? p1 - 1 : MaxPoints - 1;
+        t = t - (int)t; // Decimal part
+        float t2 = t * t;
+        float t3 = t2 * t;
+        // Based on the original Catmull-Rom spline but modified by javidx9
+        float q0 = -3.0f * t2 + 4.0f * t - 1.0f;
+        float q1 = 9.0f * t2 - 10.0f * t;
+        float q2 = -9.0f * t2 + 8.0f * t + 1.0f;
+        float q3 = 3.0f * t2 - 2.0f * t;
+        float x = 0.5f * (q0 * Points[p0].first + q1 * Points[p1].first + q2 * Points[p2].first + q3 * Points[p3].first);
+        float y = 0.5f * (q0 * Points[p0].second + q1 * Points[p1].second + q2 * Points[p2].second + q3 * Points[p3].second);
+        return { x , y };
+    }
+
     virtual bool OnUserCreate() override
     {
         for (int i = 0; i < MaxPoints; i++) {
@@ -43,6 +63,12 @@ class CatmullRomSplines : public olcConsoleGameEngine
 
     virtual bool OnUserUpdate(float fElapsedTime) override
     {
+        CurrentGradient += 0.01f;
+
+        if (CurrentGradient > MaxPoints) {
+            CurrentGradient = 0;
+        }
+
         // Change selected control point
         if (m_keys['Z'].bReleased) {
             Selected--;
@@ -79,6 +105,12 @@ class CatmullRomSplines : public olcConsoleGameEngine
             pair<float, float> p = Interpolate(t);
             Draw(p.first, p.second, PIXEL_SOLID, FG_WHITE);
         }
+
+        // Draw gradient
+        pair<float, float> p = Interpolate(CurrentGradient);
+        pair<float, float> g = Gradient(CurrentGradient);
+        DrawLine(p.first, p.second, p.first + 0.3f * g.first, p.second + 0.3f * g.second, PIXEL_SOLID, FG_BLUE);
+        Draw(p.first, p.second, PIXEL_SOLID, FG_GREEN);
 
         // Draw control points
         int n = 0;        
