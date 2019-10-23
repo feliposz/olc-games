@@ -7,6 +7,7 @@ using namespace std;
 class FroggerGame : public olcConsoleGameEngine
 {
     vector<pair<float, string>> Lanes;
+    float Time;
 
     virtual bool OnUserCreate() override
     {
@@ -26,6 +27,21 @@ class FroggerGame : public olcConsoleGameEngine
 
     virtual bool OnUserUpdate(float fElapsedTime) override
     {
+        Time += fElapsedTime;
+        int nRow = 0;
+        for (auto &l : Lanes) {
+            int nCol = 0;
+            for (int x = 0; x < 128; x++) {
+                int pos = (int)(x/8.0 + Time * l.first) % 64;
+                if (pos < 0) {
+                    pos = 64 - abs(pos);
+                }
+                for (int y = 0; y < 8; y++) {
+                    Draw(x, y + nRow * 8, l.second[pos] == 'x' ? '*' : '.');
+                }
+            }
+            nRow++;
+        }
         return true;
     }
 };
