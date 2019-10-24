@@ -30,16 +30,16 @@ class FroggerGame : public olcConsoleGameEngine
         sprWall.Load(L"FroggerSprites/wall.spr");
         sprWater.Load(L"FroggerSprites/water.spr");
 
-        Lanes.push_back(make_pair(+0.0f, "xxx..xxx..xxx..xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"));
-        Lanes.push_back(make_pair(+2.0f, "..xx....xxxxxx......xxx.xx...xx.......xx...xxx........xx..xx...."));
-        Lanes.push_back(make_pair(-3.0f, ".xxxx.xx...xxxx..xx.....xxxxxx.....xxx..xxxxx....xx.xx...xxxx..."));
-        Lanes.push_back(make_pair(+4.0f, "....xx..xxx.......xx.xxx.........xxx...xx....xxxxxx.....xxx...xx"));
-        Lanes.push_back(make_pair(+0.0f, "................................................................"));
-        Lanes.push_back(make_pair(+2.0f, "...xx....xx.......xx...xx.......xx......xx.xx......xx.....xx..xx"));
-        Lanes.push_back(make_pair(+4.0f, ".xxxx.....xxxx....xxxx.xxxx.......xxxx.....xxxx.....xxxx...xxxx."));
-        Lanes.push_back(make_pair(-3.0f, "...xx....xx....xx......xx......xx.......xx......xx.xx...xx...xx."));
-        Lanes.push_back(make_pair(+2.0f, "..xx...xx......xx.....xx....xx.xx...xx.....xx......xx....xx.xx.."));
-        Lanes.push_back(make_pair(+0.0f, "................................................................"));
+        Lanes.push_back(make_pair(+0.0f, "wwwhhwwwhhwwwhhwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww"));
+        Lanes.push_back(make_pair(-2.0f, ",,<>,,,,<####>,,,,,,<#>,<>,,,<>,,,,,,,<>,,,<#>,,,,,,,,<>,,<>,,,,"));
+        Lanes.push_back(make_pair(+3.0f, ",<##>,<>,,,<##>,,<>,,,,,<####>,,,,,<#>,,<###>,,,,<>,<>,,,<##>,,,"));
+        Lanes.push_back(make_pair(-4.0f, ",,,,<>,,<#>,,,,,,,<>,<#>,,,,,,,,,<#>,,,<>,,,,<####>,,,,,<#>,,,<#"));
+        Lanes.push_back(make_pair(+0.0f, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"));
+        Lanes.push_back(make_pair(-2.0f, "...db....db.......db...db.......db......db.db......db.....db..db"));
+        Lanes.push_back(make_pair(-4.0f, ".1234.....1234....1234.1234.......1234.....1234.....1234...1234."));
+        Lanes.push_back(make_pair(+3.0f, "...qp....qp....qp......qp......qp.......qp......qp.qp...qp...qp."));
+        Lanes.push_back(make_pair(-2.0f, "..db...db......db.....db....db.db...db.....db......db....db.db.."));
+        Lanes.push_back(make_pair(+0.0f, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"));
 
         return true;
     }
@@ -51,14 +51,32 @@ class FroggerGame : public olcConsoleGameEngine
         int nRow = 0;
         for (auto &l : Lanes) {
             int nCol = 0;
-            for (int x = 0; x < 128; x++) {
-                int pos = (int)(x/8.0 + Time * l.first) % 64;
+            for (int col = 0; col < 16; col++) {
+                int pos = (int)(col + Time * l.first) % 64;
                 if (pos < 0) {
                     pos = 64 - abs(pos);
+                }                
+                olcSprite *sprite = nullptr;
+                int spriteTile = 0;
+                switch (l.second[pos]) {
+                case 'w': sprite = &sprWall; break;
+                case 'x': sprite = &sprPavement; break;
+                case 'h': sprite = &sprHome; break;
+                case ',': sprite = &sprWater; break;
+                case '<': sprite = &sprLog; spriteTile = 0; break;
+                case '#': sprite = &sprLog; spriteTile = 1; break;
+                case '>': sprite = &sprLog; spriteTile = 2; break;
+                case '1': sprite = &sprBus; spriteTile = 0; break;
+                case '2': sprite = &sprBus; spriteTile = 1; break;
+                case '3': sprite = &sprBus; spriteTile = 2; break;
+                case '4': sprite = &sprBus; spriteTile = 3; break;
+                case 'd': sprite = &sprCar1; spriteTile = 0; break;
+                case 'b': sprite = &sprCar1; spriteTile = 1; break;
+                case 'q': sprite = &sprCar2; spriteTile = 0; break;
+                case 'p': sprite = &sprCar2; spriteTile = 1; break;
+                default: sprite = nullptr;
                 }
-                for (int y = 0; y < 8; y++) {
-                    Draw(x, y + nRow * 8, l.second[pos] == 'x' ? 'X' : '.');
-                }
+                DrawPartialSprite(col * 8, nRow * 8, sprite, spriteTile * 8, 0, 8, 8);
             }
             nRow++;
         }
