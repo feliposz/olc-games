@@ -51,11 +51,13 @@ class FroggerGame : public olcConsoleGameEngine
         int nRow = 0;
         for (auto &l : Lanes) {
             int nCol = 0;
-            for (int col = 0; col < 16; col++) {
-                int pos = (int)(col + Time * l.first) % 64;
+            for (int col = -1; col < 18; col++) {
+                float realPos = Time * l.first;
+                int pos = (int)(col + realPos) % 64;
                 if (pos < 0) {
                     pos = 64 - abs(pos);
-                }                
+                }
+                int partial = (int)(realPos * 8) % 8;
                 olcSprite *sprite = nullptr;
                 int spriteTile = 0;
                 switch (l.second[pos]) {
@@ -76,7 +78,7 @@ class FroggerGame : public olcConsoleGameEngine
                 case 'p': sprite = &sprCar2; spriteTile = 1; break;
                 default: sprite = nullptr;
                 }
-                DrawPartialSprite(col * 8, nRow * 8, sprite, spriteTile * 8, 0, 8, 8);
+                DrawPartialSprite(col * 8 - partial, nRow * 8, sprite, spriteTile * 8, 0, 8, 8);
             }
             nRow++;
         }
