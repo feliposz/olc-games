@@ -17,9 +17,13 @@ class FroggerGame : public olcConsoleGameEngine
     olcSprite sprPavement;
     olcSprite sprWall;
     olcSprite sprWater;
+    float FrogX;
+    float FrogY;
 
     virtual bool OnUserCreate() override
     {
+        FrogX = 8;
+        FrogY = 9;
         sprBus.Load(L"FroggerSprites/bus.spr");
         sprCar1.Load(L"FroggerSprites/car1.spr");
         sprCar2.Load(L"FroggerSprites/car2.spr");
@@ -82,6 +86,14 @@ class FroggerGame : public olcConsoleGameEngine
             }
             nRow++;
         }
+        if (m_keys[VK_UP].bPressed && FrogY > 0) FrogY -= 1;
+        if (m_keys[VK_DOWN].bPressed && FrogY < 9) FrogY += 1;
+        if (m_keys[VK_LEFT].bPressed && FrogX > 0) FrogX -= 1;
+        if (m_keys[VK_RIGHT].bPressed && FrogX < 16) FrogX += 1;
+        if (FrogY < 4) {
+             FrogX -= fElapsedTime * Lanes[(int)FrogY].first;
+        }
+        DrawSprite(FrogX * 8, FrogY * 8, &sprFrog);
         return true;
     }
 };
