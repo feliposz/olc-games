@@ -14,6 +14,7 @@ class AsteroidsGame : public olcConsoleGameEngine
 {
 private:
     vector<GameObject> asteroids;
+    GameObject player;
 
     void WrapCoordinates(float xi, float yi, float &xo, float &yo)
     {
@@ -37,6 +38,12 @@ public:
     virtual bool OnUserCreate() override
     {
         asteroids.push_back({20.0f, 20.0f, 20.0f, 20.0f, 16, 0.0f});
+        player.x = ScreenWidth() / 2;
+        player.y = ScreenHeight() / 2;
+        player.dx = 0;
+        player.dy = 0;
+        player.size = 3;
+        player.angle = 0;
         return true;
     }
 
@@ -55,6 +62,14 @@ public:
                     Draw(x + a.x, y + a.y);
                 }
             }
+        }
+
+        float px[3] = { -1, 1, 0 };
+        float py[3] = { 0, 0, -2 };
+
+        for (int i = 0; i < 3; i++) {
+            int j = (i + 1) % 3;
+            DrawLine(player.x + px[i] * player.size, player.y + py[i] * player.size, player.x + px[j] * player.size, player.y + py[j] * player.size);
         }
 
         return true;
