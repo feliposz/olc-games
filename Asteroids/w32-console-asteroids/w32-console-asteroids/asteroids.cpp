@@ -1,5 +1,6 @@
 #include <vector>
 #include <algorithm>
+#include <string>
 #include "olcConsoleGameEngine.h"
 
 using namespace std;
@@ -18,6 +19,7 @@ class AsteroidsGame : public olcConsoleGameEngine
 {
 private:
     int level;
+    int score;
     GameObject player;
     vector<GameObject> asteroids;
     vector<GameObject> bullets;
@@ -116,6 +118,7 @@ public:
                             newAsteroids.push_back({ a.x, a.y, 20.0f * sin(player.angle - PI / 2), 20.0f * cos(player.angle - PI / 2), a.size / 2, a.angle, true });
                             newAsteroids.push_back({ a.x, a.y, 20.0f * sin(player.angle + PI / 2), 20.0f * cos(player.angle + PI / 2), a.size / 2, a.angle, true });
                         }
+                        score += 100;
                     }
                 }
             }
@@ -142,6 +145,8 @@ public:
         }
 
         DrawWireFrameModel(playerModel, player.x, player.y, player.angle, player.size);
+
+        DrawString(2, 2, L"Score: " + to_wstring(score));
 
         return true;
     }
@@ -183,6 +188,7 @@ public:
     void ResetGame() 
     {
         level = 1;
+        score = 0;
         asteroids.clear();
         bullets.clear();
 
