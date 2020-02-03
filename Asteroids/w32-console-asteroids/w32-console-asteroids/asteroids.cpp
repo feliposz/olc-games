@@ -11,6 +11,7 @@ struct GameObject {
     float dx, dy;
     int size;
     float angle;
+    bool active;
 };
 
 class AsteroidsGame : public olcConsoleGameEngine
@@ -43,7 +44,7 @@ private:
 public:
     virtual bool OnUserCreate() override
     {
-        asteroids.push_back({20.0f, 20.0f, 20.0f, 20.0f, 16, 0.0f});
+        asteroids.push_back({ 20.0f, 20.0f, 20.0f, 20.0f, 16, 0.0f, true });
 
         playerModel.push_back(make_pair(-1, 1));
         playerModel.push_back(make_pair(1, 1));
@@ -83,7 +84,7 @@ public:
         }
 
         if (m_keys[VK_SPACE].bReleased) {
-            bullets.push_back({ player.x, player.y, 1.0f * sin(player.angle), -1.0f * cos(player.angle), 0, 0.0f });
+            bullets.push_back({ player.x, player.y, 1.0f * sin(player.angle), -1.0f * cos(player.angle), 0, 0.0f, true });
         }
 
         player.x += player.dx;
@@ -101,15 +102,41 @@ public:
             DrawWireFrameModel(asteroidModel, a.x, a.y, a.angle, a.size, FG_YELLOW);
         }
 
+        vector<GameObject> newAsteroids;
+
         for (auto &b : bullets) {
             Draw(b.x, b.y, PIXEL_SOLID, FG_RED);
             b.x += b.dx;
             b.y += b.dy;
+
+            if (b.x >= 0 && b.x < ScreenWidth() && b.y >= 0 && b.y < ScreenHeight()) {
+                for (auto &a : asteroids) {
+                    if (PointInsideCircle(b.x, b.y, a.x, a.y, a.size)) {
+                        b.active = false;
+                        a.active = false;
+                        if (a.size > 4) {
+                            newAsteroids.push_back({ a.x, a.y, 20.0f * sin(player.angle - PI / 2), 20.0f * cos(player.angle - PI / 2), a.size / 2, a.angle, true });
+                            newAsteroids.push_back({ a.x, a.y, 20.0f * sin(player.angle + PI / 2), 20.0f * cos(player.angle + PI / 2), a.size / 2, a.angle, true });
+                        }
+                    }
+                }
+            }
+            else {
+                b.active = false;
+            }
         }
 
-        bullets.erase(remove_if(bullets.begin(), bullets.end(), [&](GameObject b) {
-            return b.x < 0 || b.x >= ScreenWidth() || b.y < 0 || b.y >= ScreenHeight();
+        bullets.erase(remove_if(bullets.begin(), bullets.end(), [&](GameObject o) {
+            return !o.active;
         }), bullets.end());
+
+        asteroids.erase(remove_if(asteroids.begin(), asteroids.end(), [&](GameObject o) {
+            return !o.active;
+        }), asteroids.end());
+
+        for (auto &a : newAsteroids) {
+            asteroids.push_back(a);
+        }
 
         DrawWireFrameModel(playerModel, player.x, player.y, player.angle, player.size);
 
@@ -128,6 +155,11 @@ public:
         }
     }
 
+    bool PointInsideCircle(float x1, float y1, float x2, float y2, float size)
+    {
+        return sqrtf((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2)) < size;
+    }
+
     void Draw(int x, int y, short c = 0x2588, short col = 0x000F)
     {
         float fx = (float)x;
@@ -137,7 +169,7 @@ public:
     }
 };
 
-int main() 
+int main()
 {
     AsteroidsGame game;
     game.ConstructConsole(160, 100, 8, 8);
