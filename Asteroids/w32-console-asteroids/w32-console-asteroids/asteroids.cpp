@@ -1,4 +1,5 @@
 #include <vector>
+#include <algorithm>
 #include "olcConsoleGameEngine.h"
 
 using namespace std;
@@ -15,8 +16,9 @@ struct GameObject {
 class AsteroidsGame : public olcConsoleGameEngine
 {
 private:
-    vector<GameObject> asteroids;
     GameObject player;
+    vector<GameObject> asteroids;
+    vector<GameObject> bullets;
     vector<pair<float, float>> playerModel;
     vector<pair<float, float>> asteroidModel;
 
@@ -80,6 +82,10 @@ public:
             player.dy += -cos(player.angle) * 1.0f * fElapsedTime;
         }
 
+        if (m_keys[VK_SPACE].bReleased) {
+            bullets.push_back({ player.x, player.y, 1.0f * sin(player.angle), -1.0f * cos(player.angle), 0, 0.0f });
+        }
+
         player.x += player.dx;
         player.y += player.dy;
 
@@ -94,6 +100,16 @@ public:
 
             DrawWireFrameModel(asteroidModel, a.x, a.y, a.angle, a.size, FG_YELLOW);
         }
+
+        for (auto &b : bullets) {
+            Draw(b.x, b.y, PIXEL_SOLID, FG_RED);
+            b.x += b.dx;
+            b.y += b.dy;
+        }
+
+        bullets.erase(remove_if(bullets.begin(), bullets.end(), [&](GameObject b) {
+            return b.x < 0 || b.x >= ScreenWidth() || b.y < 0 || b.y >= ScreenHeight();
+        }), bullets.end());
 
         DrawWireFrameModel(playerModel, player.x, player.y, player.angle, player.size);
 
