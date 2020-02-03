@@ -17,6 +17,7 @@ struct GameObject {
 class AsteroidsGame : public olcConsoleGameEngine
 {
 private:
+    int level;
     GameObject player;
     vector<GameObject> asteroids;
     vector<GameObject> bullets;
@@ -44,8 +45,6 @@ private:
 public:
     virtual bool OnUserCreate() override
     {
-        asteroids.push_back({ 20.0f, 20.0f, 20.0f, 20.0f, 16, 0.0f, true });
-
         playerModel.push_back(make_pair(-1, 1));
         playerModel.push_back(make_pair(1, 1));
         playerModel.push_back(make_pair(0, -2));
@@ -56,12 +55,7 @@ public:
             asteroidModel.push_back(make_pair(radius * sin(angle), radius * cos(angle)));
         }
 
-        player.x = ScreenWidth() / 2;
-        player.y = ScreenHeight() / 2;
-        player.dx = 0;
-        player.dy = 0;
-        player.size = 3;
-        player.angle = 0;
+        ResetGame();
 
         return true;
     }
@@ -100,6 +94,10 @@ public:
             WrapCoordinates(a.x, a.y, a.x, a.y);
 
             DrawWireFrameModel(asteroidModel, a.x, a.y, a.angle, a.size, FG_YELLOW);
+
+            if (PointInsideCircle(player.x, player.y, a.x, a.y, a.size)) {
+                ResetGame();
+            }
         }
 
         vector<GameObject> newAsteroids;
@@ -138,6 +136,11 @@ public:
             asteroids.push_back(a);
         }
 
+        if (asteroids.empty()) {
+            level++;
+            AddRandomAsteroids(level);
+        }
+
         DrawWireFrameModel(playerModel, player.x, player.y, player.angle, player.size);
 
         return true;
@@ -158,6 +161,39 @@ public:
     bool PointInsideCircle(float x1, float y1, float x2, float y2, float size)
     {
         return sqrtf((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2)) < size;
+    }
+
+    void AddRandomAsteroids(int n)
+    {
+        for (int i = 0; i < n; i++) {
+            bool added = false;
+            while (!added) {
+                int size = 16;
+                float x = (float)rand() / (float)RAND_MAX * ScreenWidth();
+                float y = (float)rand() / (float)RAND_MAX * ScreenWidth();
+                float angle = (float)rand() / (float)RAND_MAX * PI * 2;
+                if (!PointInsideCircle(player.x, player.y, x, y, size * 2.0f)) {
+                    asteroids.push_back({ x, y, 20.0f * sin(angle), 20.0f * cos(angle), size, angle, true });
+                    added = true;
+                }
+            }
+        }
+    }
+
+    void ResetGame() 
+    {
+        level = 1;
+        asteroids.clear();
+        bullets.clear();
+
+        AddRandomAsteroids(level);        
+
+        player.x = ScreenWidth() / 2;
+        player.y = ScreenHeight() / 2;
+        player.dx = 0;
+        player.dy = 0;
+        player.size = 3;
+        player.angle = 0;
     }
 
     void Draw(int x, int y, short c = 0x2588, short col = 0x000F)
