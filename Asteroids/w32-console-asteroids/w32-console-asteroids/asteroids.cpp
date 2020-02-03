@@ -59,6 +59,16 @@ public:
             player.angle += 5.0f * fElapsedTime;
         }
 
+        if (m_keys[VK_UP].bHeld) {
+            player.dx += sin(player.angle) * 1.0f * fElapsedTime;
+            player.dy += -cos(player.angle) * 1.0f * fElapsedTime;
+        }
+
+        player.x += player.dx;
+        player.y += player.dy;
+
+        WrapCoordinates(player.x, player.y, player.x, player.y);
+
         for (auto &a : asteroids) {
             a.x += a.dx * fElapsedTime;
             a.y += a.dy * fElapsedTime;
