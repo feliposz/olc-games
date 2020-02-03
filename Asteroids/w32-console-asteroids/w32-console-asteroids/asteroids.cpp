@@ -3,6 +3,8 @@
 
 using namespace std;
 
+const float PI = 3.1415926f;
+
 struct GameObject {
     float x, y;
     float dx, dy;
@@ -16,6 +18,7 @@ private:
     vector<GameObject> asteroids;
     GameObject player;
     vector<pair<float, float>> playerModel;
+    vector<pair<float, float>> asteroidModel;
 
     void WrapCoordinates(float xi, float yi, float &xo, float &yo)
     {
@@ -43,6 +46,12 @@ public:
         playerModel.push_back(make_pair(-1, 1));
         playerModel.push_back(make_pair(1, 1));
         playerModel.push_back(make_pair(0, -2));
+
+        for (int i = 0; i < 20; i++) {
+            float angle = (float)i / 20.0f * 2.0f * PI;
+            float radius = (float)rand() / (float)RAND_MAX * 0.4 + 0.8;
+            asteroidModel.push_back(make_pair(radius * sin(angle), radius * cos(angle)));
+        }
 
         player.x = ScreenWidth() / 2;
         player.y = ScreenHeight() / 2;
@@ -79,14 +88,11 @@ public:
         for (auto &a : asteroids) {
             a.x += a.dx * fElapsedTime;
             a.y += a.dy * fElapsedTime;
+            a.angle += 0.5f * fElapsedTime;
 
             WrapCoordinates(a.x, a.y, a.x, a.y);
 
-            for (int x = 0; x < a.size; x++) {
-                for (int y = 0; y < a.size; y++) {
-                    Draw(x + a.x, y + a.y);
-                }
-            }
+            DrawWireFrameModel(asteroidModel, a.x, a.y, a.angle, a.size, FG_YELLOW);
         }
 
         DrawWireFrameModel(playerModel, player.x, player.y, player.angle, player.size);
@@ -94,7 +100,7 @@ public:
         return true;
     }
 
-    void DrawWireFrameModel(vector<pair<float, float>> points, float x, float y, float angle, float scale)
+    void DrawWireFrameModel(vector<pair<float, float>> points, float x, float y, float angle, float scale, short color = 15)
     {
         for (int i = 0; i < points.size(); i++) {
             int j = (i + 1) % points.size();
@@ -102,7 +108,7 @@ public:
             float y1 = y + scale * (points[i].first * sin(angle) + points[i].second * cos(angle));
             float x2 = x + scale * (points[j].first * cos(angle) - points[j].second * sin(angle));
             float y2 = y + scale * (points[j].first * sin(angle) + points[j].second * cos(angle));
-            DrawLine(x1, y1, x2, y2);
+            DrawLine(x1, y1, x2, y2, PIXEL_SOLID, color);
         }
     }
 
