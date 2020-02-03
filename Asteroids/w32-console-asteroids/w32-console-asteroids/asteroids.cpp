@@ -51,6 +51,14 @@ public:
     {
         Fill(0, 0, ScreenWidth(), ScreenHeight(), ' ', FG_BLACK);
 
+        if (m_keys[VK_LEFT].bHeld) {
+            player.angle -= 5.0f * fElapsedTime;
+        }
+
+        if (m_keys[VK_RIGHT].bHeld) {
+            player.angle += 5.0f * fElapsedTime;
+        }
+
         for (auto &a : asteroids) {
             a.x += a.dx * fElapsedTime;
             a.y += a.dy * fElapsedTime;
@@ -65,11 +73,15 @@ public:
         }
 
         float px[3] = { -1, 1, 0 };
-        float py[3] = { 0, 0, -2 };
+        float py[3] = { 1, 1, -2 };
 
         for (int i = 0; i < 3; i++) {
             int j = (i + 1) % 3;
-            DrawLine(player.x + px[i] * player.size, player.y + py[i] * player.size, player.x + px[j] * player.size, player.y + py[j] * player.size);
+            float x1 = player.x + player.size * (px[i] * cos(player.angle) - py[i] * sin(player.angle));
+            float y1 = player.y + player.size * (px[i] * sin(player.angle) + py[i] * cos(player.angle));
+            float x2 = player.x + player.size * (px[j] * cos(player.angle) - py[j] * sin(player.angle));
+            float y2 = player.y + player.size * (px[j] * sin(player.angle) + py[j] * cos(player.angle));
+            DrawLine(x1, y1, x2, y2);
         }
 
         return true;
