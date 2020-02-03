@@ -15,6 +15,7 @@ class AsteroidsGame : public olcConsoleGameEngine
 private:
     vector<GameObject> asteroids;
     GameObject player;
+    vector<pair<float, float>> playerModel;
 
     void WrapCoordinates(float xi, float yi, float &xo, float &yo)
     {
@@ -38,12 +39,18 @@ public:
     virtual bool OnUserCreate() override
     {
         asteroids.push_back({20.0f, 20.0f, 20.0f, 20.0f, 16, 0.0f});
+
+        playerModel.push_back(make_pair(-1, 1));
+        playerModel.push_back(make_pair(1, 1));
+        playerModel.push_back(make_pair(0, -2));
+
         player.x = ScreenWidth() / 2;
         player.y = ScreenHeight() / 2;
         player.dx = 0;
         player.dy = 0;
         player.size = 3;
         player.angle = 0;
+
         return true;
     }
 
@@ -82,19 +89,21 @@ public:
             }
         }
 
-        float px[3] = { -1, 1, 0 };
-        float py[3] = { 1, 1, -2 };
-
-        for (int i = 0; i < 3; i++) {
-            int j = (i + 1) % 3;
-            float x1 = player.x + player.size * (px[i] * cos(player.angle) - py[i] * sin(player.angle));
-            float y1 = player.y + player.size * (px[i] * sin(player.angle) + py[i] * cos(player.angle));
-            float x2 = player.x + player.size * (px[j] * cos(player.angle) - py[j] * sin(player.angle));
-            float y2 = player.y + player.size * (px[j] * sin(player.angle) + py[j] * cos(player.angle));
-            DrawLine(x1, y1, x2, y2);
-        }
+        DrawWireFrameModel(playerModel, player.x, player.y, player.angle, player.size);
 
         return true;
+    }
+
+    void DrawWireFrameModel(vector<pair<float, float>> points, float x, float y, float angle, float scale)
+    {
+        for (int i = 0; i < points.size(); i++) {
+            int j = (i + 1) % points.size();
+            float x1 = x + scale * (points[i].first * cos(angle) - points[i].second * sin(angle));
+            float y1 = y + scale * (points[i].first * sin(angle) + points[i].second * cos(angle));
+            float x2 = x + scale * (points[j].first * cos(angle) - points[j].second * sin(angle));
+            float y2 = y + scale * (points[j].first * sin(angle) + points[j].second * cos(angle));
+            DrawLine(x1, y1, x2, y2);
+        }
     }
 
     void Draw(int x, int y, short c = 0x2588, short col = 0x000F)
