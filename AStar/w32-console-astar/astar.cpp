@@ -32,6 +32,7 @@ class AstarGame : public olcConsoleGameEngine
         UpdateNeighbors();
         StartNode = &Nodes[0];
         EndNode = &Nodes[GridSize * GridSize - 1];
+        AstarPath();
 
         return true;
     }
@@ -48,7 +49,7 @@ class AstarGame : public olcConsoleGameEngine
                 n->x = x;
                 n->y = y;
                 n->visited = false;
-                n->obstacle = false;
+                n->obstacle = rand() % 5 < 1;
                 n->parent = NULL;
             }
         }
@@ -59,6 +60,9 @@ class AstarGame : public olcConsoleGameEngine
         for (int x = 0; x < GridSize; x++) {
             for (int y = 0; y < GridSize; y++) {
                 Node *current = &Nodes[y * GridSize + x];
+                if (current->obstacle) {
+                    continue;
+                }
                 Node *left = &Nodes[y * GridSize + x - 1];
                 Node *right = &Nodes[y * GridSize + x + 1];
                 Node *up = &Nodes[(y - 1) * GridSize + x];
@@ -95,19 +99,22 @@ class AstarGame : public olcConsoleGameEngine
 
         while (!toVisit.empty()) {
             Node *current = toVisit.back();
+            toVisit.pop_back();
             for (auto n : current->neighbors) {
-                float distanceToNeighbor = Distance(current, n);
-                float distanceToEnd = distanceToNeighbor + Distance(n, EndNode);
-                if (n->local > distanceToNeighbor) {
-                    n->local = distanceToNeighbor;
+                float testLocal = current->local + Distance(current, n);
+                float testGlobal = testLocal + Distance(n, EndNode);
+                if (testLocal < n->local) {
+                    n->global = testGlobal;
+                    n->local = testLocal;
                     n->parent = current;
                 }
                 if (!n->visited) {
-                    toVisit.push_back(n);
+                    if (find(toVisit.begin(), toVisit.end(), n) == toVisit.end()) {
+                        toVisit.push_back(n);
+                    }
                 }
             }
             current->visited = true;
-            toVisit.pop_back();
             sort(toVisit.begin(), toVisit.end(), [&](Node *a, Node *b) { return a->global < b->global; });
         }
     }
@@ -143,6 +150,20 @@ class AstarGame : public olcConsoleGameEngine
             int x = MarginLeft + (int)(Nodes[i].x * (CellSize + CellSpace));
             int y = MarginTop + (int)(Nodes[i].y * (CellSize + CellSpace));
             Fill(x, y, x + CellSize, y + CellSize, PIXEL_SOLID, color);
+        }
+        
+        Node *Path = EndNode;
+        while (Path) {
+
+            if (Path->parent) {
+                int x1 = MarginLeft + (int)((Path->x) * (CellSize + CellSpace) + CellSize / 2);
+                int y1 = MarginTop + (int)((Path->y) * (CellSize + CellSpace) + CellSize / 2);
+                int x2 = MarginLeft + (int)((Path->parent->x) * (CellSize + CellSpace) + CellSize / 2);
+                int y2 = MarginTop + (int)((Path->parent->y) * (CellSize + CellSpace) + CellSize / 2);
+                DrawLine(x1, y1, x2, y2, PIXEL_SOLID, FG_YELLOW);
+            }
+
+            Path = Path->parent;
         }
 
         return true;
