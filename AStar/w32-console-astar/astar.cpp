@@ -30,7 +30,7 @@ class AstarGame : public olcConsoleGameEngine
     {
         InitNodes();
         
-        srand(time(0));
+        //srand(time(0));
 
         // Place random obstacles
         for (int i = 0; i < GridSize * GridSize; i++) {
@@ -45,7 +45,6 @@ class AstarGame : public olcConsoleGameEngine
         EndNode->obstacle = false;
 
         UpdateNeighbors();
-
         AstarPath();
 
         return true;
@@ -58,13 +57,23 @@ class AstarGame : public olcConsoleGameEngine
         for (int x = 0; x < GridSize; x++) {
             for (int y = 0; y < GridSize; y++) {
                 Node *n = &Nodes[y * GridSize + x];
-                n->global = INT32_MAX;
-                n->local = INT32_MAX;
                 n->x = x;
                 n->y = y;
-                n->visited = false;
                 n->obstacle = false;
-                n->parent = NULL;
+            }
+        }
+    }
+
+
+    void ResetNodes()
+    {
+        for (int x = 0; x < GridSize; x++) {
+            for (int y = 0; y < GridSize; y++) {
+                Node *n = &Nodes[y * GridSize + x];
+                n->global = INT32_MAX;
+                n->local = INT32_MAX;
+                n->visited = false;
+                n->parent = nullptr;
             }
         }
     }
@@ -74,14 +83,14 @@ class AstarGame : public olcConsoleGameEngine
         for (int x = 0; x < GridSize; x++) {
             for (int y = 0; y < GridSize; y++) {
                 Node *current = &Nodes[y * GridSize + x];
+                current->neighbors.clear();
                 if (current->obstacle) {
                     continue;
                 }
                 Node *left = &Nodes[y * GridSize + x - 1];
                 Node *right = &Nodes[y * GridSize + x + 1];
                 Node *up = &Nodes[(y - 1) * GridSize + x];
-                Node *down = &Nodes[(y + 1) * GridSize + x];
-                current->neighbors.clear();
+                Node *down = &Nodes[(y + 1) * GridSize + x];                
                 if (x > 0 && !left->obstacle) {
                     current->neighbors.push_back(left);
                 }
@@ -105,22 +114,25 @@ class AstarGame : public olcConsoleGameEngine
 
     void AstarPath()
     {
+        ResetNodes();
+
         vector<Node *> toVisit;
 
-        toVisit.push_back(StartNode);
         StartNode->global = Distance(StartNode, EndNode);
         StartNode->local = 0;
+
+        toVisit.push_back(StartNode);
 
         while (!toVisit.empty()) {
             Node *current = toVisit.back();
             toVisit.pop_back();
+            current->visited = true;
             for (auto n : current->neighbors) {
                 float testLocal = current->local + Distance(current, n);
-                float testGlobal = testLocal + Distance(n, EndNode);
                 if (testLocal < n->local) {
-                    n->global = testGlobal;
-                    n->local = testLocal;
                     n->parent = current;
+                    n->local = testLocal;
+                    n->global = testLocal + Distance(n, EndNode);
                 }
                 if (!n->visited) {
                     if (find(toVisit.begin(), toVisit.end(), n) == toVisit.end()) {
@@ -128,14 +140,35 @@ class AstarGame : public olcConsoleGameEngine
                     }
                 }
             }
-            current->visited = true;
-            sort(toVisit.begin(), toVisit.end(), [&](Node *a, Node *b) { return a->global < b->global; });
+            
+            sort(toVisit.begin(), toVisit.end(), [&](Node *a, Node *b) { return a->global > b->global; });
         }
     }
 
     virtual bool OnUserUpdate(float fElapsedTime) override
     {
         Fill(0, 0, ScreenWidth(), ScreenHeight(), L' ');
+
+        if (m_mouse[0].bReleased) {
+            int nodeX = (m_mousePosX - MarginTop) / (CellSize + CellSpace);
+            int nodeY = (m_mousePosY - MarginTop) / (CellSize + CellSpace);
+            if (nodeX >= 0 && nodeX < GridSize && nodeY >= 0 && nodeY <= GridSize) {
+                Node *n = &Nodes[nodeY * GridSize + nodeX];
+                if (m_keys[VK_SHIFT].bHeld && !n->obstacle) {
+                    StartNode = n;
+                    AstarPath();
+                }
+                else if (m_keys[VK_CONTROL].bHeld && !n->obstacle) {
+                    EndNode = n;
+                    AstarPath();
+                }
+                else {
+                    n->obstacle = !n->obstacle;
+                    UpdateNeighbors();
+                    AstarPath();
+                }
+            }
+        }
 
         // Draw link to neighbors
         for (int i = 0; i < GridSize * GridSize; i++) {
@@ -169,7 +202,7 @@ class AstarGame : public olcConsoleGameEngine
         }
         
         Node *Path = EndNode;
-        while (Path) {
+        while (Path->parent) {
 
             if (Path->parent) {
                 int x1 = MarginLeft + (int)((Path->x) * (CellSize + CellSpace) + CellSize / 2);
