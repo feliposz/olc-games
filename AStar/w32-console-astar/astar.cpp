@@ -3,6 +3,10 @@
 using namespace std;
 
 const int GridSize = 16;
+const int CellSize = 5;
+const int CellSpace = 4;
+const int MarginTop = 10;
+const int MarginLeft = 10;
 
 struct Node
 {
@@ -18,11 +22,15 @@ struct Node
 class AstarGame : public olcConsoleGameEngine
 {
     Node *Nodes;
+    Node *StartNode;
+    Node *EndNode;
 
     virtual bool OnUserCreate() override
     {
         InitNodes();
         UpdateNeighbors();
+        StartNode = &Nodes[0];
+        EndNode = &Nodes[GridSize * GridSize - 1];
 
         return true;
     }
@@ -73,6 +81,37 @@ class AstarGame : public olcConsoleGameEngine
 
     virtual bool OnUserUpdate(float fElapsedTime) override
     {
+        // Draw link to neighbors
+        for (int i = 0; i < GridSize * GridSize; i++) {
+            for (auto n : Nodes[i].neighbors) {
+                int x1 = MarginLeft + (int)((Nodes[i].x) * (CellSize + CellSpace) + CellSize/2);
+                int y1 = MarginTop + (int)((Nodes[i].y) * (CellSize + CellSpace) + CellSize / 2);
+                int x2 = MarginLeft + (int)((n->x) * (CellSize + CellSpace) + CellSize / 2);
+                int y2 = MarginTop + (int)((n->y) * (CellSize + CellSpace) + CellSize / 2);
+                DrawLine(x1, y1, x2, y2, PIXEL_SOLID, FG_DARK_BLUE);
+            }
+        }
+
+        // Draw nodes
+        for (int i = 0; i < GridSize * GridSize; i++) {
+            short color = FG_DARK_BLUE;
+            if (Nodes[i].obstacle) {
+                color = FG_DARK_GREY;
+            }
+            if (Nodes[i].visited) {
+                color = FG_BLUE;
+            }
+            if (&Nodes[i] == StartNode) {
+                color = FG_GREEN;
+            }
+            if (&Nodes[i] == EndNode) {
+                color = FG_RED;
+            }
+            int x = MarginLeft + (int)(Nodes[i].x * (CellSize + CellSpace));
+            int y = MarginTop + (int)(Nodes[i].y * (CellSize + CellSpace));
+            Fill(x, y, x + CellSize, y + CellSize, PIXEL_SOLID, color);
+        }
+
         return true;
     }
 };
