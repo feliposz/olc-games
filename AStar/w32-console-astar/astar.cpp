@@ -1,4 +1,5 @@
 #include <vector>
+#include <algorithm>
 #include "olcConsoleGameEngine.h"
 using namespace std;
 
@@ -13,8 +14,8 @@ struct Node
     bool visited;
     bool obstacle;
     float x, y;
-    int local;
-    int global;
+    float local;
+    float global;
     vector<Node *> neighbors;
     Node *parent;
 };
@@ -76,6 +77,38 @@ class AstarGame : public olcConsoleGameEngine
                     current->neighbors.push_back(down);
                 }
             }
+        }
+    }
+
+    float Distance(Node *a, Node *b)
+    {
+        return sqrtf((a->x - b->x) * (a->x - b->x) + (a->y - b->y) * (a->y - b->y));
+    }
+
+    void AstarPath()
+    {
+        vector<Node *> toVisit;
+
+        toVisit.push_back(StartNode);
+        StartNode->global = Distance(StartNode, EndNode);
+        StartNode->local = 0;
+
+        while (!toVisit.empty()) {
+            Node *current = toVisit.back();
+            for (auto n : current->neighbors) {
+                float distanceToNeighbor = Distance(current, n);
+                float distanceToEnd = distanceToNeighbor + Distance(n, EndNode);
+                if (n->local > distanceToNeighbor) {
+                    n->local = distanceToNeighbor;
+                    n->parent = current;
+                }
+                if (!n->visited) {
+                    toVisit.push_back(n);
+                }
+            }
+            current->visited = true;
+            toVisit.pop_back();
+            sort(toVisit.begin(), toVisit.end(), [&](Node *a, Node *b) { return a->global < b->global; });
         }
     }
 
