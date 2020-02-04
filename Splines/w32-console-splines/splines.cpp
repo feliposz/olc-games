@@ -4,17 +4,22 @@
 #include <utility>
 using namespace std;
 
+struct Point {
+    float x, y, length;
+};
+
 class CatmullRomSplines : public olcConsoleGameEngine
 {
     const int MaxPoints = 8;
     const int Padding = 10;
     const float ControlPointSpeed = 20.0f;
 
-    vector<pair<float, float>> Points;
+    vector<Point> Points;
     int Selected = 0;
     float CurrentGradient = 0;
+    float TotalLength = 0;
 
-    pair<float, float> Interpolate(float t)
+    Point Interpolate(float t)
     {        
         int p1 = ((int)t) % MaxPoints;
         int p2 = (p1 + 1) % MaxPoints;
@@ -28,12 +33,12 @@ class CatmullRomSplines : public olcConsoleGameEngine
         float q1 = 3.0f * t3 - 5.0f * t2 + 2.0f;
         float q2 = -3.0f * t3 + 4.0f * t2 + t;
         float q3 = t3 - t2;
-        float x = 0.5f * (q0 * Points[p0].first + q1 * Points[p1].first + q2 * Points[p2].first + q3 * Points[p3].first);
-        float y = 0.5f * (q0 * Points[p0].second + q1 * Points[p1].second + q2 * Points[p2].second + q3 * Points[p3].second);
+        float x = 0.5f * (q0 * Points[p0].x + q1 * Points[p1].x + q2 * Points[p2].x + q3 * Points[p3].x);
+        float y = 0.5f * (q0 * Points[p0].y + q1 * Points[p1].y + q2 * Points[p2].y + q3 * Points[p3].y);
         return { x , y };
     }
 
-    pair<float, float> Gradient(float t)
+    Point Gradient(float t)
     {
         int p1 = ((int)t) % MaxPoints;
         int p2 = (p1 + 1) % MaxPoints;
@@ -47,15 +52,38 @@ class CatmullRomSplines : public olcConsoleGameEngine
         float q1 = 9.0f * t2 - 10.0f * t;
         float q2 = -9.0f * t2 + 8.0f * t + 1.0f;
         float q3 = 3.0f * t2 - 2.0f * t;
-        float x = 0.5f * (q0 * Points[p0].first + q1 * Points[p1].first + q2 * Points[p2].first + q3 * Points[p3].first);
-        float y = 0.5f * (q0 * Points[p0].second + q1 * Points[p1].second + q2 * Points[p2].second + q3 * Points[p3].second);
+        float x = 0.5f * (q0 * Points[p0].x + q1 * Points[p1].x + q2 * Points[p2].x + q3 * Points[p3].x);
+        float y = 0.5f * (q0 * Points[p0].y + q1 * Points[p1].y + q2 * Points[p2].y + q3 * Points[p3].y);
         return { x , y };
+    }
+
+    float CalculateSegmentLength(float t)
+    {
+        float length = 0;
+        float step = 0.05f;
+        Point oldP = Interpolate(t), newP;
+        for (float u = step; u < 1; u += step) {
+            newP = Interpolate(t + u);
+            length += sqrtf((newP.x - oldP.x) * (newP.x - oldP.x) + (newP.y - oldP.y) * (newP.y - oldP.y));
+            oldP = newP;
+        }
+        return length;
+    }
+
+    void UpdateLength()
+    {
+        float total = 0;
+        for (int i = 0; i < Points.size(); i++) {
+            total += Points[i].length = CalculateSegmentLength(i);
+        }
+        TotalLength = total;
     }
 
     virtual bool OnUserCreate() override
     {
         for (int i = 0; i < MaxPoints; i++) {
-            Points.emplace_back(make_pair(Padding + i * ((ScreenWidth() - Padding)/MaxPoints), 20 * (i%2) + ScreenHeight() / 2));
+            float angle = (float)i / MaxPoints * 3.14159f * 2.0f;
+            Points.push_back({ ScreenWidth() / 2 + sinf(angle) * 30.0f, ScreenHeight() / 2 + cosf(angle) * 30.0f, 0.0f });
         }
 
         return true;
@@ -85,38 +113,41 @@ class CatmullRomSplines : public olcConsoleGameEngine
 
         // Move selected control point
         if (m_keys[VK_LEFT].bHeld) {
-            Points[Selected].first -= ControlPointSpeed * fElapsedTime;
+            Points[Selected].x -= ControlPointSpeed * fElapsedTime;
         }
         if (m_keys[VK_RIGHT].bHeld) {
-            Points[Selected].first += ControlPointSpeed * fElapsedTime;
+            Points[Selected].x += ControlPointSpeed * fElapsedTime;
         }
         if (m_keys[VK_UP].bHeld) {
-            Points[Selected].second -= ControlPointSpeed * fElapsedTime;
+            Points[Selected].y -= ControlPointSpeed * fElapsedTime;
         }
         if (m_keys[VK_DOWN].bHeld) {
-            Points[Selected].second += ControlPointSpeed * fElapsedTime;
+            Points[Selected].y += ControlPointSpeed * fElapsedTime;
         }
+
+        UpdateLength();
 
         // Clear Screen
         Fill(0, 0, ScreenWidth(), ScreenHeight(), ' ');
 
         // Draw curve
         for (float t = 0; t < Points.size(); t += 0.001) {
-            pair<float, float> p = Interpolate(t);
-            Draw(p.first, p.second, PIXEL_SOLID, FG_WHITE);
+            Point p = Interpolate(t);
+            Draw(p.x, p.y, PIXEL_SOLID, FG_WHITE);
         }
 
         // Draw gradient
-        pair<float, float> p = Interpolate(CurrentGradient);
-        pair<float, float> g = Gradient(CurrentGradient);
-        DrawLine(p.first, p.second, p.first + 0.3f * g.first, p.second + 0.3f * g.second, PIXEL_SOLID, FG_BLUE);
-        Draw(p.first, p.second, PIXEL_SOLID, FG_GREEN);
+        Point p = Interpolate(CurrentGradient);
+        Point g = Gradient(CurrentGradient);
+        DrawLine(p.x, p.y, p.x + 0.3f * g.x, p.y + 0.3f * g.y, PIXEL_SOLID, FG_BLUE);
+        Draw(p.x, p.y, PIXEL_SOLID, FG_GREEN);
 
         // Draw control points
         int n = 0;        
         for (auto p : Points) {
-            Fill(p.first-1, p.second-1, p.first + 2, p.second + 2, PIXEL_SOLID, n == Selected ? FG_YELLOW : FG_RED);
-            DrawString(p.first, p.second, to_wstring(n), FG_WHITE);
+            Fill(p.x-1, p.y-1, p.x + 2, p.y + 2, PIXEL_SOLID, n == Selected ? FG_YELLOW : FG_RED);
+            DrawString(p.x, p.y, to_wstring(n), FG_WHITE);
+            DrawString(p.x + 5, p.y, to_wstring(p.length), FG_GREEN);
             n++;
         }
         return true;
