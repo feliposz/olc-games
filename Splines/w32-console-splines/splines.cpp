@@ -10,13 +10,12 @@ struct Point {
 
 class CatmullRomSplines : public olcConsoleGameEngine
 {
-    const int MaxPoints = 8;
-    const int Padding = 10;
+    const int MaxPoints = 10;
     const float ControlPointSpeed = 20.0f;
 
     vector<Point> Points;
     int Selected = 0;
-    float CurrentGradient = 0;
+    float CurrentOffset = 0;
     float TotalLength = 0;
 
     Point Interpolate(float t)
@@ -79,6 +78,20 @@ class CatmullRomSplines : public olcConsoleGameEngine
         TotalLength = total;
     }
 
+    float GetNormalizedOffset(float offset)
+    {
+        float total = 0;
+        int i = 0;
+        while (offset > Points[i].length) {
+            offset -= Points[i].length;
+            i++;
+            if (i >= Points.size()) {
+                return i;
+            }
+        }
+        return (float)i + offset / Points[i].length;
+    }
+
     virtual bool OnUserCreate() override
     {
         for (int i = 0; i < MaxPoints; i++) {
@@ -86,15 +99,17 @@ class CatmullRomSplines : public olcConsoleGameEngine
             Points.push_back({ ScreenWidth() / 2 + sinf(angle) * 30.0f, ScreenHeight() / 2 + cosf(angle) * 30.0f, 0.0f });
         }
 
+        UpdateLength();
+
         return true;
     }
 
     virtual bool OnUserUpdate(float fElapsedTime) override
     {
-        CurrentGradient += 0.01f;
+        CurrentOffset += 0.35f;
 
-        if (CurrentGradient > MaxPoints) {
-            CurrentGradient = 0;
+        if (CurrentOffset > TotalLength) {
+            CurrentOffset = 0;
         }
 
         // Change selected control point
@@ -137,6 +152,7 @@ class CatmullRomSplines : public olcConsoleGameEngine
         }
 
         // Draw gradient
+        float CurrentGradient = GetNormalizedOffset(CurrentOffset);
         Point p = Interpolate(CurrentGradient);
         Point g = Gradient(CurrentGradient);
         DrawLine(p.x, p.y, p.x + 0.3f * g.x, p.y + 0.3f * g.y, PIXEL_SOLID, FG_BLUE);
@@ -147,9 +163,14 @@ class CatmullRomSplines : public olcConsoleGameEngine
         for (auto p : Points) {
             Fill(p.x-1, p.y-1, p.x + 2, p.y + 2, PIXEL_SOLID, n == Selected ? FG_YELLOW : FG_RED);
             DrawString(p.x, p.y, to_wstring(n), FG_WHITE);
-            DrawString(p.x + 5, p.y, to_wstring(p.length), FG_GREEN);
+            DrawString(p.x + 5, p.y, to_wstring(p.length), FG_MAGENTA);
             n++;
         }
+
+        DrawString(1, 1, L"Length: " + to_wstring(TotalLength), FG_WHITE);
+        DrawString(1, 2, L"Offset: " + to_wstring(CurrentOffset), FG_MAGENTA);
+        DrawString(1, 3, L"Point: " + to_wstring(CurrentGradient), FG_RED);
+
         return true;
     }
 };
