@@ -30,7 +30,7 @@ class AstarGame : public olcConsoleGameEngine
     {
         InitNodes();
         
-        //srand(time(0));
+        srand(time(0));
 
         // Place random obstacles
         for (int i = 0; i < GridSize * GridSize; i++) {
@@ -90,7 +90,7 @@ class AstarGame : public olcConsoleGameEngine
                 Node *left = &Nodes[y * GridSize + x - 1];
                 Node *right = &Nodes[y * GridSize + x + 1];
                 Node *up = &Nodes[(y - 1) * GridSize + x];
-                Node *down = &Nodes[(y + 1) * GridSize + x];                
+                Node *down = &Nodes[(y + 1) * GridSize + x];
                 if (x > 0 && !left->obstacle) {
                     current->neighbors.push_back(left);
                 }
@@ -102,6 +102,22 @@ class AstarGame : public olcConsoleGameEngine
                 }
                 if (y < GridSize - 1 && !down->obstacle) {
                     current->neighbors.push_back(down);
+                }
+                Node *leftUp = &Nodes[(y - 1) * GridSize + x - 1];
+                Node *rightUp = &Nodes[(y - 1) * GridSize + x + 1];
+                Node *leftDown = &Nodes[(y + 1) * GridSize + x - 1];
+                Node *rightDown = &Nodes[(y + 1) * GridSize + x + 1];
+                if (x > 0 && y > 0 && !leftUp->obstacle) {
+                    current->neighbors.push_back(leftUp);
+                }
+                if (x < GridSize - 1 && y > 0 && !rightUp->obstacle) {
+                    current->neighbors.push_back(rightUp);
+                }
+                if (x > 0 && y < GridSize - 1 && !leftDown->obstacle) {
+                    current->neighbors.push_back(leftDown);
+                }
+                if (x < GridSize - 1 && y < GridSize - 1 && !rightDown->obstacle) {
+                    current->neighbors.push_back(rightDown);
                 }
             }
         }
