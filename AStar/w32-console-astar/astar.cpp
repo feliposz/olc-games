@@ -22,16 +22,30 @@ struct Node
 
 class AstarGame : public olcConsoleGameEngine
 {
-    Node *Nodes;
-    Node *StartNode;
-    Node *EndNode;
+    Node *Nodes = nullptr;
+    Node *StartNode = nullptr;
+    Node *EndNode = nullptr;
 
     virtual bool OnUserCreate() override
     {
         InitNodes();
+        
+        srand(time(0));
+
+        // Place random obstacles
+        for (int i = 0; i < GridSize * GridSize; i++) {
+            Nodes[i].obstacle = rand() % 10 < 3;
+        }
+
+        // Select random start/end
+        StartNode = &Nodes[rand() % (GridSize*GridSize)];
+        EndNode = &Nodes[rand() % (GridSize*GridSize)];
+
+        StartNode->obstacle = false;
+        EndNode->obstacle = false;
+
         UpdateNeighbors();
-        StartNode = &Nodes[0];
-        EndNode = &Nodes[GridSize * GridSize - 1];
+
         AstarPath();
 
         return true;
@@ -49,7 +63,7 @@ class AstarGame : public olcConsoleGameEngine
                 n->x = x;
                 n->y = y;
                 n->visited = false;
-                n->obstacle = rand() % 5 < 1;
+                n->obstacle = false;
                 n->parent = NULL;
             }
         }
@@ -121,6 +135,8 @@ class AstarGame : public olcConsoleGameEngine
 
     virtual bool OnUserUpdate(float fElapsedTime) override
     {
+        Fill(0, 0, ScreenWidth(), ScreenHeight(), L' ');
+
         // Draw link to neighbors
         for (int i = 0; i < GridSize * GridSize; i++) {
             for (auto n : Nodes[i].neighbors) {
@@ -149,7 +165,7 @@ class AstarGame : public olcConsoleGameEngine
             }
             int x = MarginLeft + (int)(Nodes[i].x * (CellSize + CellSpace));
             int y = MarginTop + (int)(Nodes[i].y * (CellSize + CellSpace));
-            Fill(x, y, x + CellSize, y + CellSize, PIXEL_SOLID, color);
+            Fill(x, y, x + CellSize, y + CellSize, Nodes[i].visited ? PIXEL_SOLID : PIXEL_HALF, color);
         }
         
         Node *Path = EndNode;
