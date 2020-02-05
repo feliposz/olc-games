@@ -23,6 +23,17 @@ class Game : public olcConsoleGameEngine
     virtual bool OnUserUpdate(float fElapsedTime) override
     {
         Fill(0, 0, ScreenWidth(), ScreenHeight(), L' ');
+
+        // Test
+        for (int i = 0; i < Size; i++) {
+            RandomNoise[i] = RandomSeed[i];
+        }
+
+        for (int x = 0; x < ScreenWidth(); x++) {
+            int y = (int)(RandomNoise[x] * ScreenHeight() / 2);
+            DrawLine(x, ScreenHeight() / 2 - y, x, ScreenHeight() / 2, PIXEL_SOLID, FG_GREEN);
+        }
+
         return true;
     }
 };
