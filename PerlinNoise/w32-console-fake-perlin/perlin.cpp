@@ -1,3 +1,4 @@
+#include <string>
 #include "olcConsoleGameEngine.h"
 using namespace std;
 
@@ -6,6 +7,7 @@ class Game : public olcConsoleGameEngine
     float *RandomSeed = nullptr;
     float *RandomNoise = nullptr;
     int Size = 0;
+    int Octaves = 8;
 
     virtual bool OnUserCreate() override
     {
@@ -13,9 +15,7 @@ class Game : public olcConsoleGameEngine
         RandomSeed = new float[Size];
         RandomNoise = new float[Size];
 
-        for (int i = 0; i < Size; i++) {
-            RandomSeed[i] = (float)rand() / RAND_MAX;
-        }
+        GenerateRandomSeed1D(Size, RandomSeed);
 
         return true;
     }
@@ -24,7 +24,19 @@ class Game : public olcConsoleGameEngine
     {
         Fill(0, 0, ScreenWidth(), ScreenHeight(), L' ');
 
-        PerlinNoise1D(Size, RandomSeed, 8, RandomNoise);
+        if (m_keys[L'S'].bReleased) {
+            GenerateRandomSeed1D(Size, RandomSeed);
+        }
+
+        if (m_keys[VK_LEFT].bReleased && Octaves > 1) {
+            Octaves--;
+        }
+
+        if (m_keys[VK_RIGHT].bReleased && Octaves < 8) {
+            Octaves++;
+        }
+
+        PerlinNoise1D(Size, RandomSeed, Octaves, RandomNoise);
 
         for (int x = 0; x < ScreenWidth(); x++) {
             int y = (int)(RandomNoise[x] * ScreenHeight() / 2);
@@ -32,6 +44,13 @@ class Game : public olcConsoleGameEngine
         }
 
         return true;
+    }
+
+    void GenerateRandomSeed1D(int size, float *seed)
+    {
+        for (int i = 0; i < size; i++) {
+            seed[i] = (float)rand() / RAND_MAX;
+        }
     }
 
     void PerlinNoise1D(int size, float *seed, int octaves, float *noise)
@@ -59,7 +78,7 @@ class Game : public olcConsoleGameEngine
 int main()
 {
     Game game;
-    game.ConstructConsole(256, 256, 3, 3);
+    game.ConstructConsole(128, 128, 6, 6);
     game.Start();
 
     return 0;
