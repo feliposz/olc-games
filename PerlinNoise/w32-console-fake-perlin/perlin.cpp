@@ -8,6 +8,7 @@ class Game : public olcConsoleGameEngine
     float *RandomNoise = nullptr;
     int Size = 0;
     int Octaves = 8;
+    float ScaleBias = 2.0f;
 
     virtual bool OnUserCreate() override
     {
@@ -36,7 +37,15 @@ class Game : public olcConsoleGameEngine
             Octaves++;
         }
 
-        PerlinNoise1D(Size, RandomSeed, Octaves, RandomNoise);
+        if (m_keys[VK_UP].bReleased && ScaleBias < 10.0f) {
+            ScaleBias += 0.2f;
+        }
+
+        if (m_keys[VK_DOWN].bReleased && ScaleBias > 0.2f) {
+            ScaleBias -= 0.2f;
+        }
+
+        PerlinNoise1D(Size, RandomSeed, Octaves, ScaleBias, RandomNoise);
 
         for (int x = 0; x < ScreenWidth(); x++) {
             int y = (int)(RandomNoise[x] * ScreenHeight() / 2);
@@ -53,7 +62,7 @@ class Game : public olcConsoleGameEngine
         }
     }
 
-    void PerlinNoise1D(int size, float *seed, int octaves, float *noise)
+    void PerlinNoise1D(int size, float *seed, int octaves, float bias, float *noise)
     {
         for (int x = 0; x < size; x++) {
             float scale = 1.0f;
@@ -67,7 +76,7 @@ class Game : public olcConsoleGameEngine
                 float interpolation = (1.0f - blend) * seed[sample1] + blend * seed[sample2];
                 n += interpolation * scale;
                 acc += scale;
-                scale /= 2.0f;
+                scale /= bias;
             }
             noise[x] = n / acc;
         }
