@@ -13,6 +13,8 @@ public:
     float radius = 4.0f;
     float friction = 0.8f;
     bool stable = false;
+    bool dead = false;
+    int bounces = 1;
 
     PhysicsObject(float x = 0, float y = 0)
     {
@@ -21,6 +23,7 @@ public:
     }
 
     virtual void Draw(olcConsoleGameEngine *engine, float offsetX, float offsetY) = 0;
+    virtual void OnCollision() = 0;
 };
 
 class Dummy : public PhysicsObject {
@@ -33,6 +36,40 @@ public:
     virtual void Draw(olcConsoleGameEngine * engine, float offsetX, float offsetY) override
     {
         engine->DrawWireFrameModel(model, px - offsetX, py - offsetY, atan2(vy, vx), radius);
+    }
+
+    virtual void OnCollision()
+    {
+    }
+
+private:
+    static vector<pair<float, float>> model;
+};
+
+class Debris : public PhysicsObject {
+
+public:
+    Debris(float x = 0, float y = 0) : PhysicsObject(x, y)
+    {
+        float angle = PI * 2 * (float)rand() / RAND_MAX;
+        vx = 10.f * cosf(angle);
+        vy = 10.f * sinf(angle);
+        radius = 2.0f;
+        bounces = 4;
+        friction = 1.0f;
+    }
+
+    virtual void Draw(olcConsoleGameEngine * engine, float offsetX, float offsetY) override
+    {
+        engine->DrawWireFrameModel(model, px - offsetX, py - offsetY, atan2(vy, vx), radius, FG_DARK_GREEN);
+    }
+
+    virtual void OnCollision()
+    {
+        bounces--;
+        if (bounces <= 0) {
+            dead = true;
+        }
     }
 
 private:
@@ -49,7 +86,18 @@ vector<pair<float, float>> DefineDummy()
     return model;
 }
 
+vector<pair<float, float>> DefineDebris()
+{
+    vector<pair<float, float>> model;
+    model.push_back(make_pair(-0.5f, -0.5f));
+    model.push_back(make_pair(-0.5f, 0.5f));
+    model.push_back(make_pair(0.5f, 0.5f));
+    model.push_back(make_pair(0.5f, -0.5f));
+    return model;
+}
+
 vector<pair<float, float>> Dummy::model = DefineDummy();
+vector<pair<float, float>> Debris::model = DefineDebris();
 
 class WormsGame : public olcConsoleGameEngine
 {
@@ -78,6 +126,12 @@ class WormsGame : public olcConsoleGameEngine
 
         if (m_mouse[2].bReleased) {
             Objects.push_back(unique_ptr<Dummy>(new Dummy(m_mousePosX + CameraX, m_mousePosY + CameraY)));
+        }
+
+        if (m_mouse[1].bReleased) {
+            for (int i = 0; i < 10; i++) {
+                Objects.push_back(unique_ptr<Debris>(new Debris(m_mousePosX + CameraX, m_mousePosY + CameraY)));
+            }
         }
 
         if (m_mousePosX < CameraBorder) {
@@ -175,11 +229,17 @@ class WormsGame : public olcConsoleGameEngine
                         o->py = potentialY;
                     }
                 }
-
                 o->ax = 0.0f;
                 o->ay = 0.0f;
+
+                if (collided) {
+                    o->OnCollision();
+                }
             }
+
         }
+
+        Objects.remove_if([](unique_ptr<PhysicsObject> &o) { return o->dead; });
 
         return true;
     }
