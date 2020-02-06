@@ -76,6 +76,29 @@ private:
     static vector<pair<float, float>> model;
 };
 
+class Worm : public PhysicsObject {
+
+public:
+    Worm(float x = 0, float y = 0) : PhysicsObject(x, y)
+    {
+        friction = 0.4f;
+    }
+
+    virtual void Draw(olcConsoleGameEngine * engine, float offsetX, float offsetY) override
+    {
+        int offsetSpriteX = 3;
+        int offsetSpriteY = 3;
+        engine->DrawSprite(px - offsetX - offsetSpriteX, py - offsetY - offsetSpriteY, &sprite);
+    }
+
+    virtual void OnCollision()
+    {
+    }
+
+private:
+    static olcSprite sprite;
+};
+
 vector<pair<float, float>> DefineDummy()
 {
     vector<pair<float, float>> model;
@@ -96,8 +119,15 @@ vector<pair<float, float>> DefineDebris()
     return model;
 }
 
+olcSprite DefineWorm()
+{
+    olcSprite sprite(L"Sprites/worms.spr");
+    return sprite;
+}
+
 vector<pair<float, float>> Dummy::model = DefineDummy();
 vector<pair<float, float>> Debris::model = DefineDebris();
+olcSprite Worm::sprite = DefineWorm();
 
 class WormsGame : public olcConsoleGameEngine
 {
@@ -132,6 +162,10 @@ class WormsGame : public olcConsoleGameEngine
             for (int i = 0; i < 10; i++) {
                 Objects.push_back(unique_ptr<Debris>(new Debris(m_mousePosX + CameraX, m_mousePosY + CameraY)));
             }
+        }
+
+        if (m_mouse[0].bReleased) {
+            Objects.push_back(unique_ptr<Worm>(new Worm(m_mousePosX + CameraX, m_mousePosY + CameraY)));
         }
 
         if (m_mousePosX < CameraBorder) {
