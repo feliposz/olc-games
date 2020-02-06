@@ -3,6 +3,8 @@
 #include "olcConsoleGameEngine.h"
 using namespace std;
 
+const float PI = 3.1415926f;
+
 class PhysicsObject {
 public:
     float px = 0, py = 0;
@@ -41,7 +43,7 @@ vector<pair<float, float>> DefineDummy()
     vector<pair<float, float>> model;
     model.push_back(make_pair(0, 0));
     for (int i = 0; i <= 10; i++) {
-        model.push_back(make_pair(sin((float)i / 10 * 3.14159f * 2), cos((float)i / 10 * 3.14159f * 2)));
+        model.push_back(make_pair(cosf((float)i / 10 * PI * 2), sinf((float)i / 10 * PI * 2)));
     }
     return model;
 }
@@ -105,13 +107,54 @@ class WormsGame : public olcConsoleGameEngine
 
         for (int y = 0; y < ScreenHeight(); y++) {
             for (int x = 0; x < ScreenWidth(); x++) {
-                short color = Map[((int)CameraY + y) * MapWidth + (int)CameraX + x] ? FG_CYAN : FG_DARK_GREEN;
+                short color = Map[((int)CameraY + y) * MapWidth + (int)CameraX + x] ? FG_DARK_GREEN : FG_CYAN;
                 Draw(x, y, PIXEL_SOLID, color);
             }
         }
 
         for (auto &o : Objects) {
             o->Draw(this, CameraX, CameraY);
+
+            // Physics steps
+            for (int step = 0; step < 10; step++) {
+                o->ay += 2.0f;
+                o->vx += o->ax * fElapsedTime;
+                o->vy += o->ay * fElapsedTime;
+                float potentialX = o->px + o->vx * fElapsedTime;
+                float potentialY = o->py + o->vy * fElapsedTime;
+
+                float direction = atan2(o->vy, o->vx);
+
+                bool collided = false;
+
+                // Debug direction vector
+                //int debugX = (int)(o->px - CameraX);
+                //int debugY = (int)(o->py - CameraY);
+                //DrawLine(debugX, debugY, debugX + (int)(cosf(direction) * 10), debugY + (int)(sinf(direction) * 10), PIXEL_SOLID, FG_YELLOW);
+
+                // Test collision in a semi-circle (approximate to get a ner pixel-perfect collision check)
+                for (float testAngle = direction - PI/2; testAngle < direction + PI/2; testAngle += PI / (2.0f * o->radius)) {
+                    float testX = potentialX + cosf(testAngle) * o->radius;
+                    float testY = potentialY + sinf(testAngle) * o->radius;
+                    if (Map[(int)testY * MapWidth + (int)testX] > 0) {
+                        collided = true;
+                    }
+                    // Debug collision points
+                    //Draw(testX - (int)CameraX, testY - (int)CameraY, PIXEL_SOLID, collided ? FG_RED : FG_BLUE);
+                }
+
+                if (collided) {
+                    o->vx = 0.0f;
+                    o->vy = 0.0f;
+                }
+                else {
+                    o->px = potentialX;
+                    o->py = potentialY;
+                }
+
+                o->ax = 0.0f;
+                o->ay = 0.0f;
+            }
         }
 
         return true;
@@ -127,7 +170,7 @@ class WormsGame : public olcConsoleGameEngine
 
         for (int y = 0; y < MapHeight; y++) {
             for (int x = 0; x < MapWidth; x++) {
-                Map[y * MapWidth + x] = Noise[x] * MapHeight > y ? 1 : 0;
+                Map[y * MapWidth + x] = Noise[x] * MapHeight > y ? 0 : 1;
             }
         }
 
