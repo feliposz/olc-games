@@ -14,6 +14,7 @@ public:
     float friction = 0.8f;
     bool stable = false;
     bool dead = false;
+    bool explode = false;
     int bounces = 1;
 
     PhysicsObject(float x = 0, float y = 0)
@@ -55,7 +56,7 @@ public:
         vx = 10.f * cosf(angle);
         vy = 10.f * sinf(angle);
         radius = 2.0f;
-        bounces = 4;
+        bounces = 3;
         friction = 1.0f;
     }
 
@@ -99,6 +100,28 @@ private:
     static olcSprite sprite;
 };
 
+class Missile : public PhysicsObject {
+
+public:
+    Missile(float x = 0, float y = 0) : PhysicsObject(x, y)
+    {
+    }
+
+    virtual void Draw(olcConsoleGameEngine * engine, float offsetX, float offsetY) override
+    {
+        engine->DrawWireFrameModel(model, px - offsetX, py - offsetY, atan2(vy, vx), radius, FG_YELLOW);
+    }
+
+    virtual void OnCollision()
+    {
+        dead = true;
+        explode = true;
+    }
+
+private:
+    static vector<pair<float, float>> model;
+};
+
 vector<pair<float, float>> DefineDummy()
 {
     vector<pair<float, float>> model;
@@ -119,6 +142,32 @@ vector<pair<float, float>> DefineDebris()
     return model;
 }
 
+vector<pair<float, float>> DefineMissile()
+{
+    vector<pair<float, float>> model;
+
+    model.push_back({ 0.0f, 0.0f });
+    model.push_back({ 1.0f, 1.0f });
+    model.push_back({ 2.0f, 1.0f });
+    model.push_back({ 2.5f, 0.0f });
+    model.push_back({ 2.0f, -1.0f });
+    model.push_back({ 1.0f, -1.0f });
+    model.push_back({ 0.0f, 0.0f });
+    model.push_back({ -1.0f, -1.0f });
+    model.push_back({ -2.5f, -1.0f });
+    model.push_back({ -2.0f, 0.0f });
+    model.push_back({ -2.5f, 1.0f });
+    model.push_back({ -1.0f, 1.0f });
+
+    // Scale points
+    for (auto &p : model) {
+        p.first /= 2.5f;
+        p.second /= 2.5f;
+    }
+
+    return model;
+}
+
 olcSprite DefineWorm()
 {
     olcSprite sprite(L"Sprites/worms.spr");
@@ -127,6 +176,7 @@ olcSprite DefineWorm()
 
 vector<pair<float, float>> Dummy::model = DefineDummy();
 vector<pair<float, float>> Debris::model = DefineDebris();
+vector<pair<float, float>> Missile::model = DefineMissile();
 olcSprite Worm::sprite = DefineWorm();
 
 class WormsGame : public olcConsoleGameEngine
@@ -155,13 +205,19 @@ class WormsGame : public olcConsoleGameEngine
         }
 
         if (m_mouse[2].bReleased) {
-            Objects.push_back(unique_ptr<Dummy>(new Dummy(m_mousePosX + CameraX, m_mousePosY + CameraY)));
+            if (m_keys[VK_SHIFT].bHeld) {
+                Objects.push_back(unique_ptr<Dummy>(new Dummy(m_mousePosX + CameraX, m_mousePosY + CameraY)));
+            }
+            else {
+                Objects.push_back(unique_ptr<Missile>(new Missile(m_mousePosX + CameraX, m_mousePosY + CameraY)));
+            }
         }
 
         if (m_mouse[1].bReleased) {
-            for (int i = 0; i < 10; i++) {
-                Objects.push_back(unique_ptr<Debris>(new Debris(m_mousePosX + CameraX, m_mousePosY + CameraY)));
-            }
+            Explosion(m_mousePosX + CameraX, m_mousePosY + CameraY, 10);
+            //for (int i = 0; i < 10; i++) {
+            //    Objects.push_back(unique_ptr<Debris>(new Debris(m_mousePosX + CameraX, m_mousePosY + CameraY)));
+            //}
         }
 
         if (m_mouse[0].bReleased) {
@@ -268,6 +324,9 @@ class WormsGame : public olcConsoleGameEngine
 
                 if (collided) {
                     o->OnCollision();
+                    if (o->explode) {
+                        Explosion(o->px, o->py, o->radius);
+                    }
                 }
             }
 
@@ -276,6 +335,35 @@ class WormsGame : public olcConsoleGameEngine
         Objects.remove_if([](unique_ptr<PhysicsObject> &o) { return o->dead; });
 
         return true;
+    }
+
+    void Explosion(float x, float y, float radius)
+    {
+        // Shockwave
+        for (auto &o : Objects) {
+            float dx = o->px - x;
+            float dy = o->py - y;
+            float distance = sqrtf(dx * dx + dy * dy);
+            if (distance < 0.001f) distance = 0.001f;
+            if (distance < radius) {
+                o->vx += dx / distance * radius;
+                o->vy += dy / distance * radius;
+                o->stable = false;
+            }
+        }
+        // Destroy terrain in a circular area
+        int sqSize = radius * radius;
+        for (int py = -radius; py < radius; py++) {
+            for (int px = -radius; px < radius; px++) {
+                int sqDistance = px * px + py * py;
+                if (sqDistance < sqSize) {
+                    Map[((int)y + py) * MapWidth + (int)x + px] = 0;
+                }
+            }
+        }
+        for (int i = 0; i < 10; i++) {
+            Objects.push_back(unique_ptr<Debris>(new Debris(x, y)));
+        }
     }
 
     void GenerateMap()
