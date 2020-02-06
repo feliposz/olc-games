@@ -122,7 +122,8 @@ class WormsGame : public olcConsoleGameEngine
                 o->vy += o->ay * fElapsedTime;
                 float potentialX = o->px + o->vx * fElapsedTime;
                 float potentialY = o->py + o->vy * fElapsedTime;
-
+                float reflectionX = 0;
+                float reflectionY = 0;
                 float direction = atan2(o->vy, o->vx);
 
                 bool collided = false;
@@ -134,18 +135,36 @@ class WormsGame : public olcConsoleGameEngine
 
                 // Test collision in a semi-circle (approximate to get a ner pixel-perfect collision check)
                 for (float testAngle = direction - PI/2; testAngle < direction + PI/2; testAngle += PI / (2.0f * o->radius)) {
-                    float testX = potentialX + cosf(testAngle) * o->radius;
-                    float testY = potentialY + sinf(testAngle) * o->radius;
-                    if (Map[(int)testY * MapWidth + (int)testX] > 0) {
+                    float testX = cosf(testAngle) * o->radius;
+                    float testY = sinf(testAngle) * o->radius;
+                    int testMapX = (int)(potentialX + testX);
+                    int testMapY = (int)(potentialY + testY);
+
+
+                    if (testMapX < 0 || testMapX > MapWidth - 1 || testMapY < 0 || testMapY > MapHeight - 1 || Map[testMapY * MapWidth + testMapX] > 0) {
                         collided = true;
+                        reflectionX -= testX;
+                        reflectionY -= testY;
                     }
                     // Debug collision points
-                    //Draw(testX - (int)CameraX, testY - (int)CameraY, PIXEL_SOLID, collided ? FG_RED : FG_BLUE);
+                    //Draw(testMapX - (int)CameraX, testMapY - (int)CameraY, PIXEL_SOLID, collided ? FG_RED : FG_BLUE);
                 }
 
                 if (collided) {
-                    o->vx = 0.0f;
-                    o->vy = 0.0f;
+                    // Normalize vector
+                    float reflectionLength = sqrtf(reflectionX*reflectionX + reflectionY * reflectionY);
+                    reflectionX /= reflectionLength;
+                    reflectionY /= reflectionLength;
+                    float dot = o->vx * reflectionX + o->vy * reflectionY;
+                    float newVX = o->vx - 2.0f * dot * reflectionX;
+                    float newVY = o->vy - 2.0f * dot * reflectionY;
+                    o->vx = newVX;
+                    o->vy = newVY;
+
+                    // Debug reflection vector
+                    //int debugX = (int)(o->px - CameraX);
+                    //int debugY = (int)(o->py - CameraY);
+                    //DrawLine(debugX, debugY, debugX + reflectionX, debugY + reflectionY, PIXEL_SOLID, FG_MAGENTA);
                 }
                 else {
                     o->px = potentialX;
