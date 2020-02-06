@@ -11,6 +11,7 @@ public:
     float vx = 0, vy = 0;
     float ax = 0, ay = 0;
     float radius = 4.0f;
+    float friction = 0.8f;
     bool stable = false;
 
     PhysicsObject(float x = 0, float y = 0)
@@ -133,39 +134,46 @@ class WormsGame : public olcConsoleGameEngine
                 //int debugY = (int)(o->py - CameraY);
                 //DrawLine(debugX, debugY, debugX + (int)(cosf(direction) * 10), debugY + (int)(sinf(direction) * 10), PIXEL_SOLID, FG_YELLOW);
 
-                // Test collision in a semi-circle (approximate to get a ner pixel-perfect collision check)
-                for (float testAngle = direction - PI/2; testAngle < direction + PI/2; testAngle += PI / (2.0f * o->radius)) {
-                    float testX = cosf(testAngle) * o->radius;
-                    float testY = sinf(testAngle) * o->radius;
-                    int testMapX = (int)(potentialX + testX);
-                    int testMapY = (int)(potentialY + testY);
+                if (!o->stable) {
+                    // Test collision in a semi-circle (approximate to get a ner pixel-perfect collision check)
+                    for (float testAngle = direction - PI / 2; testAngle < direction + PI / 2; testAngle += PI / (2.0f * o->radius)) {
+                        float testX = cosf(testAngle) * o->radius;
+                        float testY = sinf(testAngle) * o->radius;
+                        int testMapX = (int)(potentialX + testX);
+                        int testMapY = (int)(potentialY + testY);
 
 
-                    if (testMapX < 0 || testMapX > MapWidth - 1 || testMapY < 0 || testMapY > MapHeight - 1 || Map[testMapY * MapWidth + testMapX] > 0) {
-                        collided = true;
-                        responseX -= testX;
-                        responseY -= testY;
+                        if (testMapX < 0 || testMapX > MapWidth - 1 || testMapY < 0 || testMapY > MapHeight - 1 || Map[testMapY * MapWidth + testMapX] > 0) {
+                            collided = true;
+                            responseX -= testX;
+                            responseY -= testY;
+                        }
+                        // Debug collision points
+                        //Draw(testMapX - (int)CameraX, testMapY - (int)CameraY, PIXEL_SOLID, collided ? FG_RED : FG_BLUE);
                     }
-                    // Debug collision points
-                    //Draw(testMapX - (int)CameraX, testMapY - (int)CameraY, PIXEL_SOLID, collided ? FG_RED : FG_BLUE);
-                }
 
-                if (collided) {
-                    // Normalize response vector
-                    float responseMag = sqrtf(responseX*responseX + responseY * responseY);
-                    responseX /= responseMag;
-                    responseY /= responseMag;
+                    if (collided) {
+                        // Normalize response vector
+                        float responseMag = sqrtf(responseX*responseX + responseY * responseY);
+                        responseX /= responseMag;
+                        responseY /= responseMag;
 
-                    // Dot product and reflection of movement
-                    float dot = o->vx * responseX + o->vy * responseY;
-                    float reflectX = o->vx - 2.0f * dot * responseX;
-                    float reflectY = o->vy - 2.0f * dot * responseY;
-                    o->vx = reflectX;
-                    o->vy = reflectY;
-                }
-                else {
-                    o->px = potentialX;
-                    o->py = potentialY;
+                        // Dot product and reflection of movement
+                        float dot = o->vx * responseX + o->vy * responseY;
+                        float reflectX = o->vx - 2.0f * dot * responseX * o->friction;
+                        float reflectY = o->vy - 2.0f * dot * responseY * o->friction;
+                        o->vx = reflectX;
+                        o->vy = reflectY;
+
+                        float vectorMag = sqrtf(o->vx*o->vx + o->vy*o->vy);
+                        if (vectorMag < 0.2f) {
+                            o->stable = true;
+                        }
+                    }
+                    else {
+                        o->px = potentialX;
+                        o->py = potentialY;
+                    }
                 }
 
                 o->ax = 0.0f;
