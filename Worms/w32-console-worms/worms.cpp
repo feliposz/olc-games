@@ -80,6 +80,8 @@ private:
 class Worm : public PhysicsObject {
 
 public:
+    float shootAngle = 0;
+
     Worm(float x = 0, float y = 0) : PhysicsObject(x, y)
     {
         friction = 0.4f;
@@ -189,7 +191,6 @@ class WormsGame : public olcConsoleGameEngine
     int CameraBorder = 10;
     list<unique_ptr<PhysicsObject>> Objects;
     PhysicsObject *SelectedUnit = nullptr;
-    float ShootingAngle = 0;
 
     virtual bool OnUserCreate() override
     {
@@ -207,19 +208,11 @@ class WormsGame : public olcConsoleGameEngine
         }
 
         if (m_mouse[2].bReleased) {
-            if (m_keys[VK_SHIFT].bHeld) {
-                Objects.push_back(unique_ptr<Dummy>(new Dummy(m_mousePosX + CameraX, m_mousePosY + CameraY)));
-            }
-            else {
-                Objects.push_back(unique_ptr<Missile>(new Missile(m_mousePosX + CameraX, m_mousePosY + CameraY)));
-            }
+            Objects.push_back(unique_ptr<Missile>(new Missile(m_mousePosX + CameraX, m_mousePosY + CameraY)));
         }
 
         if (m_mouse[1].bReleased) {
             Explosion(m_mousePosX + CameraX, m_mousePosY + CameraY, 10);
-            //for (int i = 0; i < 10; i++) {
-            //    Objects.push_back(unique_ptr<Debris>(new Debris(m_mousePosX + CameraX, m_mousePosY + CameraY)));
-            //}
         }
 
         if (m_mouse[0].bReleased) {
@@ -255,21 +248,17 @@ class WormsGame : public olcConsoleGameEngine
         }
 
         if (SelectedUnit && SelectedUnit->stable) {
+            Worm *worm = (Worm *)SelectedUnit;
             if (m_keys[L'Z'].bPressed) {
                 SelectedUnit->stable = false;
-                SelectedUnit->vx = -4.0f;
-                SelectedUnit->vy = -8.0f;
-            }
-            if (m_keys[L'X'].bPressed) {
-                SelectedUnit->stable = false;
-                SelectedUnit->vx = 4.0f;
-                SelectedUnit->vy = -8.0f;
+                SelectedUnit->vx = 4.0f * cosf(worm->shootAngle);
+                SelectedUnit->vy = 8.0f * sinf(worm->shootAngle);
             }
             if (m_keys[L'A'].bHeld) {
-                ShootingAngle -= 1.0f * fElapsedTime;
+                worm->shootAngle -= 1.0f * fElapsedTime;
             }
             if (m_keys[L'S'].bHeld) {
-                ShootingAngle += 1.0f * fElapsedTime;
+                worm->shootAngle += 1.0f * fElapsedTime;
             }
         }
 
@@ -355,14 +344,15 @@ class WormsGame : public olcConsoleGameEngine
             o->Draw(this, CameraX, CameraY);
         }
 
-        if (SelectedUnit) {
-            float ShootingX = SelectedUnit->px - CameraX + cosf(ShootingAngle) * 10.0f;
-            float ShootingY = SelectedUnit->py - CameraY + sinf(ShootingAngle) * 10.0f;
+        if (SelectedUnit && SelectedUnit->stable) {
+            Worm *worm = (Worm *)SelectedUnit;
+            float ShootingX = SelectedUnit->px - CameraX + cosf(worm->shootAngle) * 10.0f;
+            float ShootingY = SelectedUnit->py - CameraY + sinf(worm->shootAngle) * 10.0f;
             Draw(ShootingX, ShootingY, PIXEL_SOLID, FG_BLACK);
             Draw(ShootingX - 1, ShootingY, PIXEL_SOLID, FG_BLACK);
             Draw(ShootingX + 1, ShootingY, PIXEL_SOLID, FG_BLACK);
             Draw(ShootingX, ShootingY - 1, PIXEL_SOLID, FG_BLACK);
-            Draw(ShootingX, ShootingY + 1, PIXEL_SOLID, FG_BLACK);            
+            Draw(ShootingX, ShootingY + 1, PIXEL_SOLID, FG_BLACK);
         }
 
         return true;
