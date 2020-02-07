@@ -189,6 +189,7 @@ class WormsGame : public olcConsoleGameEngine
     int CameraBorder = 10;
     list<unique_ptr<PhysicsObject>> Objects;
     PhysicsObject *SelectedUnit = nullptr;
+    float ShootingAngle = 0;
 
     virtual bool OnUserCreate() override
     {
@@ -264,6 +265,12 @@ class WormsGame : public olcConsoleGameEngine
                 SelectedUnit->vx = 4.0f;
                 SelectedUnit->vy = -8.0f;
             }
+            if (m_keys[L'A'].bHeld) {
+                ShootingAngle -= 1.0f * fElapsedTime;
+            }
+            if (m_keys[L'S'].bHeld) {
+                ShootingAngle += 1.0f * fElapsedTime;
+            }
         }
 
         // Draw terrain
@@ -337,8 +344,6 @@ class WormsGame : public olcConsoleGameEngine
                         o->px = potentialX;
                         o->py = potentialY;
                     }
-
-
                 }
             }
         }
@@ -348,6 +353,16 @@ class WormsGame : public olcConsoleGameEngine
         // Draw objects
         for (auto &o : Objects) {
             o->Draw(this, CameraX, CameraY);
+        }
+
+        if (SelectedUnit) {
+            float ShootingX = SelectedUnit->px - CameraX + cosf(ShootingAngle) * 10.0f;
+            float ShootingY = SelectedUnit->py - CameraY + sinf(ShootingAngle) * 10.0f;
+            Draw(ShootingX, ShootingY, PIXEL_SOLID, FG_BLACK);
+            Draw(ShootingX - 1, ShootingY, PIXEL_SOLID, FG_BLACK);
+            Draw(ShootingX + 1, ShootingY, PIXEL_SOLID, FG_BLACK);
+            Draw(ShootingX, ShootingY - 1, PIXEL_SOLID, FG_BLACK);
+            Draw(ShootingX, ShootingY + 1, PIXEL_SOLID, FG_BLACK);            
         }
 
         return true;
