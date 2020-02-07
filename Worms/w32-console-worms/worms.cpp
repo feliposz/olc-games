@@ -286,8 +286,12 @@ class WormsGame : public olcConsoleGameEngine
                         int testMapX = (int)(potentialX + testX);
                         int testMapY = (int)(potentialY + testY);
 
+                        if (testMapX < 0) testMapX = 0;
+                        if (testMapX > MapWidth - 1) testMapX = MapWidth - 1;
+                        if (testMapY < 0) testMapY = 0;
+                        if (testMapY > MapHeight - 1) testMapY = MapHeight - 1;
 
-                        if (testMapX < 0 || testMapX > MapWidth - 1 || testMapY < 0 || testMapY > MapHeight - 1 || Map[testMapY * MapWidth + testMapX] > 0) {
+                        if (Map[testMapY * MapWidth + testMapX] > 0) {
                             collided = true;
                             responseX -= testX;
                             responseY -= testY;
@@ -325,7 +329,7 @@ class WormsGame : public olcConsoleGameEngine
                 if (collided) {
                     o->OnCollision();
                     if (o->explode) {
-                        Explosion(o->px, o->py, o->radius);
+                        Explosion(o->px, o->py, 12);
                     }
                 }
             }
@@ -344,7 +348,7 @@ class WormsGame : public olcConsoleGameEngine
             float dx = o->px - x;
             float dy = o->py - y;
             float distance = sqrtf(dx * dx + dy * dy);
-            if (distance < 0.001f) distance = 0.001f;
+            if (distance < 0.5f) distance = 0.5f;
             if (distance < radius) {
                 o->vx += dx / distance * radius;
                 o->vy += dy / distance * radius;
