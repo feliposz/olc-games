@@ -188,6 +188,7 @@ class WormsGame : public olcConsoleGameEngine
     float CameraY = 0.0f;
     int CameraBorder = 10;
     list<unique_ptr<PhysicsObject>> Objects;
+    PhysicsObject *SelectedUnit = nullptr;
 
     virtual bool OnUserCreate() override
     {
@@ -221,7 +222,9 @@ class WormsGame : public olcConsoleGameEngine
         }
 
         if (m_mouse[0].bReleased) {
-            Objects.push_back(unique_ptr<Worm>(new Worm(m_mousePosX + CameraX, m_mousePosY + CameraY)));
+            PhysicsObject *worm = new Worm(m_mousePosX + CameraX, m_mousePosY + CameraY);
+            Objects.push_back(unique_ptr<Worm>((Worm*)worm));
+            SelectedUnit = worm;
         }
 
         if (m_mousePosX < CameraBorder) {
@@ -250,6 +253,20 @@ class WormsGame : public olcConsoleGameEngine
             CameraY = MapHeight - ScreenHeight();
         }
 
+        if (SelectedUnit && SelectedUnit->stable) {
+            if (m_keys[L'Z'].bPressed) {
+                SelectedUnit->stable = false;
+                SelectedUnit->vx = -4.0f;
+                SelectedUnit->vy = -8.0f;
+            }
+            if (m_keys[L'X'].bPressed) {
+                SelectedUnit->stable = false;
+                SelectedUnit->vx = 4.0f;
+                SelectedUnit->vy = -8.0f;
+            }
+        }
+
+        // Draw terrain
         for (int y = 0; y < ScreenHeight(); y++) {
             for (int x = 0; x < ScreenWidth(); x++) {
                 short color = Map[((int)CameraY + y) * MapWidth + (int)CameraX + x] ? FG_DARK_GREEN : FG_CYAN;
@@ -257,28 +274,24 @@ class WormsGame : public olcConsoleGameEngine
             }
         }
 
+        // Update objects
         for (auto &o : Objects) {
-            o->Draw(this, CameraX, CameraY);
-
             // Physics steps
             for (int step = 0; step < 10; step++) {
-                o->ay += 2.0f;
-                o->vx += o->ax * fElapsedTime;
-                o->vy += o->ay * fElapsedTime;
-                float potentialX = o->px + o->vx * fElapsedTime;
-                float potentialY = o->py + o->vy * fElapsedTime;
-                float responseX = 0;
-                float responseY = 0;
-                float direction = atan2(o->vy, o->vx);
-
-                bool collided = false;
-
-                // Debug direction vector
-                //int debugX = (int)(o->px - CameraX);
-                //int debugY = (int)(o->py - CameraY);
-                //DrawLine(debugX, debugY, debugX + (int)(cosf(direction) * 10), debugY + (int)(sinf(direction) * 10), PIXEL_SOLID, FG_YELLOW);
-
                 if (!o->stable) {
+                    bool collided = false;
+                    o->ay += 2.0f;
+                    o->vx += o->ax * fElapsedTime;
+                    o->vy += o->ay * fElapsedTime;
+                    float potentialX = o->px + o->vx * fElapsedTime;
+                    float potentialY = o->py + o->vy * fElapsedTime;
+                    o->ax = 0.0f;
+                    o->ay = 0.0f;
+                    o->stable = false;
+                    float responseX = 0;
+                    float responseY = 0;
+                    float direction = atan2(o->vy, o->vx);
+
                     // Test collision in a semi-circle (approximate to get a ner pixel-perfect collision check)
                     for (float testAngle = direction - PI / 2; testAngle < direction + PI / 2; testAngle += PI / (2.0f * o->radius)) {
                         float testX = cosf(testAngle) * o->radius;
@@ -296,11 +309,11 @@ class WormsGame : public olcConsoleGameEngine
                             responseX -= testX;
                             responseY -= testY;
                         }
-                        // Debug collision points
-                        //Draw(testMapX - (int)CameraX, testMapY - (int)CameraY, PIXEL_SOLID, collided ? FG_RED : FG_BLUE);
                     }
 
                     if (collided) {
+                        o->stable = true;
+
                         // Normalize response vector
                         float responseMag = sqrtf(responseX*responseX + responseY * responseY);
                         responseX /= responseMag;
@@ -314,29 +327,28 @@ class WormsGame : public olcConsoleGameEngine
                         o->vy = reflectY;
 
                         float vectorMag = sqrtf(o->vx*o->vx + o->vy*o->vy);
-                        if (vectorMag < 0.2f) {
-                            o->stable = true;
+
+                        o->OnCollision();
+                        if (o->explode) {
+                            Explosion(o->px, o->py, 20);
                         }
                     }
                     else {
                         o->px = potentialX;
                         o->py = potentialY;
                     }
-                }
-                o->ax = 0.0f;
-                o->ay = 0.0f;
 
-                if (collided) {
-                    o->OnCollision();
-                    if (o->explode) {
-                        Explosion(o->px, o->py, 12);
-                    }
+
                 }
             }
-
         }
 
         Objects.remove_if([](unique_ptr<PhysicsObject> &o) { return o->dead; });
+
+        // Draw objects
+        for (auto &o : Objects) {
+            o->Draw(this, CameraX, CameraY);
+        }
 
         return true;
     }
