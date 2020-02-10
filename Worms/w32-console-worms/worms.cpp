@@ -213,7 +213,7 @@ class WormsGame : public olcConsoleGameEngine
     virtual bool OnUserUpdate(float fElapsedTime) override
     {
         float cameraSpeed = 400.0f;
-        float cameraFollowSpeed = 5.0f;
+        float cameraFollowSpeed = 4.0f;
 
         if (m_keys[L'M'].bReleased) {
             GenerateMap();
@@ -238,10 +238,8 @@ class WormsGame : public olcConsoleGameEngine
         if (CameraFollowing) {
             TargetCameraX = CameraFollowing->px - ScreenWidth() / 2;
             TargetCameraY = CameraFollowing->py - ScreenHeight() / 2;
-        }
-        else {
-            TargetCameraX = CameraX;
-            TargetCameraY = CameraY;
+            CameraX += (TargetCameraX - CameraX) * cameraFollowSpeed * fElapsedTime;
+            CameraY += (TargetCameraY - CameraY) * cameraFollowSpeed * fElapsedTime;
         }
 
         if (m_mousePosX < CameraBorder) {
@@ -256,9 +254,6 @@ class WormsGame : public olcConsoleGameEngine
         if (m_mousePosY > ScreenHeight() - CameraBorder) {
             CameraY += cameraSpeed * fElapsedTime;
         }
-
-        CameraX += (TargetCameraX - CameraX) * cameraFollowSpeed * fElapsedTime;
-        CameraY += (TargetCameraY - CameraY) * cameraFollowSpeed * fElapsedTime;
 
         if (CameraX < 0.0f) {
             CameraX = 0.0f;
@@ -281,10 +276,10 @@ class WormsGame : public olcConsoleGameEngine
                 SelectedUnit->vy = 8.0f * sinf(worm->shootAngle);
             }
             if (m_keys[L'A'].bHeld) {
-                worm->shootAngle -= 1.0f * fElapsedTime;
+                worm->shootAngle -= 1.5f * fElapsedTime;
             }
             if (m_keys[L'S'].bHeld) {
-                worm->shootAngle += 1.0f * fElapsedTime;
+                worm->shootAngle += 1.5f * fElapsedTime;
             }
 
             bool shoot = false;
