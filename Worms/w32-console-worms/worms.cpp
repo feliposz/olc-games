@@ -188,9 +188,12 @@ class WormsGame : public olcConsoleGameEngine
     int MapHeight = 256;
     float CameraX = 0.0f;
     float CameraY = 0.0f;
+    float TargetCameraX = 0.0f;
+    float TargetCameraY = 0.0f;
     int CameraBorder = 10;
     list<unique_ptr<PhysicsObject>> Objects;
     PhysicsObject *SelectedUnit = nullptr;
+    PhysicsObject *CameraFollowing = nullptr;
 
     virtual bool OnUserCreate() override
     {
@@ -219,6 +222,17 @@ class WormsGame : public olcConsoleGameEngine
             PhysicsObject *worm = new Worm(m_mousePosX + CameraX, m_mousePosY + CameraY);
             Objects.push_back(unique_ptr<Worm>((Worm*)worm));
             SelectedUnit = worm;
+            CameraFollowing = worm;
+        }
+
+
+        if (CameraFollowing) {
+            TargetCameraX = CameraFollowing->px - ScreenWidth() / 2;
+            TargetCameraY = CameraFollowing->py - ScreenHeight() / 2;
+        }
+        else {
+            TargetCameraX = CameraX;
+            TargetCameraY = CameraY;
         }
 
         if (m_mousePosX < CameraBorder) {
@@ -233,6 +247,9 @@ class WormsGame : public olcConsoleGameEngine
         if (m_mousePosY > ScreenHeight() - CameraBorder) {
             CameraY += cameraSpeed * fElapsedTime;
         }
+
+        CameraX += (TargetCameraX - CameraX) * fElapsedTime;
+        CameraY += (TargetCameraY - CameraY) * fElapsedTime;
 
         if (CameraX < 0.0f) {
             CameraX = 0.0f;
