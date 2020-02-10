@@ -202,11 +202,24 @@ class WormsGame : public olcConsoleGameEngine
     list<unique_ptr<PhysicsObject>> Objects;
     PhysicsObject *SelectedUnit = nullptr;
     PhysicsObject *CameraFollowing = nullptr;
+    bool PlayerHasControl = false;
+    bool PlayerActionComplete = false;
+    bool WorldIsStable = false;
+
+    enum GAMESTATE {
+        GS_RESET,
+        GS_CREATING_MAP,
+        GS_DEPLOY_UNITS,
+        GS_DEPLOYING_UNITS,
+        GS_UNITS_DEPLOYED,
+        GS_PLAYER_CONTROL,
+        GS_CAMERA_MOVEMENT
+    } GameState, NextGameState;
 
     virtual bool OnUserCreate() override
     {
         Map = new unsigned char[MapWidth * MapHeight];
-        GenerateMap();
+        GameState = GS_RESET;
         return true;
     }
 
@@ -214,6 +227,61 @@ class WormsGame : public olcConsoleGameEngine
     {
         float cameraSpeed = 400.0f;
         float cameraFollowSpeed = 4.0f;
+
+        switch (GameState) {
+        case GS_RESET:
+        {
+            PlayerHasControl = false;
+            PlayerActionComplete = false;
+            WorldIsStable = false;
+            NextGameState = GS_CREATING_MAP;
+        }
+        break;
+        case GS_CREATING_MAP:
+        {
+            PlayerHasControl = false;
+            GenerateMap();
+            NextGameState = GS_DEPLOY_UNITS;
+        }
+        break;
+        case GS_DEPLOY_UNITS:
+        {
+            PlayerHasControl = false;
+            PhysicsObject * worm = new Worm(MapWidth / 2, 0);
+            Objects.push_back(unique_ptr<Worm>((Worm*)worm));
+            SelectedUnit = worm;
+            CameraFollowing = worm;
+            NextGameState = GS_DEPLOYING_UNITS;
+        }
+        break;
+        case GS_DEPLOYING_UNITS:
+        {
+            PlayerHasControl = false;
+            if (WorldIsStable) {
+                NextGameState = GS_PLAYER_CONTROL;
+            }
+        }
+        break;
+        case GS_PLAYER_CONTROL:
+        {
+            PlayerHasControl = true;
+            if (PlayerActionComplete) {
+                NextGameState = GS_CAMERA_MOVEMENT;
+            }
+        }
+        break;
+        case GS_CAMERA_MOVEMENT:
+        {
+            PlayerHasControl = false;
+            if (WorldIsStable) {
+                CameraFollowing = SelectedUnit;
+                NextGameState = GS_PLAYER_CONTROL;
+            }
+        }
+        break;
+        }
+
+        GameState = NextGameState;
 
         if (m_keys[L'M'].bReleased) {
             GenerateMap();
@@ -268,7 +336,7 @@ class WormsGame : public olcConsoleGameEngine
             CameraY = MapHeight - ScreenHeight();
         }
 
-        if (SelectedUnit && SelectedUnit->stable) {
+        if (SelectedUnit && PlayerHasControl) {
             Worm *worm = (Worm *)SelectedUnit;
             if (m_keys[L'Z'].bPressed) {
                 SelectedUnit->stable = false;
@@ -308,6 +376,7 @@ class WormsGame : public olcConsoleGameEngine
                 shoot = false;
                 worm->energizing = false;
                 worm->energy = 0;
+                PlayerActionComplete = true;
             }
         }
 
@@ -383,15 +452,12 @@ class WormsGame : public olcConsoleGameEngine
             }
         }
 
-        bool worldStable = true;
+        WorldIsStable = true;
         for (auto &o : Objects) {
             if (!o->stable) {
-                worldStable = false;
+                WorldIsStable = false;
                 break;
             }
-        }
-        if (worldStable) {
-            CameraFollowing = SelectedUnit;
         }
 
         Objects.remove_if([](unique_ptr<PhysicsObject> &o) { return o->dead; });
