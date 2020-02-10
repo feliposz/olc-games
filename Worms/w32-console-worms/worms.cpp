@@ -192,8 +192,8 @@ olcSprite Worm::sprite = DefineWorm();
 class WormsGame : public olcConsoleGameEngine
 {
     unsigned char *Map;
-    int MapWidth = 512;
-    int MapHeight = 256;
+    int MapWidth = 1024;
+    int MapHeight = 512;
     float CameraX = 0.0f;
     float CameraY = 0.0f;
     float TargetCameraX = 0.0f;
@@ -213,6 +213,7 @@ class WormsGame : public olcConsoleGameEngine
     virtual bool OnUserUpdate(float fElapsedTime) override
     {
         float cameraSpeed = 400.0f;
+        float cameraFollowSpeed = 5.0f;
 
         if (m_keys[L'M'].bReleased) {
             GenerateMap();
@@ -256,8 +257,8 @@ class WormsGame : public olcConsoleGameEngine
             CameraY += cameraSpeed * fElapsedTime;
         }
 
-        CameraX += (TargetCameraX - CameraX) * fElapsedTime;
-        CameraY += (TargetCameraY - CameraY) * fElapsedTime;
+        CameraX += (TargetCameraX - CameraX) * cameraFollowSpeed * fElapsedTime;
+        CameraY += (TargetCameraY - CameraY) * cameraFollowSpeed * fElapsedTime;
 
         if (CameraX < 0.0f) {
             CameraX = 0.0f;
@@ -307,6 +308,7 @@ class WormsGame : public olcConsoleGameEngine
                 PhysicsObject *missile = new Missile(worm->px, worm->py);
                 missile->vx = worm->energy * 40.0f * cosf(worm->shootAngle);
                 missile->vy = worm->energy * 40.0f * sinf(worm->shootAngle);
+                CameraFollowing = missile;
                 Objects.push_back(unique_ptr<Missile>((Missile *)missile));
                 shoot = false;
                 worm->energizing = false;
@@ -326,67 +328,75 @@ class WormsGame : public olcConsoleGameEngine
         for (auto &o : Objects) {
             // Physics steps
             for (int step = 0; step < 10; step++) {
-                if (!o->stable) {
-                    bool collided = false;
-                    o->ay += 2.0f;
-                    o->vx += o->ax * fElapsedTime;
-                    o->vy += o->ay * fElapsedTime;
-                    float potentialX = o->px + o->vx * fElapsedTime;
-                    float potentialY = o->py + o->vy * fElapsedTime;
-                    o->ax = 0.0f;
-                    o->ay = 0.0f;
-                    o->stable = false;
-                    float responseX = 0;
-                    float responseY = 0;
-                    float direction = atan2(o->vy, o->vx);
+                bool collided = false;
+                o->ay += 2.0f;
+                o->vx += o->ax * fElapsedTime;
+                o->vy += o->ay * fElapsedTime;
+                float potentialX = o->px + o->vx * fElapsedTime;
+                float potentialY = o->py + o->vy * fElapsedTime;
+                o->ax = 0.0f;
+                o->ay = 0.0f;
+                o->stable = false;
+                float responseX = 0;
+                float responseY = 0;
+                float direction = atan2(o->vy, o->vx);
 
-                    // Test collision in a semi-circle (approximate to get a ner pixel-perfect collision check)
-                    for (float testAngle = direction - PI / 2; testAngle < direction + PI / 2; testAngle += PI / (2.0f * o->radius)) {
-                        float testX = cosf(testAngle) * o->radius;
-                        float testY = sinf(testAngle) * o->radius;
-                        int testMapX = (int)(potentialX + testX);
-                        int testMapY = (int)(potentialY + testY);
+                // Test collision in a semi-circle (approximate to get a ner pixel-perfect collision check)
+                for (float testAngle = direction - PI / 2; testAngle < direction + PI / 2; testAngle += PI / (2.0f * o->radius)) {
+                    float testX = cosf(testAngle) * o->radius;
+                    float testY = sinf(testAngle) * o->radius;
+                    int testMapX = (int)(potentialX + testX);
+                    int testMapY = (int)(potentialY + testY);
 
-                        if (testMapX < 0) testMapX = 0;
-                        if (testMapX > MapWidth - 1) testMapX = MapWidth - 1;
-                        if (testMapY < 0) testMapY = 0;
-                        if (testMapY > MapHeight - 1) testMapY = MapHeight - 1;
+                    if (testMapX < 0) testMapX = 0;
+                    if (testMapX > MapWidth - 1) testMapX = MapWidth - 1;
+                    if (testMapY < 0) testMapY = 0;
+                    if (testMapY > MapHeight - 1) testMapY = MapHeight - 1;
 
-                        if (Map[testMapY * MapWidth + testMapX] > 0) {
-                            collided = true;
-                            responseX -= testX;
-                            responseY -= testY;
-                        }
-                    }
-
-                    if (collided) {
-                        o->stable = true;
-
-                        // Normalize response vector
-                        float responseMag = sqrtf(responseX*responseX + responseY * responseY);
-                        responseX /= responseMag;
-                        responseY /= responseMag;
-
-                        // Dot product and reflection of movement
-                        float dot = o->vx * responseX + o->vy * responseY;
-                        float reflectX = o->vx - 2.0f * dot * responseX * o->friction;
-                        float reflectY = o->vy - 2.0f * dot * responseY * o->friction;
-                        o->vx = reflectX;
-                        o->vy = reflectY;
-
-                        float vectorMag = sqrtf(o->vx*o->vx + o->vy*o->vy);
-
-                        o->OnCollision();
-                        if (o->explode) {
-                            Explosion(o->px, o->py, 20);
-                        }
-                    }
-                    else {
-                        o->px = potentialX;
-                        o->py = potentialY;
+                    if (Map[testMapY * MapWidth + testMapX] > 0) {
+                        collided = true;
+                        responseX -= testX;
+                        responseY -= testY;
                     }
                 }
+
+                if (collided) {
+                    o->stable = true;
+
+                    // Normalize response vector
+                    float responseMag = sqrtf(responseX*responseX + responseY * responseY);
+                    responseX /= responseMag;
+                    responseY /= responseMag;
+
+                    // Dot product and reflection of movement
+                    float dot = o->vx * responseX + o->vy * responseY;
+                    float reflectX = o->vx - 2.0f * dot * responseX * o->friction;
+                    float reflectY = o->vy - 2.0f * dot * responseY * o->friction;
+                    o->vx = reflectX;
+                    o->vy = reflectY;
+
+                    o->OnCollision();
+                    if (o->explode) {
+                        Explosion(o->px, o->py, 20);
+                        CameraFollowing = nullptr;
+                    }
+                }
+                else {
+                    o->px = potentialX;
+                    o->py = potentialY;
+                }
             }
+        }
+
+        bool worldStable = true;
+        for (auto &o : Objects) {
+            if (!o->stable) {
+                worldStable = false;
+                break;
+            }
+        }
+        if (worldStable) {
+            CameraFollowing = SelectedUnit;
         }
 
         Objects.remove_if([](unique_ptr<PhysicsObject> &o) { return o->dead; });
