@@ -81,6 +81,8 @@ class Worm : public PhysicsObject {
 
 public:
     float shootAngle = 0;
+    bool energizing = false;
+    float energy = 0;
 
     Worm(float x = 0, float y = 0) : PhysicsObject(x, y)
     {
@@ -91,7 +93,13 @@ public:
     {
         int offsetSpriteX = 3;
         int offsetSpriteY = 3;
+        int offsetEnergyX = 8;
+        int offsetEnergyY = 8;
         engine->DrawSprite(px - offsetX - offsetSpriteX, py - offsetY - offsetSpriteY, &sprite);
+
+        if (energizing) {
+            engine->DrawLine(px - offsetX - offsetEnergyX, py - offsetY - offsetEnergyY, px - offsetX - offsetEnergyX + (int)(sprite.nWidth * energy), py - offsetY - offsetEnergyY, PIXEL_SOLID, FG_RED);
+        }
     }
 
     virtual void OnCollision()
@@ -276,6 +284,33 @@ class WormsGame : public olcConsoleGameEngine
             }
             if (m_keys[L'S'].bHeld) {
                 worm->shootAngle += 1.0f * fElapsedTime;
+            }
+
+            bool shoot = false;
+            if (m_keys[VK_SPACE].bPressed) {
+                worm->energizing = true;
+            }
+            if (m_keys[VK_SPACE].bHeld) {
+                if (worm->energizing) {
+                    worm->energy += fElapsedTime * 0.6f;
+                    if (worm->energy >= 1.0f) {
+                        shoot = true;
+                    }
+                }
+            }
+            if (m_keys[VK_SPACE].bReleased) {
+                if (worm->energizing) {
+                    shoot = true;
+                }
+            }
+            if (shoot) {
+                PhysicsObject *missile = new Missile(worm->px, worm->py);
+                missile->vx = worm->energy * 40.0f * cosf(worm->shootAngle);
+                missile->vy = worm->energy * 40.0f * sinf(worm->shootAngle);
+                Objects.push_back(unique_ptr<Missile>((Missile *)missile));
+                shoot = false;
+                worm->energizing = false;
+                worm->energy = 0;
             }
         }
 
