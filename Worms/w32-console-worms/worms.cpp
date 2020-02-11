@@ -25,6 +25,7 @@ public:
 
     virtual void Draw(olcConsoleGameEngine *engine, float offsetX, float offsetY) = 0;
     virtual void OnCollision() = 0;
+    virtual void TakeDamage(float damage) = 0;
 };
 
 class Dummy : public PhysicsObject {
@@ -40,6 +41,10 @@ public:
     }
 
     virtual void OnCollision()
+    {
+    }
+
+    virtual void TakeDamage(float damage)
     {
     }
 
@@ -73,6 +78,10 @@ public:
         }
     }
 
+    virtual void TakeDamage(float damage)
+    {
+    }
+
 private:
     static vector<pair<float, float>> model;
 };
@@ -83,6 +92,9 @@ public:
     float shootAngle = 0;
     bool energizing = false;
     float energy = 0;
+    float health = 0;
+    int team = 0;
+    bool playable = true;
 
     Worm(float x = 0, float y = 0) : PhysicsObject(x, y)
     {
@@ -91,14 +103,21 @@ public:
 
     virtual void Draw(olcConsoleGameEngine * engine, float offsetX, float offsetY) override
     {
-        int offsetSpriteX = 3;
-        int offsetSpriteY = 3;
-        int offsetEnergyX = 8;
-        int offsetEnergyY = 8;
-        engine->DrawSprite(px - offsetX - offsetSpriteX, py - offsetY - offsetSpriteY, &sprite);
+        const int spriteW = 8, spriteH = 8;
+        const int offsetSpriteX = -3, offsetSpriteY = -3, offsetEnergyX = -3, offsetEnergyY = -8;
+        const int offsetHealthX = -3, offsetHealthY = 6;
 
-        if (energizing) {
-            engine->DrawLine(px - offsetX - offsetEnergyX, py - offsetY - offsetEnergyY, px - offsetX - offsetEnergyX + (int)(sprite.nWidth * energy), py - offsetY - offsetEnergyY, PIXEL_SOLID, FG_RED);
+        //engine->Fill(px - offsetX + offsetSpriteX, py - offsetY + offsetSpriteY, px - offsetX + offsetSpriteX + spriteW, py - offsetY + offsetSpriteY + spriteH);
+        if (health > 0) {
+            engine->DrawPartialSprite(px - offsetX + offsetSpriteX, py - offsetY + offsetSpriteY, &spriteSheet, team * spriteW, 0, spriteW, spriteH);
+            engine->DrawLine(px - offsetX + offsetHealthX, py - offsetY + offsetHealthY, px - offsetX + offsetHealthX + (int)(spriteW * health), py - offsetY + offsetHealthY, PIXEL_SOLID, FG_BLUE);
+            if (energizing) {
+                engine->DrawLine(px - offsetX + offsetEnergyX, py - offsetY + offsetEnergyY, px - offsetX + offsetEnergyX + (int)(spriteW * energy), py - offsetY + offsetEnergyY, PIXEL_SOLID, FG_RED);
+                engine->DrawLine(px - offsetX + offsetEnergyX, py - offsetY + offsetEnergyY + 1, px - offsetX + offsetEnergyX + (int)(spriteW * energy), py - offsetY + offsetEnergyY + 1, PIXEL_SOLID, FG_GREEN);
+            }
+        }
+        else {
+            engine->DrawPartialSprite(px - offsetX + offsetSpriteX, py - offsetY + offsetSpriteY, &spriteSheet, team * spriteW, spriteH, spriteW, spriteH);
         }
     }
 
@@ -106,8 +125,18 @@ public:
     {
     }
 
+    virtual void TakeDamage(float damage) {
+        if (playable) {
+            health -= damage;
+            if (health < 0) {
+                health = 0;
+                playable = false;
+            }
+        }
+    }
+
 private:
-    static olcSprite sprite;
+    static olcSprite spriteSheet;
 };
 
 class Missile : public PhysicsObject {
@@ -126,6 +155,10 @@ public:
     {
         dead = true;
         explode = true;
+    }
+
+    virtual void TakeDamage(float damage)
+    {
     }
 
 private:
@@ -180,14 +213,14 @@ vector<pair<float, float>> DefineMissile()
 
 olcSprite DefineWorm()
 {
-    olcSprite sprite(L"Sprites/worms.spr");
+    olcSprite sprite(L"Sprites/worms1.spr");
     return sprite;
 }
 
 vector<pair<float, float>> Dummy::model = DefineDummy();
 vector<pair<float, float>> Debris::model = DefineDebris();
 vector<pair<float, float>> Missile::model = DefineMissile();
-olcSprite Worm::sprite = DefineWorm();
+olcSprite Worm::spriteSheet = DefineWorm();
 
 class WormsGame : public olcConsoleGameEngine
 {
@@ -283,6 +316,8 @@ class WormsGame : public olcConsoleGameEngine
 
         GameState = NextGameState;
 
+        // Debug Controls
+
         if (m_keys[L'M'].bReleased) {
             GenerateMap();
         }
@@ -295,12 +330,12 @@ class WormsGame : public olcConsoleGameEngine
             Explosion(m_mousePosX + CameraX, m_mousePosY + CameraY, 10);
         }
 
-        if (m_mouse[0].bReleased) {
-            PhysicsObject *worm = new Worm(m_mousePosX + CameraX, m_mousePosY + CameraY);
-            Objects.push_back(unique_ptr<Worm>((Worm*)worm));
-            SelectedUnit = worm;
-            CameraFollowing = worm;
-        }
+        //if (m_mouse[0].bReleased) {
+        //    PhysicsObject *worm = new Worm(m_mousePosX + CameraX, m_mousePosY + CameraY);
+        //    Objects.push_back(unique_ptr<Worm>((Worm*)worm));
+        //    SelectedUnit = worm;
+        //    CameraFollowing = worm;
+        //}
 
 
         if (CameraFollowing) {
@@ -483,6 +518,7 @@ class WormsGame : public olcConsoleGameEngine
 
     void Explosion(float x, float y, float radius)
     {
+        const float baseDamage = 0.5f;
         // Shockwave
         for (auto &o : Objects) {
             float dx = o->px - x;
@@ -493,6 +529,7 @@ class WormsGame : public olcConsoleGameEngine
                 o->vx += dx / distance * radius;
                 o->vy += dy / distance * radius;
                 o->stable = false;
+                o->TakeDamage(distance * baseDamage);
             }
         }
         // Destroy terrain in a circular area
