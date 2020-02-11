@@ -92,7 +92,7 @@ public:
     float shootAngle = 0;
     bool energizing = false;
     float energy = 0;
-    float health = 0;
+    float health = 1;
     int team = 0;
     bool playable = true;
 
@@ -125,7 +125,8 @@ public:
     {
     }
 
-    virtual void TakeDamage(float damage) {
+    virtual void TakeDamage(float damage)
+    {
         if (playable) {
             health -= damage;
             if (health < 0) {
@@ -137,6 +138,43 @@ public:
 
 private:
     static olcSprite spriteSheet;
+};
+
+class Team {
+
+private:
+    int size;
+    int current;
+
+public:
+    vector<Worm *> Members;
+
+    Team(int s)
+    {
+        size = s;
+        current = -1;
+    }
+
+    bool IsTeamAlive()
+    {
+        for (auto &o : Members) {
+            if (o->health > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    Worm *GetNextMember()
+    {
+        for (int i = 0; i < size; i++) {
+            current = (current + 1) % size;
+            if (Members[current]->health > 0) {
+                return Members[current];
+            }
+        }
+        return nullptr;
+    }
 };
 
 class Missile : public PhysicsObject {
@@ -233,11 +271,14 @@ class WormsGame : public olcConsoleGameEngine
     float TargetCameraY = 0.0f;
     int CameraBorder = 10;
     list<unique_ptr<PhysicsObject>> Objects;
+    int SelectedTeam = 0;
+    int PreviousTeam = -1;
     PhysicsObject *SelectedUnit = nullptr;
     PhysicsObject *CameraFollowing = nullptr;
     bool PlayerHasControl = false;
     bool PlayerActionComplete = false;
     bool WorldIsStable = false;
+    vector<unique_ptr<Team>> Teams;
 
     enum GAMESTATE {
         GS_RESET,
@@ -246,7 +287,8 @@ class WormsGame : public olcConsoleGameEngine
         GS_DEPLOYING_UNITS,
         GS_UNITS_DEPLOYED,
         GS_PLAYER_CONTROL,
-        GS_CAMERA_MOVEMENT
+        GS_CAMERA_MOVEMENT,
+        GS_GAME_OVER
     } GameState, NextGameState;
 
     virtual bool OnUserCreate() override
@@ -258,8 +300,11 @@ class WormsGame : public olcConsoleGameEngine
 
     virtual bool OnUserUpdate(float fElapsedTime) override
     {
-        float cameraSpeed = 400.0f;
-        float cameraFollowSpeed = 4.0f;
+        const float cameraSpeed = 400.0f;
+        const float cameraFollowSpeed = 4.0f;
+
+        const int teamCount = 4;
+        const int teamSize = 4;
 
         switch (GameState) {
         case GS_RESET:
@@ -280,10 +325,19 @@ class WormsGame : public olcConsoleGameEngine
         case GS_DEPLOY_UNITS:
         {
             PlayerHasControl = false;
-            PhysicsObject * worm = new Worm(MapWidth / 2, 0);
-            Objects.push_back(unique_ptr<Worm>((Worm*)worm));
-            SelectedUnit = worm;
-            CameraFollowing = worm;
+            for (int team = 0; team < teamCount; team++) {
+                Team *newTeam = new Team(teamSize);
+                for (int i = 0; i < teamSize; i++) {
+                    Worm * worm = new Worm((float)rand() / RAND_MAX * MapWidth, 0);
+                    worm->team = team;
+                    Objects.push_back(unique_ptr<Worm>((Worm*)worm));
+                    newTeam->Members.push_back(worm);
+                }
+                Teams.push_back(unique_ptr<Team>(newTeam));
+            }
+            SelectedTeam = 0;
+            SelectedUnit = Teams[SelectedTeam]->GetNextMember();
+            CameraFollowing = SelectedUnit;
             NextGameState = GS_DEPLOYING_UNITS;
         }
         break;
@@ -306,10 +360,25 @@ class WormsGame : public olcConsoleGameEngine
         case GS_CAMERA_MOVEMENT:
         {
             PlayerHasControl = false;
+            PlayerActionComplete = false;
             if (WorldIsStable) {
+                do {
+                    SelectedTeam = (SelectedTeam + 1) % teamCount;
+                } while (!Teams[SelectedTeam]->IsTeamAlive());
+                SelectedUnit = Teams[SelectedTeam]->GetNextMember();
                 CameraFollowing = SelectedUnit;
-                NextGameState = GS_PLAYER_CONTROL;
+                if (SelectedTeam == PreviousTeam) {
+                    NextGameState = GS_GAME_OVER; 
+                }
+                else {
+                    NextGameState = GS_PLAYER_CONTROL;
+                }
             }
+        }
+        break;
+        case GS_GAME_OVER:
+        {
+            return false;
         }
         break;
         }
