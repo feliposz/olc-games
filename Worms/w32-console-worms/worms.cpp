@@ -4,6 +4,8 @@
 using namespace std;
 
 const float PI = 3.1415926f;
+const int MapWidth = 1024;
+const int MapHeight = 512;
 
 class PhysicsObject {
 public:
@@ -23,7 +25,7 @@ public:
         py = y;
     }
 
-    virtual void Draw(olcConsoleGameEngine *engine, float offsetX, float offsetY) = 0;
+    virtual void Draw(olcConsoleGameEngine *engine, float offsetX, float offsetY, bool zoom) = 0;
     virtual void OnCollision() = 0;
     virtual void TakeDamage(float damage) = 0;
 };
@@ -35,9 +37,14 @@ public:
     {
     }
 
-    virtual void Draw(olcConsoleGameEngine * engine, float offsetX, float offsetY) override
+    virtual void Draw(olcConsoleGameEngine * engine, float offsetX, float offsetY, bool zoom) override
     {
-        engine->DrawWireFrameModel(model, px - offsetX, py - offsetY, atan2(vy, vx), radius);
+        if (zoom) {
+            engine->DrawWireFrameModel(model, px * ((float)engine->ScreenWidth() / MapWidth), py * ((float)engine->ScreenHeight() / MapHeight), atan2(vy, vx), radius * 0.5f);
+        }
+        else {
+            engine->DrawWireFrameModel(model, px - offsetX, py - offsetY, atan2(vy, vx), radius);
+        }
     }
 
     virtual void OnCollision()
@@ -65,9 +72,14 @@ public:
         friction = 1.0f;
     }
 
-    virtual void Draw(olcConsoleGameEngine * engine, float offsetX, float offsetY) override
+    virtual void Draw(olcConsoleGameEngine * engine, float offsetX, float offsetY, bool zoom) override
     {
-        engine->DrawWireFrameModel(model, px - offsetX, py - offsetY, atan2(vy, vx), radius, FG_DARK_GREEN);
+        if (zoom) {
+            engine->DrawWireFrameModel(model, px * ((float)engine->ScreenWidth() / MapWidth), py * ((float)engine->ScreenHeight() / MapHeight), atan2(vy, vx), radius * 0.5f, FG_DARK_GREEN);
+        }
+        else {
+            engine->DrawWireFrameModel(model, px - offsetX, py - offsetY, atan2(vy, vx), radius, FG_DARK_GREEN);
+        }
     }
 
     virtual void OnCollision()
@@ -101,23 +113,30 @@ public:
         friction = 0.2f;
     }
 
-    virtual void Draw(olcConsoleGameEngine * engine, float offsetX, float offsetY) override
+    virtual void Draw(olcConsoleGameEngine * engine, float offsetX, float offsetY, bool zoom) override
     {
         const int spriteW = 8, spriteH = 8;
         const int offsetSpriteX = -3, offsetSpriteY = -3, offsetEnergyX = -3, offsetEnergyY = -8;
         const int offsetHealthX = -3, offsetHealthY = 6;
 
-        //engine->Fill(px - offsetX + offsetSpriteX, py - offsetY + offsetSpriteY, px - offsetX + offsetSpriteX + spriteW, py - offsetY + offsetSpriteY + spriteH);
+        float posX = px - offsetX;
+        float posY = py - offsetY;
+
+        if (zoom) {
+            posX = px * ((float)engine->ScreenWidth() / MapWidth);
+            posY = py * ((float)engine->ScreenHeight() / MapHeight);
+        }
+
         if (health > 0) {
-            engine->DrawPartialSprite(px - offsetX + offsetSpriteX, py - offsetY + offsetSpriteY, &spriteSheet, team * spriteW, 0, spriteW, spriteH);
-            engine->DrawLine(px - offsetX + offsetHealthX, py - offsetY + offsetHealthY, px - offsetX + offsetHealthX + (int)(spriteW * health), py - offsetY + offsetHealthY, PIXEL_SOLID, FG_BLUE);
+            engine->DrawPartialSprite(posX + offsetSpriteX, posY + offsetSpriteY, &spriteSheet, team * spriteW, 0, spriteW, spriteH);
+            engine->DrawLine(posX + offsetHealthX, posY + offsetHealthY, posX + offsetHealthX + (int)(spriteW * health), posY + offsetHealthY, PIXEL_SOLID, FG_BLUE);
             if (energizing) {
-                engine->DrawLine(px - offsetX + offsetEnergyX, py - offsetY + offsetEnergyY, px - offsetX + offsetEnergyX + (int)(spriteW * energy), py - offsetY + offsetEnergyY, PIXEL_SOLID, FG_RED);
-                engine->DrawLine(px - offsetX + offsetEnergyX, py - offsetY + offsetEnergyY + 1, px - offsetX + offsetEnergyX + (int)(spriteW * energy), py - offsetY + offsetEnergyY + 1, PIXEL_SOLID, FG_GREEN);
+                engine->DrawLine(posX + offsetEnergyX, posY + offsetEnergyY, posX + offsetEnergyX + (int)(spriteW * energy), posY + offsetEnergyY, PIXEL_SOLID, FG_RED);
+                engine->DrawLine(posX + offsetEnergyX, posY + offsetEnergyY + 1, posX + offsetEnergyX + (int)(spriteW * energy), posY + offsetEnergyY + 1, PIXEL_SOLID, FG_GREEN);
             }
         }
         else {
-            engine->DrawPartialSprite(px - offsetX + offsetSpriteX, py - offsetY + offsetSpriteY, &spriteSheet, team * spriteW, spriteH, spriteW, spriteH);
+            engine->DrawPartialSprite(posX + offsetSpriteX, posY + offsetSpriteY, &spriteSheet, team * spriteW, spriteH, spriteW, spriteH);
         }
     }
 
@@ -189,9 +208,14 @@ public:
         radius = 2.5f;
     }
 
-    virtual void Draw(olcConsoleGameEngine * engine, float offsetX, float offsetY) override
+    virtual void Draw(olcConsoleGameEngine * engine, float offsetX, float offsetY, bool zoom) override
     {
-        engine->DrawWireFrameModel(model, px - offsetX, py - offsetY, atan2(vy, vx), radius, FG_YELLOW);
+        if (zoom) {
+            engine->DrawWireFrameModel(model, px * ((float)engine->ScreenWidth() / MapWidth), py * ((float)engine->ScreenHeight() / MapHeight), atan2(vy, vx), radius * 0.5f, FG_YELLOW);
+        }
+        else {
+            engine->DrawWireFrameModel(model, px - offsetX, py - offsetY, atan2(vy, vx), radius, FG_YELLOW);
+        }
     }
 
     virtual void OnCollision()
@@ -268,8 +292,6 @@ olcSprite Worm::spriteSheet = DefineWorm();
 class WormsGame : public olcConsoleGameEngine
 {
     unsigned char *Map;
-    int MapWidth = 1024;
-    int MapHeight = 512;
     float CameraX = 0.0f;
     float CameraY = 0.0f;
     float TargetCameraX = 0.0f;
@@ -283,6 +305,7 @@ class WormsGame : public olcConsoleGameEngine
     bool PlayerHasControl = false;
     bool PlayerActionComplete = false;
     bool WorldIsStable = false;
+    bool ZoomMode = false;
     vector<unique_ptr<Team>> Teams;
 
     enum GAMESTATE {
@@ -413,6 +436,11 @@ class WormsGame : public olcConsoleGameEngine
             Explosion(m_mousePosX + CameraX, m_mousePosY + CameraY, 10);
         }
 
+
+        if (m_keys[VK_TAB].bReleased) {
+            ZoomMode = !ZoomMode;
+        }
+
         //if (m_mouse[0].bReleased) {
         //    PhysicsObject *worm = new Worm(m_mousePosX + CameraX, m_mousePosY + CameraY);
         //    Objects.push_back(unique_ptr<Worm>((Worm*)worm));
@@ -498,14 +526,6 @@ class WormsGame : public olcConsoleGameEngine
             }
         }
 
-        // Draw terrain
-        for (int y = 0; y < ScreenHeight(); y++) {
-            for (int x = 0; x < ScreenWidth(); x++) {
-                short color = Map[((int)CameraY + y) * MapWidth + (int)CameraX + x] ? FG_DARK_GREEN : FG_CYAN;
-                Draw(x, y, PIXEL_SOLID, color);
-            }
-        }
-
         // Update objects
         for (auto &o : Objects) {
             // Physics steps
@@ -580,15 +600,35 @@ class WormsGame : public olcConsoleGameEngine
 
         Objects.remove_if([](unique_ptr<PhysicsObject> &o) { return o->dead; });
 
+        // Draw terrain
+        for (int y = 0; y < ScreenHeight(); y++) {
+            for (int x = 0; x < ScreenWidth(); x++) {
+                if (ZoomMode) {
+                    int mapY = (int)((float)y / ScreenHeight() * MapHeight);
+                    int mapX = (int)((float)x / ScreenWidth() * MapWidth);
+                    short color = Map[mapY * MapWidth + mapX] ? FG_DARK_GREEN : FG_CYAN;
+                    Draw(x, y, PIXEL_SOLID, color);
+                }
+                else {
+                    short color = Map[((int)CameraY + y) * MapWidth + (int)CameraX + x] ? FG_DARK_GREEN : FG_CYAN;
+                    Draw(x, y, PIXEL_SOLID, color);
+                }
+            }
+        }
+
         // Draw objects
         for (auto &o : Objects) {
-            o->Draw(this, CameraX, CameraY);
+            o->Draw(this, CameraX, CameraY, ZoomMode);
         }
 
         if (SelectedUnit && SelectedUnit->stable) {
             Worm *worm = (Worm *)SelectedUnit;
             float ShootingX = SelectedUnit->px - CameraX + cosf(worm->shootAngle) * 10.0f;
             float ShootingY = SelectedUnit->py - CameraY + sinf(worm->shootAngle) * 10.0f;
+            if (ZoomMode) {
+                ShootingX = SelectedUnit->px * ((float)ScreenWidth() / MapWidth) + cosf(worm->shootAngle) * 10.0f;
+                ShootingY = SelectedUnit->py * ((float)ScreenHeight() / MapHeight) + sinf(worm->shootAngle) * 10.0f;
+            }
             Draw(ShootingX, ShootingY, PIXEL_SOLID, FG_BLACK);
             Draw(ShootingX - 1, ShootingY, PIXEL_SOLID, FG_BLACK);
             Draw(ShootingX + 1, ShootingY, PIXEL_SOLID, FG_BLACK);
