@@ -331,8 +331,8 @@ class WormsGame : public olcConsoleGameEngine
         const float cameraSpeed = 400.0f;
         const float cameraFollowSpeed = 4.0f;
 
-        const int teamCount = 4;
-        const int teamSize = 4;
+        const int teamCount = 3;
+        const int teamSize = 1;
 
         switch (GameState) {
         case GS_RESET:
@@ -399,8 +399,13 @@ class WormsGame : public olcConsoleGameEngine
                     }
                 }
                 if (countTeamsAlive > 0) {
-                    SelectedTeam = (SelectedTeam + 1) % teamCount;
-                    SelectedUnit = Teams[SelectedTeam]->GetNextMember();
+                    for (int i = 0; i < teamCount; i++) {
+                        SelectedTeam = (SelectedTeam + 1) % teamCount;
+                        if (Teams[SelectedTeam]->IsTeamAlive()) { // skip dead teams
+                            SelectedUnit = Teams[SelectedTeam]->GetNextMember();
+                            break;
+                        }
+                    }
                     CameraFollowing = SelectedUnit;
                 }
                 if (countTeamsAlive > 1) {
@@ -531,14 +536,16 @@ class WormsGame : public olcConsoleGameEngine
             // Physics steps
             for (int step = 0; step < 10; step++) {
                 bool collided = false;
-                o->ay += 2.0f;
-                o->vx += o->ax * fElapsedTime;
-                o->vy += o->ay * fElapsedTime;
+                if (!o->stable) {
+                    o->ay += 2.0f;
+                    o->vx += o->ax * fElapsedTime;
+                    o->vy += o->ay * fElapsedTime;
+                    o->ax = 0.0f;
+                    o->ay = 0.0f;
+                }
+                o->stable = false;
                 float potentialX = o->px + o->vx * fElapsedTime;
                 float potentialY = o->py + o->vy * fElapsedTime;
-                o->ax = 0.0f;
-                o->ay = 0.0f;
-                o->stable = false;
                 float responseX = 0;
                 float responseY = 0;
                 float direction = atan2(o->vy, o->vx);
@@ -603,17 +610,45 @@ class WormsGame : public olcConsoleGameEngine
         // Draw terrain
         for (int y = 0; y < ScreenHeight(); y++) {
             for (int x = 0; x < ScreenWidth(); x++) {
+                short ColorTerrain = FG_DARK_GREEN;
+                short ColorSky = FG_CYAN;
+                short PixelTerrain = PIXEL_SOLID;
+                short PixelSky = PIXEL_SOLID;
+
+                int mapY = (int)(CameraY + y);
+                int mapX = (int)(CameraX + x);
+
                 if (ZoomMode) {
-                    int mapY = (int)((float)y / ScreenHeight() * MapHeight);
-                    int mapX = (int)((float)x / ScreenWidth() * MapWidth);
-                    short color = Map[mapY * MapWidth + mapX] ? FG_DARK_GREEN : FG_CYAN;
-                    Draw(x, y, PIXEL_SOLID, color);
+                    mapY = (int)((float)y / ScreenHeight() * MapHeight);
+                    mapX = (int)((float)x / ScreenWidth() * MapWidth);
                 }
-                else {
-                    short color = Map[((int)CameraY + y) * MapWidth + (int)CameraX + x] ? FG_DARK_GREEN : FG_CYAN;
-                    Draw(x, y, PIXEL_SOLID, color);
+
+                switch (mapY / 32) {
+                case 0: PixelSky = PIXEL_SOLID; ColorSky = FG_DARK_BLUE; break;
+                case 1: PixelSky = PIXEL_QUARTER; ColorSky = FG_BLUE | BG_DARK_BLUE; break;
+                case 2: PixelSky = PIXEL_HALF; ColorSky = FG_BLUE | BG_DARK_BLUE; break;
+                case 3: PixelSky = PIXEL_THREEQUARTERS; ColorSky = FG_BLUE | BG_DARK_BLUE; break;
+                case 4: PixelSky = PIXEL_SOLID; ColorSky = FG_BLUE; break;
+                case 5: PixelSky = PIXEL_QUARTER; ColorSky = FG_CYAN | BG_BLUE; break;
+                case 6: PixelSky = PIXEL_HALF; ColorSky = FG_CYAN | BG_BLUE; break;
+                case 7: PixelSky = PIXEL_THREEQUARTERS; ColorSky = FG_CYAN | BG_BLUE; break;
+                default: PixelSky = PIXEL_SOLID; ColorSky = FG_CYAN; break;
                 }
+
+                bool isTerrain = Map[mapY * MapWidth + mapX] > 0;
+                Draw(x, y, isTerrain ? PixelTerrain : PixelSky, isTerrain ? ColorTerrain : ColorSky);
             }
+        }
+
+        // Draw health bar
+        short barColor[4] = { FG_RED, FG_BLUE, FG_MAGENTA, FG_GREEN };
+        int barY = 5;
+        int teamIndex = 0;
+        for (auto &t : Teams) {
+            int barSize = (ScreenWidth() - 10) / teamSize * t->TeamHealth();
+            Fill(5, barY, barSize + 5, barY + 3, PIXEL_SOLID, barColor[teamIndex % 4]);
+            barY += 5;
+            teamIndex++;
         }
 
         // Draw objects
@@ -623,17 +658,17 @@ class WormsGame : public olcConsoleGameEngine
 
         if (SelectedUnit && SelectedUnit->stable) {
             Worm *worm = (Worm *)SelectedUnit;
-            float ShootingX = SelectedUnit->px - CameraX + cosf(worm->shootAngle) * 10.0f;
-            float ShootingY = SelectedUnit->py - CameraY + sinf(worm->shootAngle) * 10.0f;
+            float CrossHairX = SelectedUnit->px - CameraX + cosf(worm->shootAngle) * 10.0f;
+            float CrossHairY = SelectedUnit->py - CameraY + sinf(worm->shootAngle) * 10.0f;
             if (ZoomMode) {
-                ShootingX = SelectedUnit->px * ((float)ScreenWidth() / MapWidth) + cosf(worm->shootAngle) * 10.0f;
-                ShootingY = SelectedUnit->py * ((float)ScreenHeight() / MapHeight) + sinf(worm->shootAngle) * 10.0f;
+                CrossHairX = SelectedUnit->px * ((float)ScreenWidth() / MapWidth) + cosf(worm->shootAngle) * 10.0f;
+                CrossHairY = SelectedUnit->py * ((float)ScreenHeight() / MapHeight) + sinf(worm->shootAngle) * 10.0f;
             }
-            Draw(ShootingX, ShootingY, PIXEL_SOLID, FG_BLACK);
-            Draw(ShootingX - 1, ShootingY, PIXEL_SOLID, FG_BLACK);
-            Draw(ShootingX + 1, ShootingY, PIXEL_SOLID, FG_BLACK);
-            Draw(ShootingX, ShootingY - 1, PIXEL_SOLID, FG_BLACK);
-            Draw(ShootingX, ShootingY + 1, PIXEL_SOLID, FG_BLACK);
+            Draw(CrossHairX, CrossHairY, PIXEL_SOLID, FG_BLACK);
+            Draw(CrossHairX - 1, CrossHairY, PIXEL_SOLID, FG_BLACK);
+            Draw(CrossHairX + 1, CrossHairY, PIXEL_SOLID, FG_BLACK);
+            Draw(CrossHairX, CrossHairY - 1, PIXEL_SOLID, FG_BLACK);
+            Draw(CrossHairX, CrossHairY + 1, PIXEL_SOLID, FG_BLACK);
         }
 
         return true;
