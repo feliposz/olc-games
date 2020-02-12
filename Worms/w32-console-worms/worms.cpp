@@ -155,14 +155,18 @@ public:
         current = -1;
     }
 
+    float TeamHealth()
+    {
+        float health = 0;
+        for (auto &o : Members) {
+            health += o->health;
+        }
+        return health;
+    }
+
     bool IsTeamAlive()
     {
-        for (auto &o : Members) {
-            if (o->health > 0) {
-                return true;
-            }
-        }
-        return false;
+        return TeamHealth() > 0;
     }
 
     Worm *GetNextMember()
@@ -303,8 +307,8 @@ class WormsGame : public olcConsoleGameEngine
         const float cameraSpeed = 400.0f;
         const float cameraFollowSpeed = 4.0f;
 
-        const int teamCount = 4;
-        const int teamSize = 4;
+        const int teamCount = 2;
+        const int teamSize = 1;
 
         switch (GameState) {
         case GS_RESET:
@@ -362,23 +366,30 @@ class WormsGame : public olcConsoleGameEngine
             PlayerHasControl = false;
             PlayerActionComplete = false;
             if (WorldIsStable) {
-                do {
+                int countTeamsAlive = 0;
+                for (auto &t : Teams) {
+                    if (t->IsTeamAlive()) {
+                        countTeamsAlive++;
+                    }
+                }
+                if (countTeamsAlive > 0) {
                     SelectedTeam = (SelectedTeam + 1) % teamCount;
-                } while (!Teams[SelectedTeam]->IsTeamAlive());
-                SelectedUnit = Teams[SelectedTeam]->GetNextMember();
-                CameraFollowing = SelectedUnit;
-                if (SelectedTeam == PreviousTeam) {
-                    NextGameState = GS_GAME_OVER; 
+                    SelectedUnit = Teams[SelectedTeam]->GetNextMember();
+                    CameraFollowing = SelectedUnit;
+                }
+                if (countTeamsAlive > 1) {
+                    NextGameState = GS_PLAYER_CONTROL;
                 }
                 else {
-                    NextGameState = GS_PLAYER_CONTROL;
+                    NextGameState = GS_GAME_OVER;
                 }
             }
         }
         break;
         case GS_GAME_OVER:
         {
-            return false;
+            PlayerHasControl = false;
+            PlayerActionComplete = false;
         }
         break;
         }
