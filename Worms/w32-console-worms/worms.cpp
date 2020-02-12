@@ -98,7 +98,7 @@ public:
 
     Worm(float x = 0, float y = 0) : PhysicsObject(x, y)
     {
-        friction = 0.4f;
+        friction = 0.2f;
     }
 
     virtual void Draw(olcConsoleGameEngine * engine, float offsetX, float offsetY) override
@@ -186,6 +186,7 @@ class Missile : public PhysicsObject {
 public:
     Missile(float x = 0, float y = 0) : PhysicsObject(x, y)
     {
+        radius = 2.5f;
     }
 
     virtual void Draw(olcConsoleGameEngine * engine, float offsetX, float offsetY) override
@@ -307,8 +308,8 @@ class WormsGame : public olcConsoleGameEngine
         const float cameraSpeed = 400.0f;
         const float cameraFollowSpeed = 4.0f;
 
-        const int teamCount = 2;
-        const int teamSize = 1;
+        const int teamCount = 4;
+        const int teamSize = 4;
 
         switch (GameState) {
         case GS_RESET:
@@ -332,7 +333,9 @@ class WormsGame : public olcConsoleGameEngine
             for (int team = 0; team < teamCount; team++) {
                 Team *newTeam = new Team(teamSize);
                 for (int i = 0; i < teamSize; i++) {
-                    Worm * worm = new Worm((float)rand() / RAND_MAX * MapWidth, 0);
+                    float deployPos = (team + 1) * ((float)MapWidth / (teamCount + 2));
+                    float deployArea = (float)MapWidth / (teamCount + 2) * 0.5f;
+                    Worm * worm = new Worm(deployPos + (float)rand() / RAND_MAX * deployArea, 0);
                     worm->team = team;
                     Objects.push_back(unique_ptr<Worm>((Worm*)worm));
                     newTeam->Members.push_back(worm);
