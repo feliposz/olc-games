@@ -307,6 +307,8 @@ class WormsGame : public olcConsoleGameEngine
     bool WorldIsStable = false;
     bool ZoomMode = false;
     vector<unique_ptr<Team>> Teams;
+    const float MaxTimer = 16;
+    float Timer = MaxTimer;
 
     enum GAMESTATE {
         GS_RESET,
@@ -331,8 +333,8 @@ class WormsGame : public olcConsoleGameEngine
         const float cameraSpeed = 400.0f;
         const float cameraFollowSpeed = 4.0f;
 
-        const int teamCount = 3;
-        const int teamSize = 1;
+        const int teamCount = 4;
+        const int teamSize = 4;
 
         switch (GameState) {
         case GS_RESET:
@@ -382,6 +384,11 @@ class WormsGame : public olcConsoleGameEngine
         case GS_PLAYER_CONTROL:
         {
             PlayerHasControl = true;
+            Timer -= fElapsedTime;
+            if (Timer < 0) {
+                Timer = 0;
+                PlayerActionComplete = true;
+            }
             if (PlayerActionComplete) {
                 NextGameState = GS_CAMERA_MOVEMENT;
             }
@@ -410,6 +417,7 @@ class WormsGame : public olcConsoleGameEngine
                 }
                 if (countTeamsAlive > 1) {
                     NextGameState = GS_PLAYER_CONTROL;
+                    Timer = 15;
                 }
                 else {
                     NextGameState = GS_GAME_OVER;
@@ -651,13 +659,17 @@ class WormsGame : public olcConsoleGameEngine
             teamIndex++;
         }
 
+        // Draw timer
+        if (PlayerHasControl) {
+            int digit0 = (int)Timer / 10;
+            int digit1 = (int)Timer % 10;
+            DrawDigit(digit0, 5, 25);
+            DrawDigit(digit1, 12, 25);
+        }
+
         // Draw objects
         for (auto &o : Objects) {
             o->Draw(this, CameraX, CameraY, ZoomMode);
-        }
-
-        for (int digit = 0; digit < 10; digit++) {
-            DrawDigit(digit, 5 + digit * 10, 25);
         }
 
         if (SelectedUnit && SelectedUnit->stable) {
