@@ -656,6 +656,10 @@ class WormsGame : public olcConsoleGameEngine
             o->Draw(this, CameraX, CameraY, ZoomMode);
         }
 
+        for (int digit = 0; digit < 10; digit++) {
+            DrawDigit(digit, 5 + digit * 10, 25);
+        }
+
         if (SelectedUnit && SelectedUnit->stable) {
             Worm *worm = (Worm *)SelectedUnit;
             float CrossHairX = SelectedUnit->px - CameraX + cosf(worm->shootAngle) * 10.0f;
@@ -747,6 +751,36 @@ class WormsGame : public olcConsoleGameEngine
                 scale /= bias;
             }
             noise[x] = n / acc;
+        }
+    }
+
+    void DrawDigit(int digit, int left, int top)
+    {
+        int segments[10][7] = {
+            { 0, 0, 0, 0, 0, 0, 0 }, // 0
+            { 0, 0, 0, 0, 1, 0, 1 }, // 1
+            { 1, 1, 1, 0, 1, 1, 0 }, // 2
+            { 1, 1, 1, 0, 1, 0, 1 }, // 3
+            { 0, 1, 0, 1, 1, 0, 1 }, // 4
+            { 1, 1, 1, 1, 0, 0, 1 }, // 5
+            { 1, 1, 1, 1, 0, 1, 1 }, // 6
+            { 1, 0, 0, 0, 1, 0, 1 }, // 7
+            { 1, 1, 1, 1, 1, 1, 1 }, // 8
+            { 1, 1, 1, 1, 1, 0, 1 }  // 9
+        };
+
+        // Horizontal segments
+        for (int row = 0; row < 3; row++) {
+            short color = segments[digit][row] ? FG_WHITE : FG_BLACK;
+            DrawLine(left + 2, top + row * 6, left + 4, top + row * 6, PIXEL_SOLID, color);
+        }
+
+        // Vertical segments
+        for (int row = 0; row < 2; row++) {
+            for (int col = 0; col < 2; col++) {
+                short color = segments[digit][3 + row * 2 + col] ? FG_WHITE : FG_BLACK;
+                DrawLine(left + col * 6, top + 2 + row * 6, left + col * 6, top + 4 + row * 6, PIXEL_SOLID, color);
+            }
         }
     }
 };
