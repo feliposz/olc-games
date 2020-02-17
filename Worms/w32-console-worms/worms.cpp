@@ -754,10 +754,11 @@ class WormsGame : public olcConsoleGameEngine
         }
     }
 
-    void DrawDigit(int digit, int left, int top)
+    void DrawDigit(int digit, int left, int top, int segSize = 4, int padSize = 1)
     {
+        // order (rows 1, 2 and 3, columns up-left, up-right, down-left, down-right)
         int segments[10][7] = {
-            { 0, 0, 0, 0, 0, 0, 0 }, // 0
+            { 1, 0, 1, 1, 1, 1, 1 }, // 0
             { 0, 0, 0, 0, 1, 0, 1 }, // 1
             { 1, 1, 1, 0, 1, 1, 0 }, // 2
             { 1, 1, 1, 0, 1, 0, 1 }, // 3
@@ -771,15 +772,23 @@ class WormsGame : public olcConsoleGameEngine
 
         // Horizontal segments
         for (int row = 0; row < 3; row++) {
-            short color = segments[digit][row] ? FG_WHITE : FG_BLACK;
-            DrawLine(left + 2, top + row * 6, left + 4, top + row * 6, PIXEL_SOLID, color);
+            bool segOn = segments[digit][row] > 0;
+            int x = left + padSize;
+            int y = top + row * segSize;
+            if (segOn) {
+                DrawLine(x, y, x + segSize - 2 * padSize, y, PIXEL_SOLID, segOn ? FG_BLACK : FG_BLUE);
+            }
         }
 
         // Vertical segments
         for (int row = 0; row < 2; row++) {
             for (int col = 0; col < 2; col++) {
-                short color = segments[digit][3 + row * 2 + col] ? FG_WHITE : FG_BLACK;
-                DrawLine(left + col * 6, top + 2 + row * 6, left + col * 6, top + 4 + row * 6, PIXEL_SOLID, color);
+                bool segOn = segments[digit][3 + row * 2 + col] > 0;
+                int x = left + col * segSize;
+                int y = top + padSize + row * segSize;
+                if (segOn) {
+                    DrawLine(x, y, x, y + segSize - 2 * padSize, PIXEL_SOLID, segOn ? FG_BLACK : FG_BLUE);
+                }
             }
         }
     }
