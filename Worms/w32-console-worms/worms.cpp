@@ -333,8 +333,8 @@ class WormsGame : public olcConsoleGameEngine
         const float cameraSpeed = 400.0f;
         const float cameraFollowSpeed = 4.0f;
 
-        const int teamCount = 4;
-        const int teamSize = 4;
+        const int teamCount = 2;
+        const int teamSize = 1;
 
         switch (GameState) {
         case GS_RESET:
@@ -413,6 +413,10 @@ class WormsGame : public olcConsoleGameEngine
                             break;
                         }
                     }
+                    // Make sure worm is not energizing from previous turn
+                    Worm *worm = (Worm *)SelectedUnit;
+                    worm->energizing = false;
+                    worm->energy = 0;
                     CameraFollowing = SelectedUnit;
                 }
                 if (countTeamsAlive > 1) {
@@ -449,6 +453,7 @@ class WormsGame : public olcConsoleGameEngine
             Explosion(m_mousePosX + CameraX, m_mousePosY + CameraY, 10);
         }
 
+        // Toggle zoom
 
         if (m_keys[VK_TAB].bReleased) {
             ZoomMode = !ZoomMode;
@@ -497,35 +502,45 @@ class WormsGame : public olcConsoleGameEngine
 
         if (SelectedUnit && PlayerHasControl) {
             Worm *worm = (Worm *)SelectedUnit;
-            if (m_keys[L'Z'].bPressed) {
+
+            bool controlJump = m_keys[L'Z'].bPressed;
+            bool controlLeft = m_keys[L'A'].bHeld;
+            bool controlRight = m_keys[L'S'].bHeld;
+            bool controlShootPressed = m_keys[VK_SPACE].bPressed;
+            bool controlShootHeld = m_keys[VK_SPACE].bPressed;
+            bool controlShootReleased = m_keys[VK_SPACE].bReleased;
+
+            if (controlJump) {
                 SelectedUnit->stable = false;
                 SelectedUnit->vx = 4.0f * cosf(worm->shootAngle);
                 SelectedUnit->vy = 8.0f * sinf(worm->shootAngle);
             }
-            if (m_keys[L'A'].bHeld) {
+            if (controlLeft) {
                 worm->shootAngle -= 1.5f * fElapsedTime;
             }
-            if (m_keys[L'S'].bHeld) {
+            if (controlRight) {
                 worm->shootAngle += 1.5f * fElapsedTime;
             }
 
             bool shoot = false;
-            if (m_keys[VK_SPACE].bPressed) {
+
+            if (controlShootPressed) {
                 worm->energizing = true;
             }
-            if (m_keys[VK_SPACE].bHeld) {
+            if (controlShootHeld) {
                 if (worm->energizing) {
-                    worm->energy += fElapsedTime * 0.6f;
+                    worm->energy += fElapsedTime * 0.1f;
                     if (worm->energy >= 1.0f) {
                         shoot = true;
                     }
                 }
             }
-            if (m_keys[VK_SPACE].bReleased) {
+            if (controlShootReleased) {
                 if (worm->energizing) {
                     shoot = true;
                 }
             }
+
             if (shoot) {
                 PhysicsObject *missile = new Missile(worm->px, worm->py);
                 missile->vx = worm->energy * 40.0f * cosf(worm->shootAngle);
@@ -672,7 +687,7 @@ class WormsGame : public olcConsoleGameEngine
             o->Draw(this, CameraX, CameraY, ZoomMode);
         }
 
-        if (SelectedUnit && SelectedUnit->stable) {
+        if (SelectedUnit && PlayerHasControl) {
             Worm *worm = (Worm *)SelectedUnit;
             float CrossHairX = SelectedUnit->px - CameraX + cosf(worm->shootAngle) * 10.0f;
             float CrossHairY = SelectedUnit->py - CameraY + sinf(worm->shootAngle) * 10.0f;
