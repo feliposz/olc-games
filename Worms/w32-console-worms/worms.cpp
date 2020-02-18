@@ -7,6 +7,11 @@ const float PI = 3.1415926f;
 const int MapWidth = 1024;
 const int MapHeight = 512;
 
+float CalculateDistance(float x1, float y1, float x2, float y2)
+{
+    return sqrtf((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+}
+
 class PhysicsObject {
 public:
     float px = 0, py = 0;
@@ -306,9 +311,11 @@ class WormsGame : public olcConsoleGameEngine
     bool PlayerActionComplete = false;
     bool WorldIsStable = false;
     bool ZoomMode = false;
+    bool PlayerAIControl = false;
     vector<unique_ptr<Team>> Teams;
     const float MaxTimer = 16;
     float Timer = MaxTimer;
+    float AITargetPosition = 0;
 
     enum GAMESTATE {
         GS_RESET,
@@ -320,6 +327,16 @@ class WormsGame : public olcConsoleGameEngine
         GS_CAMERA_MOVEMENT,
         GS_GAME_OVER
     } GameState, NextGameState;
+
+    enum AISTATE {
+        AI_CHOOSE_STRATEGY,
+        AI_POSITIONING,
+        AI_CHOOSE_TARGET,
+        AI_APPROACH_TARGET,
+        AI_AIM,
+        AI_FIRE,
+        AI_IDLE
+    } AIState, NextAIState;
 
     virtual bool OnUserCreate() override
     {
@@ -333,8 +350,8 @@ class WormsGame : public olcConsoleGameEngine
         const float cameraSpeed = 400.0f;
         const float cameraFollowSpeed = 4.0f;
 
-        const int teamCount = 2;
-        const int teamSize = 1;
+        const int teamCount = 4;
+        const int teamSize = 4;
 
         switch (GameState) {
         case GS_RESET:
@@ -383,6 +400,7 @@ class WormsGame : public olcConsoleGameEngine
         break;
         case GS_PLAYER_CONTROL:
         {
+            PlayerAIControl = true; // Testing - SelectedTeam == 0; 
             PlayerHasControl = true;
             Timer -= fElapsedTime;
             if (Timer < 0) {
@@ -398,6 +416,7 @@ class WormsGame : public olcConsoleGameEngine
         {
             PlayerHasControl = false;
             PlayerActionComplete = false;
+
             if (WorldIsStable) {
                 int countTeamsAlive = 0;
                 for (auto &t : Teams) {
@@ -459,13 +478,7 @@ class WormsGame : public olcConsoleGameEngine
             ZoomMode = !ZoomMode;
         }
 
-        //if (m_mouse[0].bReleased) {
-        //    PhysicsObject *worm = new Worm(m_mousePosX + CameraX, m_mousePosY + CameraY);
-        //    Objects.push_back(unique_ptr<Worm>((Worm*)worm));
-        //    SelectedUnit = worm;
-        //    CameraFollowing = worm;
-        //}
-
+        // Camera control
 
         if (CameraFollowing) {
             TargetCameraX = CameraFollowing->px - ScreenWidth() / 2;
@@ -500,6 +513,8 @@ class WormsGame : public olcConsoleGameEngine
             CameraY = MapHeight - ScreenHeight();
         }
 
+        // Control
+
         if (SelectedUnit && PlayerHasControl) {
             Worm *worm = (Worm *)SelectedUnit;
 
@@ -509,6 +524,96 @@ class WormsGame : public olcConsoleGameEngine
             bool controlShootPressed = m_keys[VK_SPACE].bPressed;
             bool controlShootHeld = m_keys[VK_SPACE].bPressed;
             bool controlShootReleased = m_keys[VK_SPACE].bReleased;
+
+            if (PlayerAIControl) {
+
+                // Reset controls
+                controlJump = false;
+                controlLeft = false;
+                controlRight = false;
+                controlShootPressed = false;
+                controlShootHeld = false;
+                controlShootReleased = false;
+
+                // AI state machine
+                switch (AIState) {
+                case AI_CHOOSE_STRATEGY:
+                {
+                    float strategy = (float)rand() / RAND_MAX;
+                    if (strategy < 0.3f) {
+                        // Do nothing
+                    }
+                    else if (strategy < 0.6f) {                        
+                        // Walk towards middle
+                        AITargetPosition = MapWidth * (0.5f - 0.1f * 0.2f * ((float)rand() / RAND_MAX));
+                    }
+                    else {
+                        // Walk alway from closest team mate
+                        PhysicsObject *closest = nullptr;
+                        float minDistance = INFINITY;
+                        for (auto &t : Teams[SelectedTeam]->Members) {
+                            if (t != worm && t->health > 0) {
+                                float distance = CalculateDistance(t->px, t->py, worm->px, worm->py);
+                                if (distance < minDistance) {
+                                    minDistance = distance;
+                                    closest = t;
+                                }
+                            }
+                        }
+                        if (closest) {
+                            if (worm->px < closest->px) {
+                                AITargetPosition = worm->py - 50.0f;
+                            }
+                            else {
+                                AITargetPosition = worm->py + 50.0f;
+                            }
+                        }
+                        if (AITargetPosition < 0) {
+                            AITargetPosition = 0;
+                        }
+                        if (AITargetPosition > ScreenWidth() - 1) {
+                            AITargetPosition = ScreenWidth() - 1;
+                        }
+                    }
+                    NextAIState = AI_POSITIONING;
+                }
+                break;
+                case AI_POSITIONING:
+                {
+                    if (AITargetPosition > worm->px) {
+                        //AITargetAngle = 0;
+                    }
+                    NextAIState = AI_CHOOSE_TARGET;
+                }
+                break;
+                case AI_CHOOSE_TARGET:
+                {
+                    NextAIState = AI_APPROACH_TARGET;
+                }
+                break;
+                case AI_APPROACH_TARGET:
+                {
+                    NextAIState = AI_AIM;
+                }
+                break;
+                case AI_AIM:
+                {
+                    NextAIState = AI_FIRE;
+                }
+                break;
+                case AI_FIRE:
+                {
+                    NextAIState = AI_IDLE;
+                }
+                break;
+                case AI_IDLE:
+                {
+                    // Do nothing
+                }
+                break;
+                }
+                AIState = NextAIState;
+            }
 
             if (controlJump) {
                 SelectedUnit->stable = false;
