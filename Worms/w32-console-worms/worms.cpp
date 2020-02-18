@@ -316,6 +316,10 @@ class WormsGame : public olcConsoleGameEngine
     const float MaxTimer = 16;
     float Timer = MaxTimer;
     float AITargetPosition = 0;
+    float AITargetAngle = 0;
+    bool AIMoveRight = false;
+    bool AIMoveLeft = false;
+    Worm *AITargetEnemy = nullptr;
 
     enum GAMESTATE {
         GS_RESET,
@@ -440,6 +444,7 @@ class WormsGame : public olcConsoleGameEngine
                 }
                 if (countTeamsAlive > 1) {
                     NextGameState = GS_PLAYER_CONTROL;
+                    AIState = AI_CHOOSE_STRATEGY;
                     Timer = 15;
                 }
                 else {
@@ -542,8 +547,9 @@ class WormsGame : public olcConsoleGameEngine
                     float strategy = (float)rand() / RAND_MAX;
                     if (strategy < 0.3f) {
                         // Do nothing
+                        AITargetPosition = worm->px;
                     }
-                    else if (strategy < 0.6f) {                        
+                    else if (strategy < 0.6f) {
                         // Walk towards middle
                         AITargetPosition = MapWidth * (0.5f - 0.1f * 0.2f * ((float)rand() / RAND_MAX));
                     }
@@ -562,32 +568,85 @@ class WormsGame : public olcConsoleGameEngine
                         }
                         if (closest) {
                             if (worm->px < closest->px) {
-                                AITargetPosition = worm->py - 50.0f;
+                                AITargetPosition = worm->px - 50.0f;
                             }
                             else {
-                                AITargetPosition = worm->py + 50.0f;
+                                AITargetPosition = worm->px + 50.0f;
                             }
                         }
-                        if (AITargetPosition < 0) {
-                            AITargetPosition = 0;
-                        }
-                        if (AITargetPosition > ScreenWidth() - 1) {
-                            AITargetPosition = ScreenWidth() - 1;
-                        }
+                    }
+                    if (AITargetPosition < 0) {
+                        AITargetPosition = 0;
+                    }
+                    if (AITargetPosition > ScreenWidth() - 1) {
+                        AITargetPosition = ScreenWidth() - 1;
+                    }
+                    if (AITargetPosition > worm->px) {
+                        AIMoveRight = true;
+                        AIMoveLeft = false;
+                    }
+                    else if (AITargetPosition < worm->px) {
+                        AIMoveLeft = true;
+                        AIMoveRight = false;
                     }
                     NextAIState = AI_POSITIONING;
                 }
                 break;
                 case AI_POSITIONING:
                 {
-                    if (AITargetPosition > worm->px) {
-                        //AITargetAngle = 0;
+                    if (Timer < 8.0f) {
+                        NextAIState = AI_CHOOSE_TARGET;
                     }
-                    NextAIState = AI_CHOOSE_TARGET;
+                    else {
+
+                        if (AIMoveRight) {
+                            AITargetAngle = -PI * 0.25f;
+                        }
+                        else if (AIMoveLeft) {
+                            AITargetAngle = -PI * 0.75f;
+                        }
+
+                        if (fabs(AITargetAngle - worm->shootAngle) > 0.1f) {
+                            if (AITargetAngle < worm->shootAngle) {
+                                controlLeft = true;
+                            }
+                            else if (AITargetAngle > worm->shootAngle) {
+                                controlRight = true;
+                            }
+                        }
+                        else {
+                            if (AIMoveRight && AITargetPosition > worm->px) {
+                                controlJump = true;
+                            }
+                            else if (AIMoveLeft && AITargetPosition < worm->px) {
+                                controlJump = true;
+                            }
+                            else {
+                                NextAIState = AI_CHOOSE_TARGET;
+                            }
+                        }
+                    }
                 }
                 break;
                 case AI_CHOOSE_TARGET:
                 {
+                    int targetTeam;
+                    do {
+                        targetTeam = rand() % teamCount;
+                        if (!Teams[targetTeam]->IsTeamAlive()) {
+                            continue;
+                        }
+                    } while (targetTeam == SelectedTeam);
+
+                    AITargetEnemy = nullptr;
+                    float maxHealth = 0;
+                    for (auto &e : Teams[targetTeam]->Members) {
+                        if (e->health > maxHealth) {
+                            maxHealth = e->health;
+                            AITargetEnemy = e;
+                        }
+                    }
+
                     NextAIState = AI_APPROACH_TARGET;
                 }
                 break;
@@ -615,7 +674,7 @@ class WormsGame : public olcConsoleGameEngine
                 AIState = NextAIState;
             }
 
-            if (controlJump) {
+            if (controlJump && SelectedUnit->stable) {
                 SelectedUnit->stable = false;
                 SelectedUnit->vx = 4.0f * cosf(worm->shootAngle);
                 SelectedUnit->vy = 8.0f * sinf(worm->shootAngle);
