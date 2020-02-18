@@ -6,10 +6,28 @@ using namespace std;
 const float PI = 3.1415926f;
 const int MapWidth = 1024;
 const int MapHeight = 512;
+const float CameraSpeed = 400.0f;
+const float CameraFollowSpeed = 4.0f;
+const int TeamCount = 2;
+const int TeamSize = 1;
+const float MaxTimer = 16;
+const float MissileSpeed = 40.0f;
+const float Gravity = 2.0f;
 
 float CalculateDistance(float x1, float y1, float x2, float y2)
 {
     return sqrtf((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+}
+
+float NormalizeAngle(float angle)
+{
+    while (angle < PI) {
+        angle += PI * 2;
+    }
+    while (angle > PI) {
+        angle -= PI * 2;
+    }
+    return angle;
 }
 
 class PhysicsObject {
@@ -313,12 +331,12 @@ class WormsGame : public olcConsoleGameEngine
     bool ZoomMode = false;
     bool PlayerAIControl = false;
     vector<unique_ptr<Team>> Teams;
-    const float MaxTimer = 16;
     float Timer = MaxTimer;
     float AITargetPosition = 0;
     float AITargetAngle = 0;
     bool AIMoveRight = false;
     bool AIMoveLeft = false;
+    float AITargetEnergy = 0.75f;
     Worm *AITargetEnemy = nullptr;
 
     enum GAMESTATE {
@@ -351,11 +369,6 @@ class WormsGame : public olcConsoleGameEngine
 
     virtual bool OnUserUpdate(float fElapsedTime) override
     {
-        const float cameraSpeed = 400.0f;
-        const float cameraFollowSpeed = 4.0f;
-
-        const int teamCount = 4;
-        const int teamSize = 4;
 
         switch (GameState) {
         case GS_RESET:
@@ -376,11 +389,11 @@ class WormsGame : public olcConsoleGameEngine
         case GS_DEPLOY_UNITS:
         {
             PlayerHasControl = false;
-            for (int team = 0; team < teamCount; team++) {
-                Team *newTeam = new Team(teamSize);
-                for (int i = 0; i < teamSize; i++) {
-                    float deployPos = (team + 1) * ((float)MapWidth / (teamCount + 2));
-                    float deployArea = (float)MapWidth / (teamCount + 2) * 0.5f;
+            for (int team = 0; team < TeamCount; team++) {
+                Team *newTeam = new Team(TeamSize);
+                for (int i = 0; i < TeamSize; i++) {
+                    float deployPos = (team + 1) * ((float)MapWidth / (TeamCount + 2));
+                    float deployArea = (float)MapWidth / (TeamCount + 2) * 0.5f;
                     Worm * worm = new Worm(deployPos + (float)rand() / RAND_MAX * deployArea, 0);
                     worm->team = team;
                     Objects.push_back(unique_ptr<Worm>((Worm*)worm));
@@ -429,8 +442,8 @@ class WormsGame : public olcConsoleGameEngine
                     }
                 }
                 if (countTeamsAlive > 0) {
-                    for (int i = 0; i < teamCount; i++) {
-                        SelectedTeam = (SelectedTeam + 1) % teamCount;
+                    for (int i = 0; i < TeamCount; i++) {
+                        SelectedTeam = (SelectedTeam + 1) % TeamCount;
                         if (Teams[SelectedTeam]->IsTeamAlive()) { // skip dead teams
                             SelectedUnit = Teams[SelectedTeam]->GetNextMember();
                             break;
@@ -488,21 +501,21 @@ class WormsGame : public olcConsoleGameEngine
         if (CameraFollowing) {
             TargetCameraX = CameraFollowing->px - ScreenWidth() / 2;
             TargetCameraY = CameraFollowing->py - ScreenHeight() / 2;
-            CameraX += (TargetCameraX - CameraX) * cameraFollowSpeed * fElapsedTime;
-            CameraY += (TargetCameraY - CameraY) * cameraFollowSpeed * fElapsedTime;
+            CameraX += (TargetCameraX - CameraX) * CameraFollowSpeed * fElapsedTime;
+            CameraY += (TargetCameraY - CameraY) * CameraFollowSpeed * fElapsedTime;
         }
 
         if (m_mousePosX < CameraBorder) {
-            CameraX -= cameraSpeed * fElapsedTime;
+            CameraX -= CameraSpeed * fElapsedTime;
         }
         if (m_mousePosY < CameraBorder) {
-            CameraY -= cameraSpeed * fElapsedTime;
+            CameraY -= CameraSpeed * fElapsedTime;
         }
         if (m_mousePosX > ScreenWidth() - CameraBorder) {
-            CameraX += cameraSpeed * fElapsedTime;
+            CameraX += CameraSpeed * fElapsedTime;
         }
         if (m_mousePosY > ScreenHeight() - CameraBorder) {
-            CameraY += cameraSpeed * fElapsedTime;
+            CameraY += CameraSpeed * fElapsedTime;
         }
 
         if (CameraX < 0.0f) {
@@ -551,7 +564,12 @@ class WormsGame : public olcConsoleGameEngine
                     }
                     else if (strategy < 0.6f) {
                         // Walk towards middle
-                        AITargetPosition = MapWidth * (0.5f - 0.1f * 0.2f * ((float)rand() / RAND_MAX));
+                        if (worm->px > MapWidth * 0.5f) {
+                            AITargetPosition = worm->px - 100.0f;
+                        }
+                        else {
+                            AITargetPosition = worm->px + 100.0f;
+                        }
                     }
                     else {
                         // Walk alway from closest team mate
@@ -574,6 +592,9 @@ class WormsGame : public olcConsoleGameEngine
                                 AITargetPosition = worm->px + 50.0f;
                             }
                         }
+                        else {
+                            AITargetPosition = worm->px;
+                        }
                     }
                     if (AITargetPosition < 0) {
                         AITargetPosition = 0;
@@ -594,7 +615,7 @@ class WormsGame : public olcConsoleGameEngine
                 break;
                 case AI_POSITIONING:
                 {
-                    if (Timer < 8.0f) {
+                    if (Timer < 7.0f) {
                         NextAIState = AI_CHOOSE_TARGET;
                     }
                     else {
@@ -632,7 +653,7 @@ class WormsGame : public olcConsoleGameEngine
                 {
                     int targetTeam;
                     do {
-                        targetTeam = rand() % teamCount;
+                        targetTeam = rand() % TeamCount;
                         if (!Teams[targetTeam]->IsTeamAlive()) {
                             continue;
                         }
@@ -652,17 +673,93 @@ class WormsGame : public olcConsoleGameEngine
                 break;
                 case AI_APPROACH_TARGET:
                 {
-                    NextAIState = AI_AIM;
+                    if (Timer < 5.0f) {
+                        AITargetAngle = worm->shootAngle;
+                        NextAIState = AI_AIM;
+                    }
+                    else {
+
+                        // Check aiming angles
+                        float v = AITargetEnergy * MissileSpeed;
+                        float dx = -(AITargetEnemy->px - worm->px);
+                        float dy = -(AITargetEnemy->py - worm->py);
+                        float delta = v * v * v * v - Gravity * (Gravity * dx * dx + 2.0f * dy * v * v);
+
+                        bool canShoot = delta >= 0 && dx != 0;
+
+                        if (canShoot) {
+                            float angle1 = NormalizeAngle(atanf((v*v + sqrtf(delta)) / (Gravity * dx)));
+                            float angle2 = NormalizeAngle(atanf((v*v - sqrtf(delta)) / (Gravity * dx)));
+                            AITargetAngle = angle1; // -(dx > 0 ? PI : 0); // ????
+                            NextAIState = AI_AIM;
+                        } 
+                        else {
+
+                            AITargetPosition = AITargetEnemy->px;
+                            if (AITargetPosition > worm->px) {
+                                AIMoveRight = true;
+                                AIMoveLeft = false;
+                            }
+                            else if (AITargetPosition < worm->px) {
+                                AIMoveLeft = true;
+                                AIMoveRight = false;
+                            }
+
+                            // Can't reach target yet, get closer
+                            if (AIMoveRight) {
+                                AITargetAngle = -PI * -0.25f;
+                            }
+                            else if (AIMoveLeft) {
+                                AITargetAngle = -PI * 0.75f;
+                            }
+
+                            if (fabs(AITargetAngle - worm->shootAngle) > 0.1f) {
+                                if (AITargetAngle < worm->shootAngle) {
+                                    controlLeft = true;
+                                }
+                                else if (AITargetAngle > worm->shootAngle) {
+                                    controlRight = true;
+                                }
+                            }
+                            else {
+                                if (AIMoveRight && AITargetPosition > worm->px) {
+                                    controlJump = true;
+                                }
+                                else if (AIMoveLeft && AITargetPosition < worm->px) {
+                                    controlJump = true;
+                                }
+                            }
+                        }
+                    }
                 }
                 break;
                 case AI_AIM:
                 {
-                    NextAIState = AI_FIRE;
+                    if (fabs(AITargetAngle - worm->shootAngle) > 0.1f) {
+                        if (AITargetAngle < worm->shootAngle) {
+                            controlLeft = true;
+                        }
+                        else if (AITargetAngle > worm->shootAngle) {
+                            controlRight = true;
+                        }
+                    }
+                    else {
+                        NextAIState = AI_FIRE;
+                    }
                 }
                 break;
                 case AI_FIRE:
                 {
-                    NextAIState = AI_IDLE;
+                    if (!worm->energizing) {
+                        controlShootPressed = true;
+                    }
+                    else if (worm->energy < AITargetEnergy) {
+                        controlShootHeld = true;
+                    }
+                    else {
+                        controlShootReleased = true;
+                        NextAIState = AI_IDLE;
+                    }                    
                 }
                 break;
                 case AI_IDLE:
@@ -685,6 +782,8 @@ class WormsGame : public olcConsoleGameEngine
             if (controlRight) {
                 worm->shootAngle += 1.5f * fElapsedTime;
             }
+            
+            worm->shootAngle = NormalizeAngle(worm->shootAngle);
 
             bool shoot = false;
 
@@ -693,7 +792,7 @@ class WormsGame : public olcConsoleGameEngine
             }
             if (controlShootHeld) {
                 if (worm->energizing) {
-                    worm->energy += fElapsedTime * 0.1f;
+                    worm->energy += fElapsedTime * 0.6f;
                     if (worm->energy >= 1.0f) {
                         shoot = true;
                     }
@@ -707,8 +806,8 @@ class WormsGame : public olcConsoleGameEngine
 
             if (shoot) {
                 PhysicsObject *missile = new Missile(worm->px, worm->py);
-                missile->vx = worm->energy * 40.0f * cosf(worm->shootAngle);
-                missile->vy = worm->energy * 40.0f * sinf(worm->shootAngle);
+                missile->vx = worm->energy * MissileSpeed * cosf(worm->shootAngle);
+                missile->vy = worm->energy * MissileSpeed * sinf(worm->shootAngle);
                 CameraFollowing = missile;
                 Objects.push_back(unique_ptr<Missile>((Missile *)missile));
                 shoot = false;
@@ -722,9 +821,10 @@ class WormsGame : public olcConsoleGameEngine
         for (auto &o : Objects) {
             // Physics steps
             for (int step = 0; step < 10; step++) {
+                if (o->stable) break; // DEBUG
                 bool collided = false;
                 if (!o->stable) {
-                    o->ay += 2.0f;
+                    o->ay += Gravity;
                     o->vx += o->ax * fElapsedTime;
                     o->vy += o->ay * fElapsedTime;
                     o->ax = 0.0f;
@@ -832,7 +932,7 @@ class WormsGame : public olcConsoleGameEngine
         int barY = 5;
         int teamIndex = 0;
         for (auto &t : Teams) {
-            int barSize = (ScreenWidth() - 10) / teamSize * t->TeamHealth();
+            int barSize = (ScreenWidth() - 10) / TeamSize * t->TeamHealth();
             Fill(5, barY, barSize + 5, barY + 3, PIXEL_SOLID, barColor[teamIndex % 4]);
             barY += 5;
             teamIndex++;
