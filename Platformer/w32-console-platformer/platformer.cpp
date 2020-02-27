@@ -57,11 +57,11 @@ class PlatformerGame : public olcConsoleGameEngine
 
         if (IsFocused()) {
             if (GetKey(VK_LEFT).bHeld) {
-                PlayerVelX -= (PlayerOnGround ? 8.0f : 4.0f) * fElapsedTime;
+                PlayerVelX -= (PlayerOnGround ? 25.0f : 15.0f) * fElapsedTime;
                 PlayerFacingLeft = true;
             }
             if (GetKey(VK_RIGHT).bHeld) {
-                PlayerVelX += (PlayerOnGround ? 8.0f : 4.0f) * fElapsedTime;
+                PlayerVelX += (PlayerOnGround ? 25.0f : 15.0f) * fElapsedTime;
                 PlayerFacingLeft = false;
             }
             if (GetKey(VK_UP).bHeld) {
@@ -80,7 +80,7 @@ class PlatformerGame : public olcConsoleGameEngine
         // Collisions
 
         if (PlayerOnGround) {
-            PlayerVelX += -2.0f * PlayerVelX * fElapsedTime;
+            PlayerVelX += -3.0f * PlayerVelX * fElapsedTime;
             if (fabs(PlayerVelX) < 0.01f) {
                 PlayerVelX = 0;
             }
@@ -219,7 +219,7 @@ class PlatformerGame : public olcConsoleGameEngine
 int main()
 {
     PlatformerGame game;
-    game.ConstructConsole(128, 120, 6, 6);
+    game.ConstructConsole(192, 180, 5, 5);
     game.Start();
 
     return 0;
