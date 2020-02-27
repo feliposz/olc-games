@@ -23,20 +23,20 @@ class PlatformerGame : public olcConsoleGameEngine
         LevelWidth = 64;
         LevelHeight = 16;
         Level += L"................................................................";
-        Level += L"................................................................";
-        Level += L"................................................................";
-        Level += L"................................................................";
-        Level += L"..................#.............................................";
-        Level += L"....#............##.........#.#...............................#.";
-        Level += L".......#........###.........#.#.............................#.#.";
+        Level += L"..................o.............................................";
+        Level += L"......oooo........o.............................................";
+        Level += L"......oooo...................o................................o.";
+        Level += L"..................#.........................................o...";
+        Level += L"....BB?BB?BB.....##.........#.#...........................o...#.";
+        Level += L"................###.........#.#.............................#.#.";
         Level += L"...............####.......................................#.#.#.";
-        Level += L"##################################.########......###############";
+        Level += L"GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG.GGGGGGGG......GGGGGGGGGGGGGGG";
         Level += L".................................#.#...........##...............";
-        Level += L".....................#############.#.........##.................";
+        Level += L".....................#############.#.o.......##.................";
         Level += L".....................#.............#.......##...................";
-        Level += L".....................#.#############.....##.....................";
+        Level += L".....................#.GGGGGGGGGGGGG.....##.....................";
         Level += L".....................#.................##.......................";
-        Level += L".....................##################.........................";
+        Level += L".....................GGGGGGGGGGGGGGGGGG.........................";
         Level += L"................................................................";
 
         sprLevel.Load(L"Sprites/leveljario.spr");
@@ -152,7 +152,20 @@ class PlatformerGame : public olcConsoleGameEngine
                     Fill(tileX, tileY, tileX + tileWidth, tileY + tileHeight, PIXEL_SOLID, FG_CYAN);
                     break;
                 case L'#':
-                    Fill(tileX, tileY, tileX + tileWidth, tileY + tileHeight, PIXEL_SOLID, FG_RED);
+                    DrawPartialSprite(tileX, tileY, &sprLevel, 2 * tileWidth, 0 * tileHeight, tileWidth, tileHeight);
+                    break;
+                case L'o':
+                    Fill(tileX, tileY, tileX + tileWidth, tileY + tileHeight, PIXEL_SOLID, FG_CYAN);
+                    DrawPartialSprite(tileX, tileY, &sprLevel, 3 * tileWidth, 0 * tileHeight, tileWidth, tileHeight);
+                    break;
+                case L'B':
+                    DrawPartialSprite(tileX, tileY, &sprLevel, 0 * tileWidth, 1 * tileHeight, tileWidth, tileHeight);
+                    break;
+                case L'?':
+                    DrawPartialSprite(tileX, tileY, &sprLevel, 1 * tileWidth, 1 * tileHeight, tileWidth, tileHeight);
+                    break;
+                case L'G':                    
+                    DrawPartialSprite(tileX, tileY, &sprLevel, 0  * tileWidth, 0 * tileHeight, tileWidth, tileHeight);
                     break;
                 default:
                     Fill(tileX, tileY, tileX + tileWidth, tileY + tileHeight, PIXEL_SOLID, FG_BLACK);
@@ -191,7 +204,7 @@ class PlatformerGame : public olcConsoleGameEngine
 int main()
 {
     PlatformerGame game;
-    game.ConstructConsole(160, 120, 6, 6);
+    game.ConstructConsole(128, 120, 6, 6);
     game.Start();
 
     return 0;
