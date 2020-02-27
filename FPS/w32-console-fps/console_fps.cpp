@@ -14,6 +14,7 @@ private:
     float fPlayerY = 8.0f;
     float fPlayerA = 0.0f;
     float fFOV = PI / 4.0f;
+    olcSprite sprWall;
 
 public:
 
@@ -51,6 +52,8 @@ public:
         map += "#..#..#........#............####";
         map += "#..#..#..#.....#...........#####";
         map += "################################";
+
+        sprWall.Load(L"Sprites/fps_wall1.spr");
 
         return true;
     }
@@ -114,8 +117,11 @@ public:
             float fDepth = 16.0f;
             bool bHitWall = false;
 
+            float fSampleX = 0;
+            float fSampleY = 0;
+
             while (!bHitWall && fDistanceToWall <= fDepth) {
-                fDistanceToWall += 0.1f;
+                fDistanceToWall += 0.01f;
                 int nTestX = (int)(fPlayerX + fEyeX * fDistanceToWall);
                 int nTestY = (int)(fPlayerY + fEyeY * fDistanceToWall);
                 if (nTestX < 0 || nTestX >= nMapWidth || nTestY < 0 || nTestY >= nMapHeight) {
@@ -124,16 +130,35 @@ public:
                 }
                 else if (map[nTestY * nMapWidth + nTestX] == '#') {
                     bHitWall = true;
+                    // Use the angle between the mid point of the block and the point the ray hit the wall, to find out which wall was hit (N, S, E, W)
+                    float fBlockMidX = nTestX + 0.5f;
+                    float fBlockMidY = nTestY + 0.5f;
+                    float fTestPointX = fPlayerX + fEyeX * fDistanceToWall;
+                    float fTestPointY = fPlayerY + fEyeY * fDistanceToWall;
+                    float fTestAngle = atan2((fTestPointX - fBlockMidX), (fTestPointY - fBlockMidY));
+                    if (fTestAngle >= -PI * 0.25f && fTestAngle < PI * 0.25f) {
+                        fSampleX = fTestPointX - (int)fTestPointX;
+                    }
+                    if (fTestAngle >= PI * 0.25f && fTestAngle < PI * 0.75f) {
+                        fSampleX = fTestPointY - (int)fTestPointY;
+                    }
+                    if (fTestAngle >= -PI * 0.75f && fTestAngle < -PI * 0.25f) {
+                        fSampleX = fTestPointY - (int)fTestPointY;
+                    }
+                    if (fTestAngle >= PI * 0.75f || fTestAngle < -PI * 0.75f) {
+                        fSampleX = fTestPointX - (int)fTestPointX;
+                    }
                 }
             }
 
             // Calculate wall height
 
             int nWallHeight = ScreenHeight() / fDistanceToWall;
-            int nCeiling = ScreenHeight() / 2 - nWallHeight;
+            int nCeiling = (ScreenHeight() - nWallHeight) / 2;
             int nFloor = ScreenHeight() - nCeiling;
 
             wchar_t cShade = ' ';
+            short nColor = FG_BLACK;
 
             // Shade wall according to distance
 
@@ -168,20 +193,24 @@ public:
                     cFloorShade = L':';
                 }
                 else if (fFloorDist < 0.8f) {
-                    cFloorShade = L'-';
+                    cFloorShade = L',';
                 }
                 else {
                     cFloorShade = L'.';
                 }
 
                 if (y < nCeiling) {
-                    Draw(x, y, L' ');
+                    Draw(x, y, PIXEL_SOLID, FG_CYAN);
                 }
-                else if (y <= nFloor) {
-                    Draw(x, y, cShade);
+                else if (y < nFloor) {
+                    if (bHitWall) {
+                        fSampleY = (float)(y - nCeiling) / (float)(nFloor - nCeiling);
+                        nColor = sprWall.GetColour(sprWall.nWidth * fSampleX, sprWall.nHeight * fSampleY);
+                    }
+                    Draw(x, y, cShade, nColor);
                 }
                 else {
-                    Draw(x, y, cFloorShade);
+                    Draw(x, y, cFloorShade, FG_DARK_GREEN);
                 }
             }
         }
@@ -231,7 +260,7 @@ public:
 int main()
 {
     FPSGame game;
-    game.ConstructConsole(160, 90, 8, 8);
+    game.ConstructConsole(160, 100, 8, 8);
     game.Start();
 
     return 0;
