@@ -7,6 +7,10 @@ class PlatformerGame : public olcConsoleGameEngine
     wstring Level;
     int LevelWidth;
     int LevelHeight;
+    float PlayerPosX = 0;
+    float PlayerPosY = 0;
+    float PlayerVelX = 0;
+    float PlayerVelY = 0;
     float CameraPosX = 0;
     float CameraPosY = 0;
 
@@ -19,10 +23,10 @@ class PlatformerGame : public olcConsoleGameEngine
         Level += L"................................................................";
         Level += L"................................................................";
         Level += L"..................#.............................................";
-        Level += L"....#............##.........#.#.................................";
-        Level += L"................###.........#.#.................................";
-        Level += L"...............####.............................................";
-        Level += L"##################################.##########    ###############";
+        Level += L"....#............##.........#.#...............................#.";
+        Level += L".......#........###.........#.#.............................#.#.";
+        Level += L"...............####.......................................#.#.#.";
+        Level += L"##################################.##########....###############";
         Level += L".................................#.#...........##...............";
         Level += L".....................#############.#.........##.................";
         Level += L".....................#.............#.......##...................";
@@ -36,17 +40,52 @@ class PlatformerGame : public olcConsoleGameEngine
 
     virtual bool OnUserUpdate(float fElapsedTime) override
     {
-        int tileWidth = 8;
-        int tileHeight = 8;
+        int tileWidth = 16;
+        int tileHeight = 16;
 
         int visibleTilesX = ScreenWidth() / tileWidth;
         int visibleTilesY = ScreenHeight() / tileHeight;
 
-        for (int y = 0; y < visibleTilesY; y++) {
-            for (int x = 0; x < visibleTilesX; x++) {
-                wchar_t tile = GetTile(x, y);
-                int tileX = x * tileWidth;
-                int tileY = y * tileHeight;
+        PlayerVelX = 0;
+        PlayerVelY = 0;
+
+        if (IsFocused()) {
+            if (GetKey(VK_LEFT).bHeld) {
+                PlayerVelX -= 6.0f;
+            }
+            if (GetKey(VK_RIGHT).bHeld) {
+                PlayerVelX += 6.0f;
+            }
+            if (GetKey(VK_UP).bHeld) {
+                PlayerVelY -= 6.0f;
+            }
+            if (GetKey(VK_DOWN).bHeld) {
+                PlayerVelY += 6.0f;
+            }
+        }
+
+        PlayerPosX = PlayerPosX + PlayerVelX * fElapsedTime;
+        PlayerPosY = PlayerPosY + PlayerVelY * fElapsedTime;
+
+        CameraPosX = PlayerPosX;
+        CameraPosY = PlayerPosY;
+
+        float levelOffsetX = CameraPosX - visibleTilesX / 2.0f;
+        float levelOffsetY = CameraPosY - visibleTilesY / 2.0f;
+
+        if (levelOffsetX < 0) { levelOffsetX = 0; }
+        if (levelOffsetY < 0) { levelOffsetY = 0; }
+        if (levelOffsetX > (LevelWidth - visibleTilesX)) { levelOffsetX = LevelWidth - visibleTilesX; }
+        if (levelOffsetY > (LevelHeight - visibleTilesY)) { levelOffsetY = LevelHeight - visibleTilesY; }
+
+        float tileOffsetX = (levelOffsetX - (int)levelOffsetX) * tileWidth;
+        float tileOffsetY = (levelOffsetY - (int)levelOffsetY) * tileHeight;
+
+        for (int y = -1; y <= visibleTilesY + 1; y++) {
+            for (int x = -1; x <= visibleTilesX + 1; x++) {
+                wchar_t tile = GetTile(x + levelOffsetX, y + levelOffsetY);
+                int tileX = x * tileWidth - tileOffsetX;
+                int tileY = y * tileHeight - tileOffsetY;
                 switch (tile) {
                 case L'.':
                     Fill(tileX, tileY, tileX + tileWidth, tileY + tileHeight, PIXEL_SOLID, FG_CYAN);
@@ -54,9 +93,17 @@ class PlatformerGame : public olcConsoleGameEngine
                 case L'#':
                     Fill(tileX, tileY, tileX + tileWidth, tileY + tileHeight, PIXEL_SOLID, FG_RED);
                     break;
+                default:
+                    Fill(tileX, tileY, tileX + tileWidth, tileY + tileHeight, PIXEL_SOLID, FG_BLACK);
+                    break;
                 }
             }
         }
+
+        int playerX = (int)((PlayerPosX - levelOffsetX) * tileWidth);
+        int playerY = (int)((PlayerPosY - levelOffsetY) * tileHeight);
+
+        Fill(playerX, playerY, playerX + tileWidth, playerY + tileHeight, PIXEL_SOLID, FG_YELLOW);
 
         return true;
     }
