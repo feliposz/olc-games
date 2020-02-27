@@ -46,6 +46,8 @@ class PlatformerGame : public olcConsoleGameEngine
         int visibleTilesX = ScreenWidth() / tileWidth;
         int visibleTilesY = ScreenHeight() / tileHeight;
 
+        // Player movement
+
         PlayerVelX = 0;
         PlayerVelY = 0;
 
@@ -64,8 +66,41 @@ class PlatformerGame : public olcConsoleGameEngine
             }
         }
 
-        PlayerPosX = PlayerPosX + PlayerVelX * fElapsedTime;
-        PlayerPosY = PlayerPosY + PlayerVelY * fElapsedTime;
+        // Collisions
+
+        float newPlayerPosX = PlayerPosX + PlayerVelX * fElapsedTime;
+        float newPlayerPosY = PlayerPosY + PlayerVelY * fElapsedTime;
+
+        if (PlayerVelX <= 0) {
+            if (GetTile(newPlayerPosX + 0.0f, PlayerPosY + 0.0f) != L'.' || GetTile(newPlayerPosX + 0.0f, PlayerPosY + 0.9f) != L'.') {
+                newPlayerPosX = (int)newPlayerPosX + 1;
+                PlayerVelX = 0;
+            }
+        }
+        else {
+            if (GetTile(newPlayerPosX + 1.0f, PlayerPosY + 0.0f) != L'.' || GetTile(newPlayerPosX + 1.0f, PlayerPosY + 0.9f) != L'.') {
+                newPlayerPosX = (int)newPlayerPosX;
+                PlayerVelX = 0;
+            }
+        }
+
+        if (PlayerVelY <= 0) {
+            if (GetTile(newPlayerPosX + 0.0f, newPlayerPosY + 0.0f) != L'.' || GetTile(newPlayerPosX + 0.9f, newPlayerPosY + 0.0f) != L'.') {
+                newPlayerPosY = (int)newPlayerPosY + 1;
+                PlayerVelY = 0;
+            }
+        }
+        else {
+            if (GetTile(newPlayerPosX + 0.0f, newPlayerPosY + 1.0f) != L'.' || GetTile(newPlayerPosX + 0.9f, newPlayerPosY + 1.0f) != L'.') {
+                newPlayerPosY = (int)newPlayerPosY;
+                PlayerVelY = 0;
+            }
+        }
+
+        PlayerPosX = newPlayerPosX;
+        PlayerPosY = newPlayerPosY;
+
+        // Rendering
 
         CameraPosX = PlayerPosX;
         CameraPosY = PlayerPosY;
