@@ -94,6 +94,21 @@ class PlatformerGame : public olcConsoleGameEngine
         float newPlayerPosX = PlayerPosX + PlayerVelX * fElapsedTime;
         float newPlayerPosY = PlayerPosY + PlayerVelY * fElapsedTime;
 
+        // Pick up coins
+
+        if (GetTile(newPlayerPosX + 0, newPlayerPosY + 0) == L'o') {
+            SetTile(newPlayerPosX + 0, newPlayerPosY + 0, L'.');
+        }
+        if (GetTile(newPlayerPosX + 0, newPlayerPosY + 1) == L'o') {
+            SetTile(newPlayerPosX + 0, newPlayerPosY + 1, L'.');
+        }
+        if (GetTile(newPlayerPosX + 1, newPlayerPosY + 0) == L'o') {
+            SetTile(newPlayerPosX + 1, newPlayerPosY + 0, L'.');
+        }
+        if (GetTile(newPlayerPosX + 1, newPlayerPosY + 1) == L'o') {
+            SetTile(newPlayerPosX + 1, newPlayerPosY + 1, L'.');
+        }
+
         if (PlayerVelX <= 0) {
             if (GetTile(newPlayerPosX + 0.0f, PlayerPosY + 0.0f) != L'.' || GetTile(newPlayerPosX + 0.0f, PlayerPosY + 0.9f) != L'.') {
                 newPlayerPosX = (int)newPlayerPosX + 1;
