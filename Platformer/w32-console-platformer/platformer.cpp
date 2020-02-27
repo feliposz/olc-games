@@ -14,6 +14,9 @@ class PlatformerGame : public olcConsoleGameEngine
     float CameraPosX = 0;
     float CameraPosY = 0;
     bool PlayerOnGround = false;
+    bool PlayerFacingLeft = false;
+    olcSprite sprJario;
+    olcSprite sprLevel;
 
     virtual bool OnUserCreate() override
     {
@@ -36,13 +39,16 @@ class PlatformerGame : public olcConsoleGameEngine
         Level += L".....................##################.........................";
         Level += L"................................................................";
 
+        sprLevel.Load(L"Sprites/leveljario.spr");
+        sprJario.Load(L"Sprites/minijario.spr");
+
         return true;
     }
 
     virtual bool OnUserUpdate(float fElapsedTime) override
     {
-        int tileWidth = 8;
-        int tileHeight = 8;
+        int tileWidth = 16;
+        int tileHeight = 16;
 
         int visibleTilesX = ScreenWidth() / tileWidth;
         int visibleTilesY = ScreenHeight() / tileHeight;
@@ -52,9 +58,11 @@ class PlatformerGame : public olcConsoleGameEngine
         if (IsFocused()) {
             if (GetKey(VK_LEFT).bHeld) {
                 PlayerVelX -= (PlayerOnGround ? 8.0f : 4.0f) * fElapsedTime;
+                PlayerFacingLeft = true;
             }
             if (GetKey(VK_RIGHT).bHeld) {
                 PlayerVelX += (PlayerOnGround ? 8.0f : 4.0f) * fElapsedTime;
+                PlayerFacingLeft = false;
             }
             if (GetKey(VK_UP).bHeld) {
                 PlayerVelY -= 6.0f * fElapsedTime;
@@ -155,8 +163,9 @@ class PlatformerGame : public olcConsoleGameEngine
 
         int playerX = (int)((PlayerPosX - levelOffsetX) * tileWidth);
         int playerY = (int)((PlayerPosY - levelOffsetY) * tileHeight);
-
-        Fill(playerX, playerY, playerX + tileWidth, playerY + tileHeight, PIXEL_SOLID, FG_YELLOW);
+        int spriteX = PlayerOnGround ? 0 : 1;
+        int spriteY = PlayerFacingLeft ? 1 : 0;
+        DrawPartialSprite(playerX, playerY, &sprJario, spriteX * tileWidth, spriteY * tileHeight, tileWidth, tileHeight);
 
         return true;
     }
