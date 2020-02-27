@@ -1,119 +1,112 @@
-#include "windows.h"
+#include "olcConsoleGameEngine.h"
 #include <string>
-#include <chrono> 
 using namespace std;
 
-int main()
-{
-    const int nScreenWidth = 120;
-    const int nScreenHeight = 40;
-    const float PI = 3.14159f;
-    const float PI_2 = PI / 2.0f;
+const float PI = 3.14159f;
+const float PI_2 = PI / 2.0f;
 
-    char *screen = new char[nScreenWidth * nScreenHeight];
-
-    const int nMapWidth = 32;
-    const int nMapHeight = 16;
-
+class FPSGame : public olcConsoleGameEngine {
+private:
     string map;
-    map += "################################";
-    map += "#..............#...............#";
-    map += "#..............##..............#";
-    map += "#..............#...............#";
-    map += "#.......###....##......##......#";
-    map += "#.........#....#...............#";
-    map += "#.........#....##..............#";
-    map += "#..............................#";
-    map += "#..............................#";
-    map += "#..............##..............#";
-    map += "#..............#...............#";
-    map += "#..#...........##..............#";
-    map += "#..#...........#.......##......#";
-    map += "#..#..#........##..............#";
-    map += "#..#..#..#.....#...............#";
-    map += "################################";
-
+    const int nMapWidth = 32;
+    const int nMapHeight = 32;
     float fPlayerX = 8.0f;
     float fPlayerY = 8.0f;
     float fPlayerA = 0.0f;
     float fFOV = PI / 4.0f;
 
-    // Set console window size
-    HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    SMALL_RECT windowSize = { 0, 0, nScreenWidth - 1, nScreenHeight - 1 };
-    SetConsoleWindowInfo(hStdOut, TRUE, &windowSize);
+public:
 
-    HANDLE hConsole = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
-    SetConsoleActiveScreenBuffer(hConsole);
+    virtual bool OnUserCreate() override
+    {
+        map += "################################";
+        map += "#..............#...............#";
+        map += "#..............##..............#";
+        map += "#..............#...............#";
+        map += "#.......###....##......##......#";
+        map += "#.........#....#...............#";
+        map += "#.........#....##..............#";
+        map += "#..............................#";
+        map += "#..............................#";
+        map += "#..............##..............#";
+        map += "#..............#...............#";
+        map += "#..#...........##..............#";
+        map += "#..#...........#.......##......#";
+        map += "#..#..#........##..............#";
+        map += "#..#..#..#.....#...............#";
+        map += "#..####..############......#####";
+        map += "#..............#...............#";
+        map += "#..............#...............#";
+        map += "#..............##..............#";
+        map += "#..............................#";
+        map += "#.......###....##......##......#";
+        map += "#.........#....#...............#";
+        map += "#.........#....##..............#";
+        map += "#..............................#";
+        map += "#..............................#";
+        map += "#..............#####...........#";
+        map += "#..............#...............#";
+        map += "#..#...........#..............##";
+        map += "#..#...........#.............###";
+        map += "#..#..#........#............####";
+        map += "#..#..#..#.....#...........#####";
+        map += "################################";
 
-    // Hide cursor
-    CONSOLE_CURSOR_INFO CursorInfo;
-    CursorInfo.bVisible = false;
-    CursorInfo.dwSize = 1;
-    SetConsoleCursorInfo(hConsole, &CursorInfo);
-
-    auto tp1 = chrono::system_clock::now();
-    auto tp2 = chrono::system_clock::now();
-
-    while (1) {
-
-        // Handle timing
-        tp2 = chrono::system_clock::now();
-        chrono::duration<float> elapsed = tp2 - tp1;
-        tp1 = tp2;
-
-        float delta = elapsed.count();
+        return true;
+    }
+    virtual bool OnUserUpdate(float fElapsedTime) override
+    {
 
         float fTurnSpeed = 2.0f;
         float fPlayerSpeed = 4.0f;
 
         // Player rotation
-        if (GetAsyncKeyState(VK_LEFT) & 0x8000) {
-            fPlayerA -= fTurnSpeed * delta;
+        if (GetKey(VK_LEFT).bHeld) {
+            fPlayerA -= fTurnSpeed * fElapsedTime;
         }
 
-        if (GetAsyncKeyState(VK_RIGHT) & 0x8000) {
-            fPlayerA += fTurnSpeed * delta;
+        if (GetKey(VK_RIGHT).bHeld) {
+            fPlayerA += fTurnSpeed * fElapsedTime;
         }
 
-        float fDeltaX = 0.0f;
-        float fDeltaY = 0.0f;
+        float ffElapsedTimeX = 0.0f;
+        float ffElapsedTimeY = 0.0f;
 
         // Player movement
-        if (GetAsyncKeyState(VK_UP) & 0x8000 || GetAsyncKeyState('W') & 0x8000) {
-            fDeltaX += fPlayerSpeed * sinf(fPlayerA) * delta;
-            fDeltaY += fPlayerSpeed * cosf(fPlayerA) * delta;
+        if (GetKey(VK_UP).bHeld || GetKey('W').bHeld) {
+            ffElapsedTimeX += fPlayerSpeed * sinf(fPlayerA) * fElapsedTime;
+            ffElapsedTimeY += fPlayerSpeed * cosf(fPlayerA) * fElapsedTime;
         }
 
-        if (GetAsyncKeyState(VK_DOWN) & 0x8000 || GetAsyncKeyState('S') & 0x8000) {
-            fDeltaX -= fPlayerSpeed * sinf(fPlayerA) * delta;
-            fDeltaY -= fPlayerSpeed * cosf(fPlayerA) * delta;
+        if (GetKey(VK_DOWN).bHeld || GetKey('S').bHeld) {
+            ffElapsedTimeX -= fPlayerSpeed * sinf(fPlayerA) * fElapsedTime;
+            ffElapsedTimeY -= fPlayerSpeed * cosf(fPlayerA) * fElapsedTime;
         }
 
-        if (GetAsyncKeyState('A') & 0x8000) {
-            fDeltaX += fPlayerSpeed * sinf(fPlayerA - PI_2) * delta;
-            fDeltaY += fPlayerSpeed * cosf(fPlayerA - PI_2) * delta;
+        if (GetKey('A').bHeld) {
+            ffElapsedTimeX += fPlayerSpeed * sinf(fPlayerA - PI_2) * fElapsedTime;
+            ffElapsedTimeY += fPlayerSpeed * cosf(fPlayerA - PI_2) * fElapsedTime;
         }
 
-        if (GetAsyncKeyState('D') & 0x8000) {
-            fDeltaX += fPlayerSpeed * sinf(fPlayerA + PI_2) * delta;
-            fDeltaY += fPlayerSpeed * cosf(fPlayerA + PI_2) * delta;
+        if (GetKey('D').bHeld) {
+            ffElapsedTimeX += fPlayerSpeed * sinf(fPlayerA + PI_2) * fElapsedTime;
+            ffElapsedTimeY += fPlayerSpeed * cosf(fPlayerA + PI_2) * fElapsedTime;
         }
 
         // Test for wall collision
-        int nTestPlayerX = (int)(fPlayerX + fDeltaX);
-        int nTestPlayerY = (int)(fPlayerY + fDeltaY);
+        int nTestPlayerX = (int)(fPlayerX + ffElapsedTimeX);
+        int nTestPlayerY = (int)(fPlayerY + ffElapsedTimeY);
 
         if (map[nTestPlayerY * nMapWidth + nTestPlayerX] != '#') {
-            fPlayerX += fDeltaX;
-            fPlayerY += fDeltaY;
+            fPlayerX += ffElapsedTimeX;
+            fPlayerY += ffElapsedTimeY;
         }
 
-        for (int x = 0; x < nScreenWidth; x++) {
+        for (int x = 0; x < ScreenWidth(); x++) {
 
             // Raytracing
 
-            float fRayAngle = (fPlayerA - fFOV / 2.0f) + (float)x / (float)nScreenWidth * fFOV;
+            float fRayAngle = (fPlayerA - fFOV / 2.0f) + (float)x / (float)ScreenWidth() * fFOV;
 
             float fEyeX = sinf(fRayAngle);
             float fEyeY = cosf(fRayAngle);
@@ -136,99 +129,110 @@ int main()
 
             // Calculate wall height
 
-            int nWallHeight = nScreenHeight / fDistanceToWall;
-            int nCeiling = nScreenHeight / 2 - nWallHeight;
-            int nFloor = nScreenHeight - nCeiling;
+            int nWallHeight = ScreenHeight() / fDistanceToWall;
+            int nCeiling = ScreenHeight() / 2 - nWallHeight;
+            int nFloor = ScreenHeight() - nCeiling;
 
-            char nShade = ' ';
+            wchar_t cShade = ' ';
 
             // Shade wall according to distance
 
             if (fDistanceToWall < 0.2f * fDepth) {
-                nShade = 219;
+                cShade = PIXEL_SOLID;
             }
             else if (fDistanceToWall < 0.4f * fDepth) {
-                nShade = 178;
+                cShade = PIXEL_THREEQUARTERS;
             }
             else if (fDistanceToWall < 0.8f * fDepth) {
-                nShade = 177;
+                cShade = PIXEL_HALF;
             }
             else if (fDistanceToWall < 1.00f * fDepth) {
-                nShade = 176;
+                cShade = PIXEL_QUARTER;
             }
             else {
-                nShade = ' ';
+                cShade = L' ';
             }
 
             // Draw wall column
 
-            for (int y = 0; y < nScreenHeight; y++) {
-                int pos = y * nScreenWidth + x;
-                float fFloorDist = 1.0f - ((float)y - nScreenHeight / 2.0f) / (nScreenHeight / 2.0f);
-                char nFloorShade = ' ';
+            for (int y = 0; y < ScreenHeight(); y++) {
+                float fFloorDist = 1.0f - ((float)y - ScreenHeight() / 2.0f) / (ScreenHeight() / 2.0f);
+                wchar_t cFloorShade = L' ';
                 if (fFloorDist < 0.2f) {
-                    nFloorShade = '#';
+                    cFloorShade = L'#';
                 }
                 else if (fFloorDist < 0.4f) {
-                    nFloorShade = 'x';
+                    cFloorShade = L'x';
                 }
                 else if (fFloorDist < 0.6f) {
-                    nFloorShade = ':';
+                    cFloorShade = L':';
                 }
                 else if (fFloorDist < 0.8f) {
-                    nFloorShade = '-';
+                    cFloorShade = L'-';
                 }
                 else {
-                    nFloorShade = ' ';
+                    cFloorShade = L'.';
                 }
 
                 if (y < nCeiling) {
-                    screen[pos] = ' ';
+                    Draw(x, y, L' ');
                 }
                 else if (y <= nFloor) {
-                    screen[pos] = nShade;
+                    Draw(x, y, cShade);
                 }
                 else {
-                    screen[pos] = nFloorShade;
+                    Draw(x, y, cFloorShade);
                 }
             }
         }
 
         for (int x = 0; x < nMapWidth; x++) {
             for (int y = 0; y < nMapHeight; y++) {
+                wchar_t c = L' ';
                 // Y is reversed when displayed
-                int pos = (nMapHeight - y - 1) * nScreenWidth + x;
                 if (x == (int)fPlayerX && y == (int)fPlayerY) {
                     float fDirX = sinf(fPlayerA);
                     float fDirY = cosf(fPlayerA);
                     if (fabs(fDirX) > fabs(fDirY)) {
                         if (fDirX < 0) {
-                            screen[pos] = '<';
+                            c = L'<';
                         }
                         else {
-                            screen[pos] = '>';
+                            c = L'>';
                         }
                     }
                     else {
                         if (fDirY < 0) {
-                            screen[pos] = 'v';
+                            c = L'v';
                         }
                         else {
-                            screen[pos] = '^';
+                            c = L'^';
                         }
                     }
                 }
                 else {
-                    screen[pos] = map[y * nMapWidth + x];
+                    c = map[y * nMapWidth + x];
                 }
+                Draw(x, (nMapHeight - y - 1), c);
             }
         }
 
-        sprintf_s(screen+50, 50, "X=%4.2f, Y=%4.2f, A=%5.2f, FPS=%8.2f", fPlayerX, fPlayerY, fPlayerA, 1.0 / elapsed.count());
+        wstring display;
+        display += L"X=" + to_wstring(fPlayerX);
+        display += L", Y = " + to_wstring(fPlayerY);
+        display += L", A = " + to_wstring(fPlayerA);
+        
+        DrawString(50, 0, display);
 
-        DWORD dwWritten = 0;
-        WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth*nScreenHeight, { 0, 0 }, &dwWritten);
+        return true;
     }
+};
+
+int main()
+{
+    FPSGame game;
+    game.ConstructConsole(160, 90, 8, 8);
+    game.Start();
 
     return 0;
 }
