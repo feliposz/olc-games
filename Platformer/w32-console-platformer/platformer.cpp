@@ -13,6 +13,7 @@ class PlatformerGame : public olcConsoleGameEngine
     float PlayerVelY = 0;
     float CameraPosX = 0;
     float CameraPosY = 0;
+    bool PlayerOnGround = false;
 
     virtual bool OnUserCreate() override
     {
@@ -26,7 +27,7 @@ class PlatformerGame : public olcConsoleGameEngine
         Level += L"....#............##.........#.#...............................#.";
         Level += L".......#........###.........#.#.............................#.#.";
         Level += L"...............####.......................................#.#.#.";
-        Level += L"##################################.##########....###############";
+        Level += L"##################################.########......###############";
         Level += L".................................#.#...........##...............";
         Level += L".....................#############.#.........##.................";
         Level += L".....................#.............#.......##...................";
@@ -40,33 +41,47 @@ class PlatformerGame : public olcConsoleGameEngine
 
     virtual bool OnUserUpdate(float fElapsedTime) override
     {
-        int tileWidth = 16;
-        int tileHeight = 16;
+        int tileWidth = 8;
+        int tileHeight = 8;
 
         int visibleTilesX = ScreenWidth() / tileWidth;
         int visibleTilesY = ScreenHeight() / tileHeight;
 
         // Player movement
 
-        PlayerVelX = 0;
-        PlayerVelY = 0;
-
         if (IsFocused()) {
             if (GetKey(VK_LEFT).bHeld) {
-                PlayerVelX -= 6.0f;
+                PlayerVelX -= (PlayerOnGround ? 8.0f : 4.0f) * fElapsedTime;
             }
             if (GetKey(VK_RIGHT).bHeld) {
-                PlayerVelX += 6.0f;
+                PlayerVelX += (PlayerOnGround ? 8.0f : 4.0f) * fElapsedTime;
             }
             if (GetKey(VK_UP).bHeld) {
-                PlayerVelY -= 6.0f;
+                PlayerVelY -= 6.0f * fElapsedTime;
             }
             if (GetKey(VK_DOWN).bHeld) {
-                PlayerVelY += 6.0f;
+                PlayerVelY += 6.0f * fElapsedTime;
+            }
+            if (GetKey(VK_SPACE).bPressed && PlayerOnGround) { // Jump
+                PlayerVelY -= 12.0f;
             }
         }
 
+        PlayerVelY += 20.0f * fElapsedTime;
+
         // Collisions
+
+        if (PlayerOnGround) {
+            PlayerVelX += -2.0f * PlayerVelX * fElapsedTime;
+            if (fabs(PlayerVelX) < 0.01f) {
+                PlayerVelX = 0;
+            }
+        }
+
+        if (PlayerVelX < -10.0f) { PlayerVelX = -10.0f; }
+        if (PlayerVelX > 10.0f) { PlayerVelX = 10.0f; }
+        if (PlayerVelY < -100.0f) { PlayerVelY = -100.0f; }
+        if (PlayerVelY > 100.0f) { PlayerVelY = 100.0f; }
 
         float newPlayerPosX = PlayerPosX + PlayerVelX * fElapsedTime;
         float newPlayerPosY = PlayerPosY + PlayerVelY * fElapsedTime;
@@ -84,6 +99,8 @@ class PlatformerGame : public olcConsoleGameEngine
             }
         }
 
+        PlayerOnGround = false;
+
         if (PlayerVelY <= 0) {
             if (GetTile(newPlayerPosX + 0.0f, newPlayerPosY + 0.0f) != L'.' || GetTile(newPlayerPosX + 0.9f, newPlayerPosY + 0.0f) != L'.') {
                 newPlayerPosY = (int)newPlayerPosY + 1;
@@ -94,6 +111,7 @@ class PlatformerGame : public olcConsoleGameEngine
             if (GetTile(newPlayerPosX + 0.0f, newPlayerPosY + 1.0f) != L'.' || GetTile(newPlayerPosX + 0.9f, newPlayerPosY + 1.0f) != L'.') {
                 newPlayerPosY = (int)newPlayerPosY;
                 PlayerVelY = 0;
+                PlayerOnGround = true;
             }
         }
 
