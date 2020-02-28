@@ -1,9 +1,16 @@
 #include "olcConsoleGameEngine.h"
 #include <string>
+#include <list>
 using namespace std;
 
 const float PI = 3.14159f;
 const float PI_2 = PI / 2.0f;
+
+struct Object {
+    float x;
+    float y;
+    olcSprite *spr;
+};
 
 class FPSGame : public olcConsoleGameEngine {
 private:
@@ -14,7 +21,10 @@ private:
     float fPlayerY = 8.0f;
     float fPlayerA = 0.0f;
     float fFOV = PI / 4.0f;
+    float *fDepthBuffer;
     olcSprite sprWall;
+    olcSprite sprLamp;
+    list<Object> lstObjects;
 
 public:
 
@@ -54,9 +64,19 @@ public:
         map += "################################";
 
         sprWall.Load(L"Sprites/fps_wall1.spr");
+        sprLamp.Load(L"Sprites/fps_lamp1.spr");
+
+        lstObjects.push_back({ 1.5f, 2.5f, &sprLamp });
+        lstObjects.push_back({ 2.5f, 3.5f, &sprLamp });
+        lstObjects.push_back({ 4.5f, 5.5f, &sprLamp });
+        lstObjects.push_back({ 5.5f, 5.5f, &sprLamp });
+        lstObjects.push_back({ 10.5f, 13.5f, &sprLamp });
+
+        fDepthBuffer = new float[ScreenWidth()];
 
         return true;
     }
+
     virtual bool OnUserUpdate(float fElapsedTime) override
     {
 
@@ -159,6 +179,8 @@ public:
                 }
             }
 
+            fDepthBuffer[x] = fDistanceToWall;
+
             // Calculate wall height
 
             int nWallHeight = ScreenHeight() / fDistanceToWall;
@@ -256,12 +278,41 @@ public:
             }
         }
 
-        wstring display;
-        display += L"X=" + to_wstring(fPlayerX);
-        display += L", Y = " + to_wstring(fPlayerY);
-        display += L", A = " + to_wstring(fPlayerA);
-        
-        DrawString(50, 0, display);
+        for (auto &o : lstObjects) {
+            // Place object on mini-map
+            Draw(o.x, (nMapHeight - o.y - 1), L'o');
+            // Check angle and distance from object
+            float fVecX = o.x - fPlayerX;
+            float fVecY = o.y - fPlayerY;
+            float fObjectDist = sqrt(fVecX*fVecX + fVecY*fVecY);
+            float fObjectAngle = atan2f(cosf(fPlayerA), sinf(fPlayerA)) - atan2f(fVecY, fVecX);
+            if (fObjectAngle < -PI) { fObjectAngle += PI * 2.0f; }
+            if (fObjectAngle > PI) { fObjectAngle -= PI * 2.0f; }
+            bool bObjectVisible = (fabs(fObjectAngle) < fFOV / 2.0f) && fObjectDist >= 0.5f && fObjectDist < fDepth;
+            if (bObjectVisible) {
+                // Object dimensions
+                int nObjectCeiling = (ScreenHeight() / 2.0f) - ScreenHeight() / fObjectDist;
+                int nObjectFloor = ScreenHeight() - nObjectCeiling;
+                int nObjectHeight = nObjectFloor - nObjectCeiling;
+                float fAspectRatio = (float)o.spr->nWidth / o.spr->nHeight;
+                int nObjectWidth = nObjectHeight * fAspectRatio;
+                int nObjectMidX = (0.5f * (fObjectAngle / (fFOV / 2.0f)) + 0.5f) * (float)ScreenWidth();
+                for (int x = 0; x < nObjectWidth; x++) {
+                    int nDrawX = nObjectMidX + x - nObjectWidth / 2;
+                    // Use buffer to check if object is behind a wall
+                    if (fObjectDist < fDepthBuffer[nDrawX]) {
+                        for (int y = 0; y < nObjectHeight; y++) {
+                            short nGlyph = o.spr->SampleGlyph((float)x / nObjectWidth, (float)y / nObjectHeight);
+                            short nColor = o.spr->SampleColour((float)x / nObjectWidth, (float)y / nObjectHeight);
+                            if (nGlyph != L' ') { // Transparent
+                                Draw(nDrawX, nObjectCeiling + y, nGlyph, nColor);
+                            }
+                            fDepthBuffer[nDrawX] = fObjectDist;
+                        }
+                    }
+                }
+            }
+        }
 
         return true;
     }
