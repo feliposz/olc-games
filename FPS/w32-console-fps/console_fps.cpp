@@ -9,7 +9,10 @@ const float PI_2 = PI / 2.0f;
 struct Object {
     float x;
     float y;
-    olcSprite *spr;
+    float vx;
+    float vy;
+    bool bRemove;
+    olcSprite *sprite;
 };
 
 class FPSGame : public olcConsoleGameEngine {
@@ -24,6 +27,7 @@ private:
     float *fDepthBuffer;
     olcSprite sprWall;
     olcSprite sprLamp;
+    olcSprite sprFireball;
     list<Object> lstObjects;
 
 public:
@@ -65,12 +69,13 @@ public:
 
         sprWall.Load(L"Sprites/fps_wall1.spr");
         sprLamp.Load(L"Sprites/fps_lamp1.spr");
+        sprFireball.Load(L"Sprites/fps_fireball1.spr");
 
-        lstObjects.push_back({ 1.5f, 2.5f, &sprLamp });
-        lstObjects.push_back({ 2.5f, 3.5f, &sprLamp });
-        lstObjects.push_back({ 4.5f, 5.5f, &sprLamp });
-        lstObjects.push_back({ 5.5f, 5.5f, &sprLamp });
-        lstObjects.push_back({ 10.5f, 13.5f, &sprLamp });
+        lstObjects.push_back({ 1.5f, 2.5f, 0, 0, false, &sprLamp });
+        lstObjects.push_back({ 2.5f, 3.5f, 0, 0, false, &sprLamp });
+        lstObjects.push_back({ 4.5f, 5.5f, 0, 0, false, &sprLamp });
+        lstObjects.push_back({ 5.5f, 5.5f, 0, 0, false, &sprLamp });
+        lstObjects.push_back({ 10.5f, 13.5f, 0, 0, false, &sprLamp });
 
         fDepthBuffer = new float[ScreenWidth()];
 
@@ -122,6 +127,20 @@ public:
             fDeltaX += fPlayerSpeed * sinf(fPlayerA + PI_2) * fElapsedTime;
             fDeltaY += fPlayerSpeed * cosf(fPlayerA + PI_2) * fElapsedTime;
         }
+
+        if (GetKey(VK_SPACE).bPressed) {
+            float fNoise = ((float)rand() / RAND_MAX - 0.5f) * 0.1f;
+            Object oFireball = {
+                fPlayerX,
+                fPlayerY,
+                8.0f * sinf(fPlayerA + fNoise),
+                8.0f * cosf(fPlayerA + fNoise),
+                false,
+                &sprFireball
+            };
+            lstObjects.push_back(oFireball);
+        }
+
 
         // Test for wall collision
         int nTestPlayerX = (int)(fPlayerX + fDeltaX);
@@ -279,12 +298,21 @@ public:
         }
 
         for (auto &o : lstObjects) {
+            // Update object position
+            o.x += o.vx * fElapsedTime;
+            o.y += o.vy * fElapsedTime;
+            if (o.x < 0 || o.x >= nMapWidth || o.y < 0 || o.y >= nMapHeight || map[(int)o.y * nMapWidth + (int)o.x] == '#') {
+                o.bRemove = true;
+            }
+            if (o.bRemove) {
+                continue; // Skip removed objects
+            }
             // Place object on mini-map
             Draw(o.x, (nMapHeight - o.y - 1), L'o');
             // Check angle and distance from object
             float fVecX = o.x - fPlayerX;
             float fVecY = o.y - fPlayerY;
-            float fObjectDist = sqrt(fVecX*fVecX + fVecY*fVecY);
+            float fObjectDist = sqrt(fVecX*fVecX + fVecY * fVecY);
             float fObjectAngle = atan2f(cosf(fPlayerA), sinf(fPlayerA)) - atan2f(fVecY, fVecX);
             if (fObjectAngle < -PI) { fObjectAngle += PI * 2.0f; }
             if (fObjectAngle > PI) { fObjectAngle -= PI * 2.0f; }
@@ -294,7 +322,7 @@ public:
                 int nObjectCeiling = (ScreenHeight() / 2.0f) - ScreenHeight() / fObjectDist;
                 int nObjectFloor = ScreenHeight() - nObjectCeiling;
                 int nObjectHeight = nObjectFloor - nObjectCeiling;
-                float fAspectRatio = (float)o.spr->nWidth / o.spr->nHeight;
+                float fAspectRatio = (float)o.sprite->nWidth / o.sprite->nHeight;
                 int nObjectWidth = nObjectHeight * fAspectRatio;
                 int nObjectMidX = (0.5f * (fObjectAngle / (fFOV / 2.0f)) + 0.5f) * (float)ScreenWidth();
                 for (int x = 0; x < nObjectWidth; x++) {
@@ -302,8 +330,8 @@ public:
                     // Use buffer to check if object is behind a wall
                     if (fObjectDist < fDepthBuffer[nDrawX]) {
                         for (int y = 0; y < nObjectHeight; y++) {
-                            short nGlyph = o.spr->SampleGlyph((float)x / nObjectWidth, (float)y / nObjectHeight);
-                            short nColor = o.spr->SampleColour((float)x / nObjectWidth, (float)y / nObjectHeight);
+                            short nGlyph = o.sprite->SampleGlyph((float)x / nObjectWidth, (float)y / nObjectHeight);
+                            short nColor = o.sprite->SampleColour((float)x / nObjectWidth, (float)y / nObjectHeight);
                             if (nGlyph != L' ') { // Transparent
                                 Draw(nDrawX, nObjectCeiling + y, nGlyph, nColor);
                             }
@@ -313,6 +341,8 @@ public:
                 }
             }
         }
+
+        lstObjects.remove_if([&](Object o) { return o.bRemove; });
 
         return true;
     }
