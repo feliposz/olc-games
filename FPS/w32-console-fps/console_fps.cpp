@@ -72,38 +72,47 @@ public:
             fPlayerA += fTurnSpeed * fElapsedTime;
         }
 
-        float ffElapsedTimeX = 0.0f;
-        float ffElapsedTimeY = 0.0f;
+        while (fPlayerA < -PI) {
+            fPlayerA += PI * 2.0f;
+        }
+        while (fPlayerA > PI) {
+            fPlayerA -= PI * 2.0f;
+        }
+
+        float fDeltaX = 0.0f;
+        float fDeltaY = 0.0f;
 
         // Player movement
         if (GetKey(VK_UP).bHeld || GetKey('W').bHeld) {
-            ffElapsedTimeX += fPlayerSpeed * sinf(fPlayerA) * fElapsedTime;
-            ffElapsedTimeY += fPlayerSpeed * cosf(fPlayerA) * fElapsedTime;
+            fDeltaX += fPlayerSpeed * sinf(fPlayerA) * fElapsedTime;
+            fDeltaY += fPlayerSpeed * cosf(fPlayerA) * fElapsedTime;
         }
 
         if (GetKey(VK_DOWN).bHeld || GetKey('S').bHeld) {
-            ffElapsedTimeX -= fPlayerSpeed * sinf(fPlayerA) * fElapsedTime;
-            ffElapsedTimeY -= fPlayerSpeed * cosf(fPlayerA) * fElapsedTime;
+            fDeltaX -= fPlayerSpeed * sinf(fPlayerA) * fElapsedTime;
+            fDeltaY -= fPlayerSpeed * cosf(fPlayerA) * fElapsedTime;
         }
 
         if (GetKey('A').bHeld) {
-            ffElapsedTimeX += fPlayerSpeed * sinf(fPlayerA - PI_2) * fElapsedTime;
-            ffElapsedTimeY += fPlayerSpeed * cosf(fPlayerA - PI_2) * fElapsedTime;
+            fDeltaX += fPlayerSpeed * sinf(fPlayerA - PI_2) * fElapsedTime;
+            fDeltaY += fPlayerSpeed * cosf(fPlayerA - PI_2) * fElapsedTime;
         }
 
         if (GetKey('D').bHeld) {
-            ffElapsedTimeX += fPlayerSpeed * sinf(fPlayerA + PI_2) * fElapsedTime;
-            ffElapsedTimeY += fPlayerSpeed * cosf(fPlayerA + PI_2) * fElapsedTime;
+            fDeltaX += fPlayerSpeed * sinf(fPlayerA + PI_2) * fElapsedTime;
+            fDeltaY += fPlayerSpeed * cosf(fPlayerA + PI_2) * fElapsedTime;
         }
 
         // Test for wall collision
-        int nTestPlayerX = (int)(fPlayerX + ffElapsedTimeX);
-        int nTestPlayerY = (int)(fPlayerY + ffElapsedTimeY);
+        int nTestPlayerX = (int)(fPlayerX + fDeltaX);
+        int nTestPlayerY = (int)(fPlayerY + fDeltaY);
 
         if (map[nTestPlayerY * nMapWidth + nTestPlayerX] != '#') {
-            fPlayerX += ffElapsedTimeX;
-            fPlayerY += ffElapsedTimeY;
+            fPlayerX += fDeltaX;
+            fPlayerY += fDeltaY;
         }
+
+        float fDepth = 16.0f;
 
         for (int x = 0; x < ScreenWidth(); x++) {
 
@@ -114,7 +123,6 @@ public:
             float fEyeX = sinf(fRayAngle);
             float fEyeY = cosf(fRayAngle);
             float fDistanceToWall = 0.0f;
-            float fDepth = 16.0f;
             bool bHitWall = false;
 
             float fSampleX = 0;
@@ -214,6 +222,8 @@ public:
                 }
             }
         }
+
+        // Map display
 
         for (int x = 0; x < nMapWidth; x++) {
             for (int y = 0; y < nMapHeight; y++) {
