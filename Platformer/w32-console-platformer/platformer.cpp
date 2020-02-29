@@ -41,8 +41,8 @@ class PlatformerGame : public olc::PixelGameEngine
         Level += L".....................GGGGGGGGGGGGGGGGGG.........................";
         Level += L"................................................................";
 
-        sprLevel.LoadFromFile("Sprites/leveljario.spr");
-        sprJario.LoadFromFile("Sprites/minijario.spr");
+        sprLevel.LoadFromFile("Sprites/leveljario.png");
+        sprJario.LoadFromFile("Sprites/minijario.png");
 
         return true;
     }
@@ -166,13 +166,13 @@ class PlatformerGame : public olc::PixelGameEngine
                 int tileY = y * tileHeight - tileOffsetY;
                 switch (tile) {
                 case L'.':
-                    DrawRect(tileX, tileY, tileX + tileWidth, tileY + tileHeight, olc::CYAN);
+                    FillRect(tileX, tileY, tileX + tileWidth, tileY + tileHeight, olc::CYAN);
                     break;
                 case L'#':
                     DrawPartialSprite(tileX, tileY, &sprLevel, 2 * tileWidth, 0 * tileHeight, tileWidth, tileHeight);
                     break;
                 case L'o':
-                    DrawRect(tileX, tileY, tileX + tileWidth, tileY + tileHeight, olc::CYAN);
+                    FillRect(tileX, tileY, tileX + tileWidth, tileY + tileHeight, olc::CYAN);
                     DrawPartialSprite(tileX, tileY, &sprLevel, 3 * tileWidth, 0 * tileHeight, tileWidth, tileHeight);
                     break;
                 case L'B':
@@ -222,6 +222,7 @@ int main()
 {
     PlatformerGame game;
     game.Construct(256, 240, 4, 4);
+    game.SetPixelMode(olc::Pixel::ALPHA);
     game.Start();
 
     return 0;
