@@ -222,7 +222,7 @@ int main()
 {
     PlatformerGame game;
     game.Construct(256, 240, 4, 4);
-    game.SetPixelMode(olc::Pixel::ALPHA);
+    game.SetPixelMode(olc::Pixel::MASK);
     game.Start();
 
     return 0;
