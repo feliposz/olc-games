@@ -1,6 +1,7 @@
-#include "rpg_map.h"
-
 #include <fstream>
+
+#include "rpg_map.h"
+#include "rpg_assets.h"
 
 namespace Rpg {
 
@@ -14,7 +15,7 @@ namespace Rpg {
         delete[] m_solids;
     }
 
-    void Map::Create(std::string filename)
+    void Map::Create(std::string filename, olc::Sprite *sprite)
     {
         std::ifstream input(filename, std::ios_base::in);
 
@@ -29,6 +30,8 @@ namespace Rpg {
             }
         }
         input.close();
+
+        Sprite = sprite;
     }
 
     int Map::GetIndex(int x, int y)
@@ -53,6 +56,6 @@ namespace Rpg {
 
     MapVillage1::MapVillage1() : Map()
     {
-        Create("rpgdata/map/village1.lvl");
+        Create("rpgdata/map/village1.lvl", Assets::GetInstance().GetSprite("village"));
     }
 }

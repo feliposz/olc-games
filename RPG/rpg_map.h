@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include "olcPixelGameEngine.h"
 
 namespace Rpg {
 
@@ -9,6 +10,7 @@ namespace Rpg {
     public:
         int Width;
         int Height;
+        olc::Sprite *Sprite = nullptr;
 
         Map();
         ~Map();
@@ -16,7 +18,7 @@ namespace Rpg {
         int GetIndex(int x, int y);
         bool GetSolid(int x, int y);
 
-        void Create(std::string filename);
+        void Create(std::string filename, olc::Sprite *sprite);
 
     private:
         int *m_indices = nullptr;

@@ -3,6 +3,7 @@
 #include "olcPixelGameEngine.h"
 
 #include "rpg_map.h"
+#include "rpg_assets.h"
 
 namespace Rpg {
     class Game : public olc::PixelGameEngine
@@ -17,14 +18,13 @@ namespace Rpg {
         bool PlayerOnGround = false;
         bool PlayerFacingLeft = false;
         olc::Sprite sprJario;
-        olc::Sprite sprLevel;
 
         virtual bool OnUserCreate() override
         {
-            CurrentMap = new MapVillage1();
-
-            sprLevel.LoadFromPGESprFile("rpgdata/gfx/toml_spritesheetdark.spr");
+            Assets::GetInstance().LoadSprites();
             sprJario.LoadFromPGESprFile("Sprites/minijario.spr");
+
+            CurrentMap = new MapVillage1();
 
             return true;
         }
@@ -132,7 +132,7 @@ namespace Rpg {
                     int tileY = y * tileHeight - tileOffsetY;
                     int sx = index % 10;
                     int sy = index / 10;
-                    DrawPartialSprite(tileX, tileY, &sprLevel, sx * tileWidth, sy * tileHeight, tileWidth, tileHeight);                    
+                    DrawPartialSprite(tileX, tileY, CurrentMap->Sprite, sx * tileWidth, sy * tileHeight, tileWidth, tileHeight);                    
                 }
             }
 
