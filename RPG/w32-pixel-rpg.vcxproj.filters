@@ -18,9 +18,15 @@
     <ClCompile Include="rpg_main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="rpg_map.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="olcPixelGameEngine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="rpg_map.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
