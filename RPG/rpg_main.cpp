@@ -2,7 +2,7 @@
 #define OLC_PGE_APPLICATION
 #include "olcPixelGameEngine.h"
 
-class PlatformerGame : public olc::PixelGameEngine
+class RpgGame : public olc::PixelGameEngine
 {
     std::wstring Level;
     int LevelWidth = 0;
@@ -39,8 +39,8 @@ class PlatformerGame : public olc::PixelGameEngine
         Level += L".....................GGGGGGGGGGGGGGGGGG.........................";
         Level += L"................................................................";
 
-        sprLevel.LoadFromFile("Sprites/leveljario.png");
-        sprJario.LoadFromFile("Sprites/minijario.png");
+        sprLevel.LoadFromPGESprFile("Sprites/leveljario.spr");
+        sprJario.LoadFromPGESprFile("Sprites/minijario.spr");
 
         return true;
     }
@@ -218,7 +218,7 @@ class PlatformerGame : public olc::PixelGameEngine
 
 int main()
 {
-    PlatformerGame game;
+    RpgGame game;
     game.Construct(256, 240, 4, 4);
     game.SetPixelMode(olc::Pixel::MASK);
     game.Start();
