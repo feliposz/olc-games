@@ -13,8 +13,6 @@ namespace Rpg {
         Dynamic *Player;
         float CameraPosX = 0;
         float CameraPosY = 0;
-        bool PlayerOnGround = false;
-        bool PlayerFacingLeft = false;
 
         virtual bool OnUserCreate() override
         {
@@ -87,8 +85,6 @@ namespace Rpg {
                 }
             }
 
-            PlayerOnGround = false;
-
             if (object->vy <= 0) {
                 if (CurrentMap->GetSolid(newObjectPosX + 0.0f, newObjectPosY + 0.0f) || CurrentMap->GetSolid(newObjectPosX + 0.9f, newObjectPosY + 0.0f)) {
                     newObjectPosY = (int)newObjectPosY + 1;
@@ -99,7 +95,6 @@ namespace Rpg {
                 if (CurrentMap->GetSolid(newObjectPosX + 0.0f, newObjectPosY + 1.0f) || CurrentMap->GetSolid(newObjectPosX + 0.9f, newObjectPosY + 1.0f)) {
                     newObjectPosY = (int)newObjectPosY;
                     object->vy = 0;
-                    PlayerOnGround = true;
                 }
             }
 
