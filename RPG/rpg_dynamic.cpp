@@ -1,4 +1,5 @@
 #include "rpg_dynamic.h"
+#include "rpg_assets.h"
 
 namespace Rpg {
 
@@ -66,22 +67,22 @@ namespace Rpg {
         int spriteSheetY = 0;
         switch (m_state) {
         case STANDING:
-            spriteSheetX = m_direction * 16;
-            spriteSheetY = 0 * 16;
+            spriteSheetX = m_direction * Assets::TileWidth;
+            spriteSheetY = 0 * Assets::TileHeight;
             break;
         case WALKING:
-            spriteSheetX = m_direction * 16;
-            spriteSheetY = m_frame * 16;
+            spriteSheetX = m_direction * Assets::TileWidth;
+            spriteSheetY = m_frame * Assets::TileHeight;
             break;
         case CELEBRATING:
-            spriteSheetX = 4 * 16;
-            spriteSheetY = 0 * 16;
+            spriteSheetX = 4 * Assets::TileWidth;
+            spriteSheetY = 0 * Assets::TileHeight;
             break;
         case DEAD:
-            spriteSheetX = 4 * 16;
-            spriteSheetY = 1 * 16;
+            spriteSheetX = 4 * Assets::TileWidth;
+            spriteSheetY = 1 * Assets::TileHeight;
             break;
         }
-        engine->DrawPartialSprite((px - ox) * 16, (py - oy) * 16, m_sprite, spriteSheetX, spriteSheetY, 16, 16);
+        engine->DrawPartialSprite((px - ox) * Assets::TileWidth, (py - oy) * Assets::TileHeight, m_sprite, spriteSheetX, spriteSheetY, Assets::TileWidth, Assets::TileHeight);
     }
 }

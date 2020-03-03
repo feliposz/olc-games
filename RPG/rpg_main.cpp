@@ -30,11 +30,9 @@ namespace Rpg {
 
         virtual bool OnUserUpdate(float fElapsedTime) override
         {
-            int tileWidth = 16;
-            int tileHeight = 16;
 
-            int visibleTilesX = ScreenWidth() / tileWidth;
-            int visibleTilesY = ScreenHeight() / tileHeight;
+            int visibleTilesX = ScreenWidth() / Assets::TileWidth;
+            int visibleTilesY = ScreenHeight() / Assets::TileHeight;
 
             // Player movement
 
@@ -123,17 +121,17 @@ namespace Rpg {
             if (levelOffsetX > (CurrentMap->Width - visibleTilesX)) { levelOffsetX = CurrentMap->Width - visibleTilesX; }
             if (levelOffsetY > (CurrentMap->Height - visibleTilesY)) { levelOffsetY = CurrentMap->Height - visibleTilesY; }
 
-            float tileOffsetX = (levelOffsetX - (int)levelOffsetX) * tileWidth;
-            float tileOffsetY = (levelOffsetY - (int)levelOffsetY) * tileHeight;
+            float tileOffsetX = (levelOffsetX - (int)levelOffsetX) * Assets::TileWidth;
+            float tileOffsetY = (levelOffsetY - (int)levelOffsetY) * Assets::TileHeight;
 
             for (int y = -1; y <= visibleTilesY + 1; y++) {
                 for (int x = -1; x <= visibleTilesX + 1; x++) {
                     int index = CurrentMap->GetIndex(x + levelOffsetX, y + levelOffsetY);
-                    int tileX = x * tileWidth - tileOffsetX;
-                    int tileY = y * tileHeight - tileOffsetY;
+                    int tileX = x * Assets::TileWidth - tileOffsetX;
+                    int tileY = y * Assets::TileHeight - tileOffsetY;
                     int sx = index % 10;
                     int sy = index / 10;
-                    DrawPartialSprite(tileX, tileY, CurrentMap->Sprite, sx * tileWidth, sy * tileHeight, tileWidth, tileHeight);                    
+                    DrawPartialSprite(tileX, tileY, CurrentMap->Sprite, sx * Assets::TileWidth, sy * Assets::TileHeight, Assets::TileWidth, Assets::TileHeight);
                 }
             }
 

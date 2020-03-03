@@ -7,6 +7,9 @@
 namespace Rpg {
     class Assets {
     public:
+        static const int TileWidth = 16;
+        static const int TileHeight = 16;
+
         Assets(Assets const&) = delete;
         void operator=(Assets const&) = delete;
 
