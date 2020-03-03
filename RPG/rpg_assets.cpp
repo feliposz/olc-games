@@ -25,6 +25,7 @@ namespace Rpg {
         };
 
         loadSpriteData("village", "rpgdata/gfx/toml_spritesheetdark.spr");
+        loadSpriteData("player", "rpgdata/gfx/toml_CharacterSprites.spr");
     }
 
     olc::Sprite * Assets::GetSprite(std::string name)

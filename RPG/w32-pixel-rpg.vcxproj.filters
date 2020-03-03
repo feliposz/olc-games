@@ -24,6 +24,9 @@
     <ClCompile Include="rpg_assets.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="rpg_dynamic.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="olcPixelGameEngine.h">
@@ -33,6 +36,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="rpg_assets.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="rpg_dynamic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

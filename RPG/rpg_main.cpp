@@ -4,27 +4,26 @@
 
 #include "rpg_map.h"
 #include "rpg_assets.h"
+#include "rpg_dynamic.h"
 
 namespace Rpg {
     class Game : public olc::PixelGameEngine
     {
         Map *CurrentMap;
-        float PlayerPosX = 10;
-        float PlayerPosY = 10;
-        float PlayerVelX = 0;
-        float PlayerVelY = 0;
+        Dynamic *Player;
         float CameraPosX = 0;
         float CameraPosY = 0;
         bool PlayerOnGround = false;
         bool PlayerFacingLeft = false;
-        olc::Sprite sprJario;
 
         virtual bool OnUserCreate() override
         {
             Assets::GetInstance().LoadSprites();
-            sprJario.LoadFromPGESprFile("Sprites/minijario.spr");
 
             CurrentMap = new MapVillage1();
+            Player = new DynamicCreature("player", Assets::GetInstance().GetSprite("player"));
+            Player->px = 5;
+            Player->py = 5;
 
             return true;
         }
@@ -41,78 +40,80 @@ namespace Rpg {
 
             if (IsFocused()) {
                 if (GetKey(olc::LEFT).bHeld) {
-                    PlayerVelX -= 10.0f * fElapsedTime;
-                    PlayerFacingLeft = true;
+                    Player->vx -= 10.0f * fElapsedTime;
                 }
                 if (GetKey(olc::RIGHT).bHeld) {
-                    PlayerVelX += 10.0f * fElapsedTime;
-                    PlayerFacingLeft = false;
+                    Player->vx += 10.0f * fElapsedTime;
                 }
                 if (GetKey(olc::UP).bHeld) {
-                    PlayerVelY -= 10.0f * fElapsedTime;
+                    Player->vy -= 10.0f * fElapsedTime;
                 }
                 if (GetKey(olc::DOWN).bHeld) {
-                    PlayerVelY += 10.0f * fElapsedTime;
+                    Player->vy += 10.0f * fElapsedTime;
                 }
             }
 
             // Friction
 
-            PlayerVelX += -3.0f * PlayerVelX * fElapsedTime;
-            if (fabs(PlayerVelX) < 0.01f) {
-                PlayerVelX = 0;
+            Dynamic *object = Player;
+
+            object->vx += -3.0f * object->vx * fElapsedTime;
+            if (fabs(object->vx) < 0.01f) {
+                object->vx = 0;
             }
-            PlayerVelY += -3.0f * PlayerVelY * fElapsedTime;
-            if (fabs(PlayerVelY) < 0.01f) {
-                PlayerVelY = 0;
+            object->vy += -3.0f * object->vy * fElapsedTime;
+            if (fabs(object->vy) < 0.01f) {
+                object->vy = 0;
             }
 
-            if (PlayerVelX < -10.0f) { PlayerVelX = -10.0f; }
-            if (PlayerVelX > 10.0f) { PlayerVelX = 10.0f; }
-            if (PlayerVelY < -100.0f) { PlayerVelY = -100.0f; }
-            if (PlayerVelY > 100.0f) { PlayerVelY = 100.0f; }
+            if (object->vx < -10.0f) { object->vx = -10.0f; }
+            if (object->vx > 10.0f) { object->vx = 10.0f; }
+            if (object->vy < -100.0f) { object->vy = -100.0f; }
+            if (object->vy > 100.0f) { object->vy = 100.0f; }
 
-            float newPlayerPosX = PlayerPosX + PlayerVelX * fElapsedTime;
-            float newPlayerPosY = PlayerPosY + PlayerVelY * fElapsedTime;
+            float newObjectPosX = object->px + object->vx * fElapsedTime;
+            float newObjectPosY = object->py + object->vy * fElapsedTime;
 
             // Collisions
 
-            if (PlayerVelX <= 0) {
-                if (CurrentMap->GetSolid(newPlayerPosX + 0.0f, PlayerPosY + 0.0f) || CurrentMap->GetSolid(newPlayerPosX + 0.0f, PlayerPosY + 0.9f)) {
-                    newPlayerPosX = (int)newPlayerPosX + 1;
-                    PlayerVelX = 0;
+            if (object->vx <= 0) {
+                if (CurrentMap->GetSolid(newObjectPosX + 0.0f, object->py + 0.0f) || CurrentMap->GetSolid(newObjectPosX + 0.0f, object->py + 0.9f)) {
+                    newObjectPosX = (int)newObjectPosX + 1;
+                    object->vx = 0;
                 }
             }
             else {
-                if (CurrentMap->GetSolid(newPlayerPosX + 1.0f, PlayerPosY + 0.0f) || CurrentMap->GetSolid(newPlayerPosX + 1.0f, PlayerPosY + 0.9f)) {
-                    newPlayerPosX = (int)newPlayerPosX;
-                    PlayerVelX = 0;
+                if (CurrentMap->GetSolid(newObjectPosX + 1.0f, object->py + 0.0f) || CurrentMap->GetSolid(newObjectPosX + 1.0f, object->py + 0.9f)) {
+                    newObjectPosX = (int)newObjectPosX;
+                    object->vx = 0;
                 }
             }
 
             PlayerOnGround = false;
 
-            if (PlayerVelY <= 0) {
-                if (CurrentMap->GetSolid(newPlayerPosX + 0.0f, newPlayerPosY + 0.0f) || CurrentMap->GetSolid(newPlayerPosX + 0.9f, newPlayerPosY + 0.0f)) {
-                    newPlayerPosY = (int)newPlayerPosY + 1;
-                    PlayerVelY = 0;
+            if (object->vy <= 0) {
+                if (CurrentMap->GetSolid(newObjectPosX + 0.0f, newObjectPosY + 0.0f) || CurrentMap->GetSolid(newObjectPosX + 0.9f, newObjectPosY + 0.0f)) {
+                    newObjectPosY = (int)newObjectPosY + 1;
+                    object->vy = 0;
                 }
             }
             else {
-                if (CurrentMap->GetSolid(newPlayerPosX + 0.0f, newPlayerPosY + 1.0f) || CurrentMap->GetSolid(newPlayerPosX + 0.9f, newPlayerPosY + 1.0f)) {
-                    newPlayerPosY = (int)newPlayerPosY;
-                    PlayerVelY = 0;
+                if (CurrentMap->GetSolid(newObjectPosX + 0.0f, newObjectPosY + 1.0f) || CurrentMap->GetSolid(newObjectPosX + 0.9f, newObjectPosY + 1.0f)) {
+                    newObjectPosY = (int)newObjectPosY;
+                    object->vy = 0;
                     PlayerOnGround = true;
                 }
             }
 
-            PlayerPosX = newPlayerPosX;
-            PlayerPosY = newPlayerPosY;
+            object->px = newObjectPosX;
+            object->py = newObjectPosY;
+
+            object->Update(fElapsedTime);
 
             // Rendering
 
-            CameraPosX = PlayerPosX;
-            CameraPosY = PlayerPosY;
+            CameraPosX = Player->px;
+            CameraPosY = Player->py;
 
             float levelOffsetX = CameraPosX - visibleTilesX / 2.0f;
             float levelOffsetY = CameraPosY - visibleTilesY / 2.0f;
@@ -136,11 +137,7 @@ namespace Rpg {
                 }
             }
 
-            int playerX = (int)((PlayerPosX - levelOffsetX) * tileWidth);
-            int playerY = (int)((PlayerPosY - levelOffsetY) * tileHeight);
-            int spriteX = 0;
-            int spriteY = PlayerFacingLeft ? 1 : 0;
-            DrawPartialSprite(playerX, playerY, &sprJario, spriteX * tileWidth, spriteY * tileHeight, tileWidth, tileHeight);
+            Player->Draw(this, levelOffsetX, levelOffsetY);
 
             return true;
         }
