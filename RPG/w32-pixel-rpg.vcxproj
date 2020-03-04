@@ -116,6 +116,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="rpg_assets.cpp" />
+    <ClCompile Include="rpg_command.cpp" />
     <ClCompile Include="rpg_dynamic.cpp" />
     <ClCompile Include="rpg_main.cpp" />
     <ClCompile Include="rpg_map.cpp" />
@@ -123,6 +124,7 @@
   <ItemGroup>
     <ClInclude Include="olcPixelGameEngine.h" />
     <ClInclude Include="rpg_assets.h" />
+    <ClInclude Include="rpg_command.h" />
     <ClInclude Include="rpg_dynamic.h" />
     <ClInclude Include="rpg_map.h" />
   </ItemGroup>

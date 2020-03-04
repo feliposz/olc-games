@@ -5,12 +5,14 @@
 #include "rpg_map.h"
 #include "rpg_assets.h"
 #include "rpg_dynamic.h"
+#include "rpg_command.h"
 
 namespace Rpg {
     class Game : public olc::PixelGameEngine
     {
         Map *CurrentMap;
         Dynamic *Player;
+        ScriptProcessor ScriptProc;
         float CameraPosX = 0;
         float CameraPosY = 0;
 
@@ -35,19 +37,36 @@ namespace Rpg {
             // Player movement
 
             if (IsFocused()) {
-                if (GetKey(olc::LEFT).bHeld) {
-                    Player->vx -= 10.0f * fElapsedTime;
-                }
-                if (GetKey(olc::RIGHT).bHeld) {
-                    Player->vx += 10.0f * fElapsedTime;
-                }
-                if (GetKey(olc::UP).bHeld) {
-                    Player->vy -= 10.0f * fElapsedTime;
-                }
-                if (GetKey(olc::DOWN).bHeld) {
-                    Player->vy += 10.0f * fElapsedTime;
+                if (ScriptProc.UserControlEnabled) {
+                    if (GetKey(olc::LEFT).bHeld) {
+                        Player->vx -= 10.0f * fElapsedTime;
+                    }
+                    if (GetKey(olc::RIGHT).bHeld) {
+                        Player->vx += 10.0f * fElapsedTime;
+                    }
+                    if (GetKey(olc::UP).bHeld) {
+                        Player->vy -= 10.0f * fElapsedTime;
+                    }
+                    if (GetKey(olc::DOWN).bHeld) {
+                        Player->vy += 10.0f * fElapsedTime;
+                    }
+                    if (GetKey(olc::Z).bReleased) {
+                        ScriptProc.AddCommand(new Command_WalkTo(Player, 10, 10, 1.5f));
+                        ScriptProc.AddCommand(new Command_Wait(0.5f));
+                        ScriptProc.AddCommand(new Command_WalkTo(Player, 10, 15, 1.5f));
+                        ScriptProc.AddCommand(new Command_Wait(0.5f));
+                        ScriptProc.AddCommand(new Command_WalkTo(Player, 15, 10, 1.5f));
+                        //ScriptProc.AddCommand(new Command_Say({ "Hello", "world!" }));
+                    }
+                } 
+                else {
+                    if (GetKey(olc::SPACE).bReleased) {
+                        ScriptProc.CompleteCommand();
+                    }
                 }
             }
+
+            ScriptProc.ProcessCommands(fElapsedTime);
 
             // Friction
 
