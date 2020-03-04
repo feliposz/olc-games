@@ -1,25 +1,27 @@
-
 #define OLC_PGE_APPLICATION
 #include "olcPixelGameEngine.h"
-
 #include "rpg_map.h"
 #include "rpg_assets.h"
 #include "rpg_dynamic.h"
 #include "rpg_command.h"
 
 namespace Rpg {
-    class Game : public olc::PixelGameEngine
+
+    class GameEngine : public olc::PixelGameEngine
     {
-        Map *CurrentMap;
-        Dynamic *Player;
+    public:
+        Map * CurrentMap = nullptr;
+        Dynamic *Player = nullptr;
+        olc::Sprite *Font = nullptr;
         ScriptProcessor ScriptProc;
         float CameraPosX = 0;
         float CameraPosY = 0;
 
-        virtual bool OnUserCreate() override
+        bool OnUserCreate()
         {
             Assets::GetInstance().LoadSprites();
 
+            Font = Assets::GetInstance().GetSprite("font");
             CurrentMap = new MapVillage1();
             Player = new DynamicCreature("player", Assets::GetInstance().GetSprite("player"));
             Player->px = 5;
@@ -28,7 +30,7 @@ namespace Rpg {
             return true;
         }
 
-        virtual bool OnUserUpdate(float fElapsedTime) override
+        bool OnUserUpdate(float fElapsedTime)
         {
 
             int visibleTilesX = ScreenWidth() / Assets::TileWidth;
@@ -56,9 +58,9 @@ namespace Rpg {
                         ScriptProc.AddCommand(new Command_WalkTo(Player, 10, 15, 1.5f));
                         ScriptProc.AddCommand(new Command_Wait(0.5f));
                         ScriptProc.AddCommand(new Command_WalkTo(Player, 15, 10, 1.5f));
-                        //ScriptProc.AddCommand(new Command_Say({ "Hello", "world!" }));
+                        ScriptProc.AddCommand(new Command_Say({ "Hello", "world!" }));
                     }
-                } 
+                }
                 else {
                     if (GetKey(olc::SPACE).bReleased) {
                         ScriptProc.CompleteCommand();
@@ -153,13 +155,23 @@ namespace Rpg {
 
             return true;
         }
+
+        void DrawText(std::string text, float x, float y)
+        {
+            for (int i = 0; i < text.size(); i++) {
+                int sx = (text[i] - 32) % 16;
+                int sy = (text[i] - 32) / 16;
+                DrawPartialSprite(x + i * 8, y, Font, sx * 8, sy * 8, 8, 8);
+            }
+        }
+
     };
 
-};
+}
 
 int main()
 {
-    Rpg::Game game;
+    Rpg::GameEngine game;
     game.Construct(256, 240, 4, 4);
     game.SetPixelMode(olc::Pixel::MASK);
     game.Start();
