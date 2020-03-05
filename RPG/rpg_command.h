@@ -10,8 +10,9 @@ namespace Rpg {
         bool Started = false;
         bool Completed = false;
 
-        virtual void Start() = 0;
-        virtual void Update(float elapsed) = 0;
+        virtual void Start() {};
+        virtual void Update(float elapsed) {};
+        virtual void OnComplete() {}
     };
 
     class ScriptProcessor {
@@ -52,9 +53,11 @@ namespace Rpg {
     
     class Command_Say : public Command {
     public:
+        static bool ShowDialog;
+        static std::vector<std::string> DialogContent;
         Command_Say(std::vector<std::string> content);
         virtual void Start() override;
-        virtual void Update(float elapsed) override;
+        virtual void OnComplete() override;
     private:
         std::vector<std::string> m_content;
     };

@@ -18,6 +18,7 @@ namespace Rpg {
             }
             cmd->Update(elapsed);
             if (cmd->Completed) {
+                cmd->OnComplete();
                 delete cmd;
                 m_queue.pop_front();
             }
@@ -68,7 +69,6 @@ namespace Rpg {
 
     void Command_Wait::Start()
     {
-        Started = true;
         m_time = 0;
     }
 
@@ -81,6 +81,9 @@ namespace Rpg {
         }
     }
 
+    bool Command_Say::ShowDialog = false;
+    std::vector<std::string> Command_Say::DialogContent;
+
     Command_Say::Command_Say(std::vector<std::string> content)
     {
         m_content = content;
@@ -88,11 +91,14 @@ namespace Rpg {
 
     void Command_Say::Start()
     {
-        Started = true;
+        ShowDialog = true;
+        DialogContent = m_content;
     }
 
-    void Command_Say::Update(float elapsed)
+    void Command_Say::OnComplete()
     {
+        ShowDialog = false;
+        DialogContent.clear();
     }
 
 }

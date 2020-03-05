@@ -54,16 +54,18 @@ namespace Rpg {
                     }
                     if (GetKey(olc::Z).bReleased) {
                         ScriptProc.AddCommand(new Command_WalkTo(Player, 10, 10, 1.5f));
-                        ScriptProc.AddCommand(new Command_Wait(0.5f));
+                        ScriptProc.AddCommand(new Command_Say({ "Hello!" }));
                         ScriptProc.AddCommand(new Command_WalkTo(Player, 10, 15, 1.5f));
                         ScriptProc.AddCommand(new Command_Wait(0.5f));
                         ScriptProc.AddCommand(new Command_WalkTo(Player, 15, 10, 1.5f));
-                        ScriptProc.AddCommand(new Command_Say({ "Hello", "world!" }));
+                        ScriptProc.AddCommand(new Command_Say({ "This is...", "a dialog example!" }));
                     }
                 }
                 else {
-                    if (GetKey(olc::SPACE).bReleased) {
-                        ScriptProc.CompleteCommand();
+                    if (Command_Say::ShowDialog) {
+                        if (GetKey(olc::SPACE).bReleased) {
+                            ScriptProc.CompleteCommand();
+                        }
                     }
                 }
             }
@@ -153,6 +155,10 @@ namespace Rpg {
 
             Player->Draw(this, levelOffsetX, levelOffsetY);
 
+            if (Command_Say::ShowDialog) {
+                DrawDialog(Command_Say::DialogContent);
+            }
+
             return true;
         }
 
@@ -162,6 +168,26 @@ namespace Rpg {
                 int sx = (text[i] - 32) % 16;
                 int sy = (text[i] - 32) / 16;
                 DrawPartialSprite(x + i * 8, y, Font, sx * 8, sy * 8, 8, 8);
+            }
+        }
+
+        void DrawDialog(std::vector<std::string> content)
+        {
+            int dialogHeight = content.size() * 9;
+            int dialogWidth = 0;
+            int padding = 4;
+            for (auto &line : content) {
+                int lineWidth = line.size() * 8;
+                if (dialogWidth < lineWidth) {
+                    dialogWidth = lineWidth;
+                }
+            }
+            FillRect(10, 10, dialogWidth + padding, dialogHeight + padding, olc::BLUE);
+            DrawRect(10, 10, dialogWidth + padding, dialogHeight + padding, olc::WHITE);
+            int y = 12;
+            for (auto &line : content) {
+                DrawText(line, 12, y);
+                y += 9;
             }
         }
 
