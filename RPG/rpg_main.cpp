@@ -16,6 +16,9 @@ namespace Rpg {
         ScriptProcessor ScriptProc;
         float CameraPosX = 0;
         float CameraPosY = 0;
+        std::list<Dynamic *> ListObjects;
+        Dynamic *Skelly1 = nullptr;
+        Dynamic *Skelly2 = nullptr;
 
         bool OnUserCreate()
         {
@@ -23,9 +26,22 @@ namespace Rpg {
 
             Font = Assets::GetInstance().GetSprite("font");
             CurrentMap = new MapVillage1();
+
             Player = new DynamicCreature("player", Assets::GetInstance().GetSprite("player"));
             Player->px = 5;
             Player->py = 5;
+
+            Skelly1 = new DynamicCreature("skelly", Assets::GetInstance().GetSprite("skelly"));
+            Skelly1->px = 7;
+            Skelly1->py = 9;
+
+            Skelly2 = new DynamicCreature("skelly", Assets::GetInstance().GetSprite("skelly"));
+            Skelly2->px = 9;
+            Skelly2->py = 7;
+
+            ListObjects.push_back(Player);
+            ListObjects.push_back(Skelly1);
+            ListObjects.push_back(Skelly2);
 
             return true;
         }
@@ -59,6 +75,8 @@ namespace Rpg {
                         ScriptProc.AddCommand(new Command_Wait(0.5f));
                         ScriptProc.AddCommand(new Command_WalkTo(Player, 15, 10, 1.5f));
                         ScriptProc.AddCommand(new Command_Say({ "This is...", "a dialog example!" }));
+                        ScriptProc.AddCommand(new Command_WalkTo(Skelly1, 11, 14, 1.0f));
+                        ScriptProc.AddCommand(new Command_WalkTo(Skelly2, 13, 12, 1.2f));
                     }
                 }
                 else {
@@ -74,57 +92,58 @@ namespace Rpg {
 
             // Friction
 
-            Dynamic *object = Player;
+            for (auto &object : ListObjects) {
 
-            object->vx += -3.0f * object->vx * fElapsedTime;
-            if (fabs(object->vx) < 0.01f) {
-                object->vx = 0;
-            }
-            object->vy += -3.0f * object->vy * fElapsedTime;
-            if (fabs(object->vy) < 0.01f) {
-                object->vy = 0;
-            }
-
-            if (object->vx < -10.0f) { object->vx = -10.0f; }
-            if (object->vx > 10.0f) { object->vx = 10.0f; }
-            if (object->vy < -100.0f) { object->vy = -100.0f; }
-            if (object->vy > 100.0f) { object->vy = 100.0f; }
-
-            float newObjectPosX = object->px + object->vx * fElapsedTime;
-            float newObjectPosY = object->py + object->vy * fElapsedTime;
-
-            // Collisions
-
-            if (object->vx <= 0) {
-                if (CurrentMap->GetSolid(newObjectPosX + 0.0f, object->py + 0.0f) || CurrentMap->GetSolid(newObjectPosX + 0.0f, object->py + 0.9f)) {
-                    newObjectPosX = (int)newObjectPosX + 1;
+                object->vx += -3.0f * object->vx * fElapsedTime;
+                if (fabs(object->vx) < 0.01f) {
                     object->vx = 0;
                 }
-            }
-            else {
-                if (CurrentMap->GetSolid(newObjectPosX + 1.0f, object->py + 0.0f) || CurrentMap->GetSolid(newObjectPosX + 1.0f, object->py + 0.9f)) {
-                    newObjectPosX = (int)newObjectPosX;
-                    object->vx = 0;
-                }
-            }
-
-            if (object->vy <= 0) {
-                if (CurrentMap->GetSolid(newObjectPosX + 0.0f, newObjectPosY + 0.0f) || CurrentMap->GetSolid(newObjectPosX + 0.9f, newObjectPosY + 0.0f)) {
-                    newObjectPosY = (int)newObjectPosY + 1;
+                object->vy += -3.0f * object->vy * fElapsedTime;
+                if (fabs(object->vy) < 0.01f) {
                     object->vy = 0;
                 }
-            }
-            else {
-                if (CurrentMap->GetSolid(newObjectPosX + 0.0f, newObjectPosY + 1.0f) || CurrentMap->GetSolid(newObjectPosX + 0.9f, newObjectPosY + 1.0f)) {
-                    newObjectPosY = (int)newObjectPosY;
-                    object->vy = 0;
+
+                if (object->vx < -10.0f) { object->vx = -10.0f; }
+                if (object->vx > 10.0f) { object->vx = 10.0f; }
+                if (object->vy < -100.0f) { object->vy = -100.0f; }
+                if (object->vy > 100.0f) { object->vy = 100.0f; }
+
+                float newObjectPosX = object->px + object->vx * fElapsedTime;
+                float newObjectPosY = object->py + object->vy * fElapsedTime;
+
+                // Collisions
+
+                if (object->vx <= 0) {
+                    if (CurrentMap->GetSolid(newObjectPosX + 0.0f, object->py + 0.0f) || CurrentMap->GetSolid(newObjectPosX + 0.0f, object->py + 0.9f)) {
+                        newObjectPosX = (int)newObjectPosX + 1;
+                        object->vx = 0;
+                    }
                 }
+                else {
+                    if (CurrentMap->GetSolid(newObjectPosX + 1.0f, object->py + 0.0f) || CurrentMap->GetSolid(newObjectPosX + 1.0f, object->py + 0.9f)) {
+                        newObjectPosX = (int)newObjectPosX;
+                        object->vx = 0;
+                    }
+                }
+
+                if (object->vy <= 0) {
+                    if (CurrentMap->GetSolid(newObjectPosX + 0.0f, newObjectPosY + 0.0f) || CurrentMap->GetSolid(newObjectPosX + 0.9f, newObjectPosY + 0.0f)) {
+                        newObjectPosY = (int)newObjectPosY + 1;
+                        object->vy = 0;
+                    }
+                }
+                else {
+                    if (CurrentMap->GetSolid(newObjectPosX + 0.0f, newObjectPosY + 1.0f) || CurrentMap->GetSolid(newObjectPosX + 0.9f, newObjectPosY + 1.0f)) {
+                        newObjectPosY = (int)newObjectPosY;
+                        object->vy = 0;
+                    }
+                }
+
+                object->px = newObjectPosX;
+                object->py = newObjectPosY;
+
+                object->Update(fElapsedTime);
             }
-
-            object->px = newObjectPosX;
-            object->py = newObjectPosY;
-
-            object->Update(fElapsedTime);
 
             // Rendering
 
@@ -153,7 +172,9 @@ namespace Rpg {
                 }
             }
 
-            Player->Draw(this, levelOffsetX, levelOffsetY);
+            for (auto &object : ListObjects) {
+                object->Draw(this, levelOffsetX, levelOffsetY);
+            }
 
             if (Command_Say::ShowDialog) {
                 DrawDialog(Command_Say::DialogContent);
