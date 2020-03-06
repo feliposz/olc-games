@@ -118,6 +118,7 @@
     <ClCompile Include="rpg_assets.cpp" />
     <ClCompile Include="rpg_command.cpp" />
     <ClCompile Include="rpg_dynamic.cpp" />
+    <ClCompile Include="rpg_engine.cpp" />
     <ClCompile Include="rpg_main.cpp" />
     <ClCompile Include="rpg_map.cpp" />
   </ItemGroup>
@@ -126,6 +127,7 @@
     <ClInclude Include="rpg_assets.h" />
     <ClInclude Include="rpg_command.h" />
     <ClInclude Include="rpg_dynamic.h" />
+    <ClInclude Include="rpg_engine.h" />
     <ClInclude Include="rpg_map.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
