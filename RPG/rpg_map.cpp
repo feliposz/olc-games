@@ -58,4 +58,9 @@ namespace Rpg {
     {
         Create("rpgdata/map/village1.lvl", Assets::GetInstance().GetSprite("village"));
     }
+
+    MapHome1::MapHome1() : Map()
+    {
+        Create("rpgdata/map/home.lvl", Assets::GetInstance().GetSprite("hitech"));
+    }
 }

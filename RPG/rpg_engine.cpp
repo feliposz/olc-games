@@ -12,9 +12,10 @@ namespace Rpg {
     bool GameEngine::OnUserCreate()
     {
         Assets::GetInstance().LoadSprites();
+        Assets::GetInstance().LoadMaps();
 
         Font = Assets::GetInstance().GetSprite("font");
-        CurrentMap = new MapVillage1();
+        CurrentMap = Assets::GetInstance().GetMap("village");
 
         Player = new DynamicCreature("player", Assets::GetInstance().GetSprite("player"));
         Player->px = 5;

@@ -3,6 +3,7 @@
 #include <map>
 #include <string>
 #include "olcPixelGameEngine.h"
+#include "rpg_map.h"
 
 namespace Rpg {
     class Assets {
@@ -15,11 +16,14 @@ namespace Rpg {
 
         static Assets& GetInstance();
         void LoadSprites();
+        void LoadMaps();
         olc::Sprite *GetSprite(std::string name);
+        Map *GetMap(std::string name);
         
     private:
         Assets();
         ~Assets();
         std::map<std::string, olc::Sprite *> m_sprites;
+        std::map<std::string, Map *> m_maps;
     };
 }

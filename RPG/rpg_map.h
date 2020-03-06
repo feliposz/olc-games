@@ -30,4 +30,9 @@ namespace Rpg {
         MapVillage1();
     };
 
+    class MapHome1 : public Map {
+    public:
+        MapHome1();
+    };
+
 }
