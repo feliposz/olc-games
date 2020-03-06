@@ -11,6 +11,8 @@ namespace Rpg {
 
     bool GameEngine::OnUserCreate()
     {
+        Command::Engine = this;
+
         Assets::GetInstance().LoadSprites();
         Assets::GetInstance().LoadMaps();
 
@@ -70,8 +72,9 @@ namespace Rpg {
                 }
             }
             else {
-                if (Command_Say::ShowDialog) {
+                if (DialogDisplay) {
                     if (GetKey(olc::SPACE).bReleased) {
+                        DialogDisplay = false;
                         ScriptProc.CompleteCommand();
                     }
                 }
@@ -166,11 +169,17 @@ namespace Rpg {
             object->Draw(this, levelOffsetX, levelOffsetY);
         }
 
-        if (Command_Say::ShowDialog) {
-            DrawDialog(Command_Say::DialogContent);
+        if (DialogDisplay) {
+            DrawDialog(DialogContent);
         }
 
         return true;
+    }
+
+    void GameEngine::ShowDialog(std::vector<std::string> content)
+    {
+        DialogDisplay = true;
+        DialogContent = content;
     }
 
     void GameEngine::DrawText(std::string text, float x, float y)

@@ -5,14 +5,17 @@
 
 namespace Rpg {
 
+    class GameEngine;
+
     class Command {
     public:
         bool Started = false;
         bool Completed = false;
 
+        static GameEngine* Engine;
+
         virtual void Start() {};
         virtual void Update(float elapsed) {};
-        virtual void OnComplete() {}
     };
 
     class ScriptProcessor {
@@ -57,7 +60,6 @@ namespace Rpg {
         static std::vector<std::string> DialogContent;
         Command_Say(std::vector<std::string> content);
         virtual void Start() override;
-        virtual void OnComplete() override;
     private:
         std::vector<std::string> m_content;
     };

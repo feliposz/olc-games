@@ -1,6 +1,9 @@
 #include "rpg_command.h"
+#include "rpg_engine.h"
 
 namespace Rpg {
+
+    GameEngine *Command::Engine = nullptr;
 
     void ScriptProcessor::AddCommand(Command *cmd)
     {
@@ -18,7 +21,6 @@ namespace Rpg {
             }
             cmd->Update(elapsed);
             if (cmd->Completed) {
-                cmd->OnComplete();
                 delete cmd;
                 m_queue.pop_front();
             }
@@ -91,14 +93,7 @@ namespace Rpg {
 
     void Command_Say::Start()
     {
-        ShowDialog = true;
-        DialogContent = m_content;
-    }
-
-    void Command_Say::OnComplete()
-    {
-        ShowDialog = false;
-        DialogContent.clear();
+        Engine->ShowDialog(m_content);
     }
 
 }
