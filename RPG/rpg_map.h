@@ -2,6 +2,7 @@
 
 #include <string>
 #include "olcPixelGameEngine.h"
+#include "rpg_dynamic.h"
 
 namespace Rpg {
 
@@ -20,6 +21,11 @@ namespace Rpg {
 
         void Create(std::string filename, olc::Sprite *sprite);
 
+        virtual bool PopulateDynamics(std::list<Dynamic *> &ListDynamics)
+        {
+            return false;
+        }
+
     private:
         int *m_indices = nullptr;
         bool *m_solids = nullptr;
@@ -28,11 +34,13 @@ namespace Rpg {
     class MapVillage1 : public Map {
     public:
         MapVillage1();
+        bool PopulateDynamics(std::list<Dynamic *> &ListDynamics) override;
     };
 
     class MapHome1 : public Map {
     public:
         MapHome1();
+        bool PopulateDynamics(std::list<Dynamic *> &ListDynamics) override;
     };
 
 }

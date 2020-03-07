@@ -85,4 +85,20 @@ namespace Rpg {
         }
         engine->DrawPartialSprite((px - ox) * Assets::TileWidth, (py - oy) * Assets::TileHeight, m_sprite, spriteSheetX, spriteSheetY, Assets::TileWidth, Assets::TileHeight);
     }
+
+    DynamicTeleport::DynamicTeleport(float x, float y, std::string map, float tx, float ty) : Dynamic("teleport")
+    {
+        px = x;
+        py = y;
+        m_map = map;
+        m_targetX = tx;
+        m_targetY = ty;
+        SolidMap = false;
+        SolidDynamic = false;
+    }
+
+    void DynamicTeleport::Draw(olc::PixelGameEngine * engine, float ox, float oy)
+    {
+        engine->DrawCircle((px + 0.5f - ox) * Assets::TileWidth, (py + 0.5f - oy) * Assets::TileHeight, Assets::TileWidth * 0.5f);
+    }
 }

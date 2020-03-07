@@ -2,6 +2,7 @@
 
 #include "rpg_map.h"
 #include "rpg_assets.h"
+#include "rpg_dynamic.h"
 
 namespace Rpg {
 
@@ -59,8 +60,21 @@ namespace Rpg {
         Create("rpgdata/map/village1.lvl", Assets::GetInstance().GetSprite("village"));
     }
 
+    bool MapVillage1::PopulateDynamics(std::list<Dynamic*>& ListDynamics)
+    {
+        ListDynamics.push_back(new DynamicTeleport(12, 6, "home", 5, 12));
+        return true;
+    }
+
     MapHome1::MapHome1() : Map()
     {
         Create("rpgdata/map/home.lvl", Assets::GetInstance().GetSprite("hitech"));
+    }
+
+    bool MapHome1::PopulateDynamics(std::list<Dynamic*>& ListDynamics)
+    {
+        ListDynamics.push_back(new DynamicTeleport(5, 13, "village", 12, 7));
+        ListDynamics.push_back(new DynamicTeleport(4, 13, "village", 12, 7));
+        return true;
     }
 }

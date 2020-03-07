@@ -42,4 +42,17 @@ namespace Rpg {
 
     };
 
+    class DynamicTeleport : public Dynamic {
+
+    protected:
+        std::string m_map;
+        int m_targetX;
+        int m_targetY;
+
+    public:
+        DynamicTeleport(float x, float y, std::string map, float tx, float ty);
+        void Draw(olc::PixelGameEngine *engine, float ox, float oy) override;
+
+    };
+
 }

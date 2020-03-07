@@ -20,14 +20,13 @@ namespace Rpg {
         std::list<Dynamic *> ListObjects;
         bool DialogDisplay = false;
         std::vector<std::string> DialogContent;
-        Dynamic *Skelly1 = nullptr;
-        Dynamic *Skelly2 = nullptr;
 
         bool OnUserCreate() override;
         bool OnUserUpdate(float fElapsedTime) override;
         void ShowDialog(std::vector<std::string> content);
         void DrawText(std::string text, float x, float y);
         void DrawDialog(std::vector<std::string> content);
+        void ChangeMap(std::string map, float x, float y);
     };
 
 }

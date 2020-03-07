@@ -17,23 +17,10 @@ namespace Rpg {
         Assets::GetInstance().LoadMaps();
 
         Font = Assets::GetInstance().GetSprite("font");
-        CurrentMap = Assets::GetInstance().GetMap("village");
 
         Player = new DynamicCreature("player", Assets::GetInstance().GetSprite("player"));
-        Player->px = 5;
-        Player->py = 5;
 
-        Skelly1 = new DynamicCreature("skelly", Assets::GetInstance().GetSprite("skelly"));
-        Skelly1->px = 7;
-        Skelly1->py = 9;
-
-        Skelly2 = new DynamicCreature("skelly", Assets::GetInstance().GetSprite("skelly"));
-        Skelly2->px = 9;
-        Skelly2->py = 7;
-
-        ListObjects.push_back(Player);
-        ListObjects.push_back(Skelly1);
-        ListObjects.push_back(Skelly2);
+        ChangeMap("village", 5, 5);
 
         return true;
     }
@@ -67,8 +54,6 @@ namespace Rpg {
                     ScriptProc.AddCommand(new Command_Wait(0.5f));
                     ScriptProc.AddCommand(new Command_WalkTo(Player, 15, 10, 1.5f));
                     ScriptProc.AddCommand(new Command_Say({ "This is...", "a dialog example!" }));
-                    ScriptProc.AddCommand(new Command_WalkTo(Skelly1, 11, 14, 1.0f));
-                    ScriptProc.AddCommand(new Command_WalkTo(Skelly2, 13, 12, 1.2f));
                 }
             }
             else {
@@ -209,6 +194,16 @@ namespace Rpg {
             DrawText(line, 12, y);
             y += 9;
         }
+    }
+
+    void GameEngine::ChangeMap(std::string map, float x, float y)
+    {
+        CurrentMap = Assets::GetInstance().GetMap(map);
+        ListObjects.clear();
+        ListObjects.push_back(Player);
+        Player->px = x;
+        Player->py = y;
+        CurrentMap->PopulateDynamics(ListObjects);
     }
 
 }
