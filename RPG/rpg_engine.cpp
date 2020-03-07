@@ -6,13 +6,10 @@
 #include "rpg_assets.h"
 #include "rpg_dynamic.h"
 #include "rpg_command.h"
+#include "game_util.h"
 
 namespace Rpg {
 
-    inline bool RectOverlap(float x1, float y1, float w1, float h1, float x2, float y2, float w2, float h2)
-    {
-        return x1 < (x2 + w2) && (x1 + w1) > x2 && y1 < (y2 + h2) && (y1 + h1) > y2;
-    }
 
     bool GameEngine::OnUserCreate()
     {
@@ -24,7 +21,7 @@ namespace Rpg {
 
         Font = Assets::GetInstance().GetSprite("font");
 
-        Player = new DynamicCreature("player", Assets::GetInstance().GetSprite("player"));
+        Player = new Dynamic_Creature("player", Assets::GetInstance().GetSprite("player"));
 
         ChangeMap("village", 5, 5);
 
@@ -115,7 +112,7 @@ namespace Rpg {
                 if (object != other) {
                     if (object->SolidDynamic && other->SolidDynamic) {
                         // Test horizontal first
-                        if (RectOverlap(newDynamicPosX, object->py, 1.0f, 1.0f, other->px, other->py, 1.0f, 1.0f)) {
+                        if (GameUtil::RectOverlap(newDynamicPosX, object->py, 1.0f, 1.0f, other->px, other->py, 1.0f, 1.0f)) {
                             if (object->vx <= 0) {
                                 newDynamicPosX = other->px + 1.0f;
                             }
@@ -124,7 +121,7 @@ namespace Rpg {
                             }
                         }
                         // Test vertical second
-                        if (RectOverlap(newDynamicPosX, newDynamicPosY, 1.0f, 1.0f, other->px, other->py, 1.0f, 1.0f)) {
+                        if (GameUtil::RectOverlap(newDynamicPosX, newDynamicPosY, 1.0f, 1.0f, other->px, other->py, 1.0f, 1.0f)) {
                             if (object->vy <= 0) {
                                 newDynamicPosY = other->py + 1.0f;
                             }
@@ -134,7 +131,7 @@ namespace Rpg {
                         }
                     }
                     else {
-                        if (RectOverlap(newDynamicPosX, newDynamicPosY, 1.0f, 1.0f, other->px, other->py, 1.0f, 1.0f)) {
+                        if (GameUtil::RectOverlap(newDynamicPosX, newDynamicPosY, 1.0f, 1.0f, other->px, other->py, 1.0f, 1.0f)) {
                             CurrentMap->OnInteraction(ListObjects, other);
                         }
                     }
@@ -144,7 +141,7 @@ namespace Rpg {
             object->px = newDynamicPosX;
             object->py = newDynamicPosY;
 
-            object->Update(fElapsedTime);
+            object->Update(fElapsedTime, Player);
         }
 
         // Rendering

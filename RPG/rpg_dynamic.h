@@ -18,12 +18,12 @@ namespace Rpg {
         Dynamic(std::string name);
         ~Dynamic();
 
-        virtual void Update(float elapsed) {}
+        virtual void Update(float elapsed, Dynamic *player) {}
         virtual void Draw(olc::PixelGameEngine *engine, float ox, float oy) {}
 
     };
 
-    class DynamicCreature : public Dynamic {
+    class Dynamic_Creature : public Dynamic {
 
     protected:
         olc::Sprite *m_sprite;
@@ -31,27 +31,33 @@ namespace Rpg {
         enum { STANDING, WALKING, CELEBRATING, DEAD } m_state;
         int m_frame;
         float m_timer;
+        float m_stateTick;
 
     public:
         float Health;
         float MaxHealth;
 
-        DynamicCreature(std::string name, olc::Sprite *sprite);
-        void Update(float elapsed) override;
+        Dynamic_Creature(std::string name, olc::Sprite *sprite);
+        void Update(float elapsed, Dynamic *player) override;
         void Draw(olc::PixelGameEngine *engine, float ox, float oy) override;
-
+        virtual void Behavior(float elapsed, Dynamic *player) {}
     };
 
-    class DynamicTeleport : public Dynamic {
+    class Dynamic_Creature_Skelly : public Dynamic_Creature {
+    public:
+        Dynamic_Creature_Skelly();
+        void Behavior(float elapsed, Dynamic *player) override;
+    };
+
+    class Dynamic_Teleport : public Dynamic {
 
     public:
         std::string TargetMap;
         int TargetX;
         int TargetY;
 
-        DynamicTeleport(float x, float y, std::string map, float tx, float ty);
+        Dynamic_Teleport(float x, float y, std::string map, float tx, float ty);
         void Draw(olc::PixelGameEngine *engine, float ox, float oy) override;
-
     };
 
 }
