@@ -33,19 +33,22 @@ namespace Rpg {
 
         // Player movement
 
+        Player->vx = 0;
+        Player->vy = 0;
+
         if (IsFocused()) {
             if (ScriptProc.UserControlEnabled) {
                 if (GetKey(olc::LEFT).bHeld) {
-                    Player->vx -= 10.0f * fElapsedTime;
+                    Player->vx = -4.0f;
                 }
                 if (GetKey(olc::RIGHT).bHeld) {
-                    Player->vx += 10.0f * fElapsedTime;
+                    Player->vx = 4.0f;
                 }
                 if (GetKey(olc::UP).bHeld) {
-                    Player->vy -= 10.0f * fElapsedTime;
+                    Player->vy = -4.0f;
                 }
                 if (GetKey(olc::DOWN).bHeld) {
-                    Player->vy += 10.0f * fElapsedTime;
+                    Player->vy = 4.0f;
                 }
                 if (GetKey(olc::Z).bReleased) {
                     ScriptProc.AddCommand(new Command_WalkTo(Player, 10, 10, 1.5f));
@@ -68,50 +71,36 @@ namespace Rpg {
 
         ScriptProc.ProcessCommands(fElapsedTime);
 
-        // Friction
-
         for (auto &object : ListObjects) {
-
-            object->vx += -3.0f * object->vx * fElapsedTime;
-            if (fabs(object->vx) < 0.01f) {
-                object->vx = 0;
-            }
-            object->vy += -3.0f * object->vy * fElapsedTime;
-            if (fabs(object->vy) < 0.01f) {
-                object->vy = 0;
-            }
-
-            if (object->vx < -10.0f) { object->vx = -10.0f; }
-            if (object->vx > 10.0f) { object->vx = 10.0f; }
-            if (object->vy < -100.0f) { object->vy = -100.0f; }
-            if (object->vy > 100.0f) { object->vy = 100.0f; }
 
             float newObjectPosX = object->px + object->vx * fElapsedTime;
             float newObjectPosY = object->py + object->vy * fElapsedTime;
 
             // Collisions
 
+            float border = 0.1f;
+
             if (object->vx <= 0) {
-                if (CurrentMap->GetSolid(newObjectPosX + 0.0f, object->py + 0.0f) || CurrentMap->GetSolid(newObjectPosX + 0.0f, object->py + 0.9f)) {
+                if (CurrentMap->GetSolid(newObjectPosX + 0.0f, object->py + (0.0f + border)) || CurrentMap->GetSolid(newObjectPosX + 0.0f, object->py + (1.0f - border))) {
                     newObjectPosX = (int)newObjectPosX + 1;
                     object->vx = 0;
                 }
             }
             else {
-                if (CurrentMap->GetSolid(newObjectPosX + 1.0f, object->py + 0.0f) || CurrentMap->GetSolid(newObjectPosX + 1.0f, object->py + 0.9f)) {
+                if (CurrentMap->GetSolid(newObjectPosX + 1.0f, object->py + (0.0f + border)) || CurrentMap->GetSolid(newObjectPosX + 1.0f, object->py + (1.0f - border))) {
                     newObjectPosX = (int)newObjectPosX;
                     object->vx = 0;
                 }
             }
 
             if (object->vy <= 0) {
-                if (CurrentMap->GetSolid(newObjectPosX + 0.0f, newObjectPosY + 0.0f) || CurrentMap->GetSolid(newObjectPosX + 0.9f, newObjectPosY + 0.0f)) {
+                if (CurrentMap->GetSolid(newObjectPosX + (0.0f + border), newObjectPosY + 0.0f) || CurrentMap->GetSolid(newObjectPosX + (1.0f - border), newObjectPosY + 0.0f)) {
                     newObjectPosY = (int)newObjectPosY + 1;
                     object->vy = 0;
                 }
             }
             else {
-                if (CurrentMap->GetSolid(newObjectPosX + 0.0f, newObjectPosY + 1.0f) || CurrentMap->GetSolid(newObjectPosX + 0.9f, newObjectPosY + 1.0f)) {
+                if (CurrentMap->GetSolid(newObjectPosX + (0.0f + border), newObjectPosY + 1.0f) || CurrentMap->GetSolid(newObjectPosX + (1.0f - border), newObjectPosY + 1.0f)) {
                     newObjectPosY = (int)newObjectPosY;
                     object->vy = 0;
                 }
