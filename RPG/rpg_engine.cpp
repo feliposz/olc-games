@@ -9,6 +9,11 @@
 
 namespace Rpg {
 
+    inline bool RectOverlap(float x1, float y1, float w1, float h1, float x2, float y2, float w2, float h2)
+    {
+        return x1 < (x2 + w2) && (x1 + w1) > x2 && y1 < (y2 + h2) && (y1 + h1) > y2;
+    }
+
     bool GameEngine::OnUserCreate()
     {
         Command::Engine = this;
@@ -76,10 +81,11 @@ namespace Rpg {
             float newObjectPosX = object->px + object->vx * fElapsedTime;
             float newObjectPosY = object->py + object->vy * fElapsedTime;
 
-            // Collisions
+            // Collisions with map wall
 
             float border = 0.1f;
 
+            // Test horizontal first
             if (object->vx <= 0) {
                 if (CurrentMap->GetSolid(newObjectPosX + 0.0f, object->py + (0.0f + border)) || CurrentMap->GetSolid(newObjectPosX + 0.0f, object->py + (1.0f - border))) {
                     newObjectPosX = (int)newObjectPosX + 1;
@@ -93,6 +99,7 @@ namespace Rpg {
                 }
             }
 
+            // Test vertical second
             if (object->vy <= 0) {
                 if (CurrentMap->GetSolid(newObjectPosX + (0.0f + border), newObjectPosY + 0.0f) || CurrentMap->GetSolid(newObjectPosX + (1.0f - border), newObjectPosY + 0.0f)) {
                     newObjectPosY = (int)newObjectPosY + 1;
@@ -106,8 +113,43 @@ namespace Rpg {
                 }
             }
 
-            object->px = newObjectPosX;
-            object->py = newObjectPosY;
+            // Handle collision with other dynamic objects
+
+            float newDynamicPosX = newObjectPosX;
+            float newDynamicPosY = newObjectPosY;
+
+            for (auto &other : ListObjects) {
+                if (object != other) {
+                    if (object->SolidDynamic && other->SolidDynamic) {
+                        // Test horizontal first
+                        if (RectOverlap(newDynamicPosX, object->py, 1.0f, 1.0f, other->px, other->py, 1.0f, 1.0f)) {
+                            if (object->vx <= 0) {
+                                newDynamicPosX = other->px + 1.0f;
+                            }
+                            else {
+                                newDynamicPosX = other->px - 1.0f;
+                            }
+                        }
+                        // Test vertical second
+                        if (RectOverlap(newDynamicPosX, newDynamicPosY, 1.0f, 1.0f, other->px, other->py, 1.0f, 1.0f)) {
+                            if (object->vy <= 0) {
+                                newDynamicPosY = other->py + 1.0f;
+                            }
+                            else {
+                                newDynamicPosY = other->py - 1.0f;
+                            }
+                        }
+                    }
+                    else {
+                        if (RectOverlap(newDynamicPosX, newDynamicPosY, 1.0f, 1.0f, other->px, other->py, 1.0f, 1.0f)) {
+                            // TODO: Handle interaction with portals, etc.
+                        }
+                    }
+                }
+            }
+
+            object->px = newDynamicPosX;
+            object->py = newDynamicPosY;
 
             object->Update(fElapsedTime);
         }
@@ -122,8 +164,8 @@ namespace Rpg {
 
         if (levelOffsetX < 0) { levelOffsetX = 0; }
         if (levelOffsetY < 0) { levelOffsetY = 0; }
-        if (levelOffsetX >(CurrentMap->Width - visibleTilesX)) { levelOffsetX = CurrentMap->Width - visibleTilesX; }
-        if (levelOffsetY >(CurrentMap->Height - visibleTilesY)) { levelOffsetY = CurrentMap->Height - visibleTilesY; }
+        if (levelOffsetX > (CurrentMap->Width - visibleTilesX)) { levelOffsetX = CurrentMap->Width - visibleTilesX; }
+        if (levelOffsetY > (CurrentMap->Height - visibleTilesY)) { levelOffsetY = CurrentMap->Height - visibleTilesY; }
 
         float tileOffsetX = (levelOffsetX - (int)levelOffsetX) * Assets::TileWidth;
         float tileOffsetY = (levelOffsetY - (int)levelOffsetY) * Assets::TileHeight;
@@ -188,6 +230,11 @@ namespace Rpg {
     void GameEngine::ChangeMap(std::string map, float x, float y)
     {
         CurrentMap = Assets::GetInstance().GetMap(map);
+        for (auto &object : ListObjects) {
+            if (object != Player) {
+                delete object;
+            }
+        }
         ListObjects.clear();
         ListObjects.push_back(Player);
         Player->px = x;

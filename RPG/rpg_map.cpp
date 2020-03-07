@@ -63,6 +63,10 @@ namespace Rpg {
     bool MapVillage1::PopulateDynamics(std::list<Dynamic*>& ListDynamics)
     {
         ListDynamics.push_back(new DynamicTeleport(12, 6, "home", 5, 12));
+        DynamicCreature *skelly = new DynamicCreature("skelly", Assets::GetInstance().GetSprite("skelly"));
+        skelly->px = 7;
+        skelly->py = 7;
+        ListDynamics.push_back(skelly);
         return true;
     }
 
