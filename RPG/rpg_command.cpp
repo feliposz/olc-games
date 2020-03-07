@@ -83,9 +83,6 @@ namespace Rpg {
         }
     }
 
-    bool Command_Say::ShowDialog = false;
-    std::vector<std::string> Command_Say::DialogContent;
-
     Command_Say::Command_Say(std::vector<std::string> content)
     {
         m_content = content;
@@ -94,6 +91,19 @@ namespace Rpg {
     void Command_Say::Start()
     {
         Engine->ShowDialog(m_content);
+    }
+
+    Command_ChangeMap::Command_ChangeMap(std::string map, float x, float y)
+    {
+        m_map = map;
+        m_x = x;
+        m_y = y;
+    }
+
+    void Command_ChangeMap::Start()
+    {
+        Engine->ChangeMap(m_map, m_x, m_y);
+        Completed = true;
     }
 
 }

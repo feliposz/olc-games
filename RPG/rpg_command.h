@@ -56,12 +56,21 @@ namespace Rpg {
     
     class Command_Say : public Command {
     public:
-        static bool ShowDialog;
-        static std::vector<std::string> DialogContent;
         Command_Say(std::vector<std::string> content);
         virtual void Start() override;
     private:
         std::vector<std::string> m_content;
     };
+
+    class Command_ChangeMap : public Command {
+    public:
+        Command_ChangeMap(std::string map, float x, float y);
+        virtual void Start() override;
+    private:
+        std::string m_map;
+        float m_x;
+        float m_y;
+    };
+
 
 }

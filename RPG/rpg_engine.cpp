@@ -17,6 +17,7 @@ namespace Rpg {
     bool GameEngine::OnUserCreate()
     {
         Command::Engine = this;
+        Map::Script = &Script;
 
         Assets::GetInstance().LoadSprites();
         Assets::GetInstance().LoadMaps();
@@ -42,7 +43,7 @@ namespace Rpg {
         Player->vy = 0;
 
         if (IsFocused()) {
-            if (ScriptProc.UserControlEnabled) {
+            if (Script.UserControlEnabled) {
                 if (GetKey(olc::LEFT).bHeld) {
                     Player->vx = -4.0f;
                 }
@@ -55,26 +56,18 @@ namespace Rpg {
                 if (GetKey(olc::DOWN).bHeld) {
                     Player->vy = 4.0f;
                 }
-                if (GetKey(olc::Z).bReleased) {
-                    ScriptProc.AddCommand(new Command_WalkTo(Player, 10, 10, 1.5f));
-                    ScriptProc.AddCommand(new Command_Say({ "Hello!" }));
-                    ScriptProc.AddCommand(new Command_WalkTo(Player, 10, 15, 1.5f));
-                    ScriptProc.AddCommand(new Command_Wait(0.5f));
-                    ScriptProc.AddCommand(new Command_WalkTo(Player, 15, 10, 1.5f));
-                    ScriptProc.AddCommand(new Command_Say({ "This is...", "a dialog example!" }));
-                }
             }
             else {
                 if (DialogDisplay) {
                     if (GetKey(olc::SPACE).bReleased) {
                         DialogDisplay = false;
-                        ScriptProc.CompleteCommand();
+                        Script.CompleteCommand();
                     }
                 }
             }
         }
 
-        ScriptProc.ProcessCommands(fElapsedTime);
+        Script.ProcessCommands(fElapsedTime);
 
         for (auto &object : ListObjects) {
 
@@ -142,7 +135,7 @@ namespace Rpg {
                     }
                     else {
                         if (RectOverlap(newDynamicPosX, newDynamicPosY, 1.0f, 1.0f, other->px, other->py, 1.0f, 1.0f)) {
-                            // TODO: Handle interaction with portals, etc.
+                            CurrentMap->OnInteraction(ListObjects, other);
                         }
                     }
                 }

@@ -6,6 +6,8 @@
 
 namespace Rpg {
 
+    ScriptProcessor *Map::Script = nullptr;
+
     Map::Map()
     {
     }
@@ -70,6 +72,14 @@ namespace Rpg {
         return true;
     }
 
+    void MapVillage1::OnInteraction(std::list<Dynamic*>& ListDynamics, Dynamic * object)
+    {
+        if (object->Name == "teleport") {
+            DynamicTeleport *t = (DynamicTeleport*) object;
+            Script->AddCommand(new Command_ChangeMap(t->TargetMap, t->TargetX, t->TargetY));
+        }
+    }
+
     MapHome1::MapHome1() : Map()
     {
         Create("rpgdata/map/home.lvl", Assets::GetInstance().GetSprite("hitech"));
@@ -80,5 +90,13 @@ namespace Rpg {
         ListDynamics.push_back(new DynamicTeleport(5, 13, "village", 12, 7));
         ListDynamics.push_back(new DynamicTeleport(4, 13, "village", 12, 7));
         return true;
+    }
+
+    void MapHome1::OnInteraction(std::list<Dynamic*>& ListDynamics, Dynamic * object)
+    {
+        if (object->Name == "teleport") {
+            DynamicTeleport *t = (DynamicTeleport*)object;
+            Script->AddCommand(new Command_ChangeMap(t->TargetMap, t->TargetX, t->TargetY));
+        }
     }
 }

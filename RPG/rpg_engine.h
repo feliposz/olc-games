@@ -14,7 +14,7 @@ namespace Rpg {
         Map * CurrentMap = nullptr;
         Dynamic *Player = nullptr;
         olc::Sprite *Font = nullptr;
-        ScriptProcessor ScriptProc;
+        ScriptProcessor Script;
         float CameraPosX = 0;
         float CameraPosY = 0;
         std::list<Dynamic *> ListObjects;

@@ -90,9 +90,9 @@ namespace Rpg {
     {
         px = x;
         py = y;
-        m_map = map;
-        m_targetX = tx;
-        m_targetY = ty;
+        TargetMap = map;
+        TargetX = tx;
+        TargetY = ty;
         SolidMap = false;
         SolidDynamic = false;
     }

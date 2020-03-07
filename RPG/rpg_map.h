@@ -2,6 +2,7 @@
 
 #include <string>
 #include "olcPixelGameEngine.h"
+#include "rpg_command.h"
 #include "rpg_dynamic.h"
 
 namespace Rpg {
@@ -12,6 +13,8 @@ namespace Rpg {
         int Width;
         int Height;
         olc::Sprite *Sprite = nullptr;
+
+        static ScriptProcessor *Script;
 
         Map();
         ~Map();
@@ -26,6 +29,8 @@ namespace Rpg {
             return false;
         }
 
+        virtual void OnInteraction(std::list<Dynamic *> &ListDynamics, Dynamic *object) {}
+
     private:
         int *m_indices = nullptr;
         bool *m_solids = nullptr;
@@ -35,12 +40,14 @@ namespace Rpg {
     public:
         MapVillage1();
         bool PopulateDynamics(std::list<Dynamic *> &ListDynamics) override;
+        void OnInteraction(std::list<Dynamic *> &ListDynamics, Dynamic *object) override;
     };
 
     class MapHome1 : public Map {
     public:
         MapHome1();
         bool PopulateDynamics(std::list<Dynamic *> &ListDynamics) override;
+        void OnInteraction(std::list<Dynamic *> &ListDynamics, Dynamic *object) override;
     };
 
 }
