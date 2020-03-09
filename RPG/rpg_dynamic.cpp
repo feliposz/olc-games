@@ -1,5 +1,6 @@
 #include "rpg_dynamic.h"
 #include "rpg_assets.h"
+#include "game_util.h"
 
 namespace Rpg {
 
@@ -19,7 +20,7 @@ namespace Rpg {
     {
     }
 
-    DynamicCreature::DynamicCreature(std::string name, olc::Sprite *sprite) : Dynamic(name)
+    Dynamic_Creature::Dynamic_Creature(std::string name, olc::Sprite *sprite) : Dynamic(name)
     {
         Health = 10;
         MaxHealth = 10;
@@ -28,7 +29,7 @@ namespace Rpg {
         m_timer = 0;
     }
 
-    void DynamicCreature::Update(float elapsed)
+    void Dynamic_Creature::Update(float elapsed, Dynamic *player)
     {
         m_timer += elapsed;
         if (m_timer > 0.2f) {
@@ -59,9 +60,11 @@ namespace Rpg {
         else {
             m_state = STANDING;
         }
+
+        Behavior(elapsed, player);
     }
 
-    void DynamicCreature::Draw(olc::PixelGameEngine *engine, float ox, float oy)
+    void Dynamic_Creature::Draw(olc::PixelGameEngine *engine, float ox, float oy)
     {
         int spriteSheetX = 0;
         int spriteSheetY = 0;
@@ -85,4 +88,52 @@ namespace Rpg {
         }
         engine->DrawPartialSprite((px - ox) * Assets::TileWidth, (py - oy) * Assets::TileHeight, m_sprite, spriteSheetX, spriteSheetY, Assets::TileWidth, Assets::TileHeight);
     }
+
+    Dynamic_Creature_Skelly::Dynamic_Creature_Skelly() : Dynamic_Creature("skelly", Assets::GetInstance().GetSprite("skelly"))
+    {
+        Health = 5;
+        MaxHealth = 5;
+        m_stateTick = 2.0f;
+    }
+
+    void Dynamic_Creature_Skelly::Behavior(float elapsed, Dynamic *player)
+    {
+        m_stateTick -= elapsed;
+        if (m_stateTick <= 0.0f) {
+            m_stateTick += 1.0f;
+            float dist = GameUtil::Distance(player->px, player->py, px, py);
+
+            if (dist < 6.0f) {
+                if (player->px > px) {
+                    vx = 1.5f;
+                }
+                else if (player->px < px) {
+                    vx = -1.5f;
+                }
+                if (player->py > py) {
+                    vy = 1.5f;
+                }
+                else if (player->py < py) {
+                    vy = -1.5f;
+                }
+            }
+        }
+    }
+
+    Dynamic_Teleport::Dynamic_Teleport(float x, float y, std::string map, float tx, float ty) : Dynamic("teleport")
+    {
+        px = x;
+        py = y;
+        TargetMap = map;
+        TargetX = tx;
+        TargetY = ty;
+        SolidMap = false;
+        SolidDynamic = false;
+    }
+
+    void Dynamic_Teleport::Draw(olc::PixelGameEngine * engine, float ox, float oy)
+    {
+        engine->DrawCircle((px + 0.5f - ox) * Assets::TileWidth, (py + 0.5f - oy) * Assets::TileHeight, Assets::TileWidth * 0.5f);
+    }
+
 }

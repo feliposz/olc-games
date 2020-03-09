@@ -2,8 +2,11 @@
 
 #include "rpg_map.h"
 #include "rpg_assets.h"
+#include "rpg_dynamic.h"
 
 namespace Rpg {
+
+    ScriptProcessor *Map::Script = nullptr;
 
     Map::Map()
     {
@@ -57,5 +60,49 @@ namespace Rpg {
     MapVillage1::MapVillage1() : Map()
     {
         Create("rpgdata/map/village1.lvl", Assets::GetInstance().GetSprite("village"));
+    }
+
+    bool MapVillage1::PopulateDynamics(std::list<Dynamic*>& ListDynamics)
+    {
+        ListDynamics.push_back(new Dynamic_Teleport(12, 6, "home", 5, 12));
+        
+        for (int i = 0; i < 3; i++) {
+            Dynamic_Creature_Skelly *skelly = new Dynamic_Creature_Skelly();
+            skelly->px = 5 + i * 6;
+            skelly->py = 15 - i * 2;
+            ListDynamics.push_back(skelly);
+        }
+
+        return true;
+    }
+
+    bool MapVillage1::OnInteraction(std::list<Dynamic*>& ListDynamics, Dynamic * object, InteractNature nature)
+    {
+        if (object->Name == "teleport" && nature == InteractNature::WALK) {
+            Dynamic_Teleport *t = (Dynamic_Teleport*) object;
+            Script->AddCommand(new Command_ChangeMap(t->TargetMap, t->TargetX, t->TargetY));
+            return true;
+        }
+    }
+
+    MapHome1::MapHome1() : Map()
+    {
+        Create("rpgdata/map/home.lvl", Assets::GetInstance().GetSprite("hitech"));
+    }
+
+    bool MapHome1::PopulateDynamics(std::list<Dynamic*>& ListDynamics)
+    {
+        ListDynamics.push_back(new Dynamic_Teleport(5, 13, "village", 12, 7));
+        ListDynamics.push_back(new Dynamic_Teleport(4, 13, "village", 12, 7));
+        return true;
+    }
+
+    bool MapHome1::OnInteraction(std::list<Dynamic*>& ListDynamics, Dynamic * object, InteractNature nature)
+    {
+        if (object->Name == "teleport" && nature == InteractNature::WALK) {
+            Dynamic_Teleport *t = (Dynamic_Teleport*)object;
+            Script->AddCommand(new Command_ChangeMap(t->TargetMap, t->TargetX, t->TargetY));
+            return true;
+        }
     }
 }

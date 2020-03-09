@@ -1,6 +1,9 @@
 #include "rpg_command.h"
+#include "rpg_engine.h"
 
 namespace Rpg {
+
+    GameEngine *Command::Engine = nullptr;
 
     void ScriptProcessor::AddCommand(Command *cmd)
     {
@@ -18,7 +21,6 @@ namespace Rpg {
             }
             cmd->Update(elapsed);
             if (cmd->Completed) {
-                cmd->OnComplete();
                 delete cmd;
                 m_queue.pop_front();
             }
@@ -81,9 +83,6 @@ namespace Rpg {
         }
     }
 
-    bool Command_Say::ShowDialog = false;
-    std::vector<std::string> Command_Say::DialogContent;
-
     Command_Say::Command_Say(std::vector<std::string> content)
     {
         m_content = content;
@@ -91,14 +90,20 @@ namespace Rpg {
 
     void Command_Say::Start()
     {
-        ShowDialog = true;
-        DialogContent = m_content;
+        Engine->ShowDialog(m_content);
     }
 
-    void Command_Say::OnComplete()
+    Command_ChangeMap::Command_ChangeMap(std::string map, float x, float y)
     {
-        ShowDialog = false;
-        DialogContent.clear();
+        m_map = map;
+        m_x = x;
+        m_y = y;
+    }
+
+    void Command_ChangeMap::Start()
+    {
+        Engine->ChangeMap(m_map, m_x, m_y);
+        Completed = true;
     }
 
 }

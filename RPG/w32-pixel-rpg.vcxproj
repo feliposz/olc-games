@@ -118,15 +118,21 @@
     <ClCompile Include="rpg_assets.cpp" />
     <ClCompile Include="rpg_command.cpp" />
     <ClCompile Include="rpg_dynamic.cpp" />
+    <ClCompile Include="rpg_engine.cpp" />
     <ClCompile Include="rpg_main.cpp" />
     <ClCompile Include="rpg_map.cpp" />
+    <ClCompile Include="game_util.cpp" />
+    <ClCompile Include="rpg_quest.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="olcPixelGameEngine.h" />
     <ClInclude Include="rpg_assets.h" />
     <ClInclude Include="rpg_command.h" />
     <ClInclude Include="rpg_dynamic.h" />
+    <ClInclude Include="rpg_engine.h" />
     <ClInclude Include="rpg_map.h" />
+    <ClInclude Include="game_util.h" />
+    <ClInclude Include="rpg_quest.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

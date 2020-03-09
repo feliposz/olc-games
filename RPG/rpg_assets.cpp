@@ -1,4 +1,5 @@
 #include "rpg_assets.h"
+#include "rpg_map.h"
 
 namespace Rpg {
 
@@ -28,11 +29,24 @@ namespace Rpg {
         loadSpriteData("player", "rpgdata/gfx/toml_CharacterSprites.spr");
         loadSpriteData("font", "rpgdata/gfx/javidx9_nesfont8x8.spr");
         loadSpriteData("skelly", "rpgdata/gfx/toml_char001.png.spr");
+        loadSpriteData("hitech", "rpgdata/gfx/toml_modernish.spr");
+        loadSpriteData("purple", "rpgdata/gfx/toml_purple.spr");
+    }
+
+    void Assets::LoadMaps()
+    {
+        m_maps["village"] = new MapVillage1();
+        m_maps["home"] = new MapHome1();
     }
 
     olc::Sprite * Assets::GetSprite(std::string name)
     {
         return m_sprites[name];
+    }
+
+    Map * Assets::GetMap(std::string name)
+    {
+        return m_maps[name];
     }
 
 }
