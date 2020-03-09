@@ -93,10 +93,6 @@ namespace Rpg {
     {
         ListDynamics.push_back(new Dynamic_Teleport(5, 13, "village", 12, 7));
         ListDynamics.push_back(new Dynamic_Teleport(4, 13, "village", 12, 7));
-        Dynamic_Creature *bob = new Dynamic_Creature("bob", Assets::GetInstance().GetSprite("skelly"));
-        bob->px = 11;
-        bob->py = 4;
-        ListDynamics.push_back(bob);
         return true;
     }
 

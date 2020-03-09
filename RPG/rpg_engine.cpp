@@ -2,10 +2,6 @@
 #include "olcPixelGameEngine.h"
 
 #include "rpg_engine.h"
-#include "rpg_map.h"
-#include "rpg_assets.h"
-#include "rpg_dynamic.h"
-#include "rpg_command.h"
 #include "game_util.h"
 
 namespace Rpg {
@@ -15,6 +11,7 @@ namespace Rpg {
     {
         Command::Engine = this;
         Map::Script = &Script;
+        Quest::Script = &Script;
 
         Assets::GetInstance().LoadSprites();
         Assets::GetInstance().LoadMaps();
@@ -22,6 +19,8 @@ namespace Rpg {
         Font = Assets::GetInstance().GetSprite("font");
 
         Player = new Dynamic_Creature("player", Assets::GetInstance().GetSprite("player"));
+
+        ListQuests.push_back(new Quest_Test());
 
         ChangeMap("village", 5, 5);
 
@@ -74,7 +73,16 @@ namespace Rpg {
                         if (target != Player) {
                             if (probeX > target->px && probeX < (target->px + 1.0f) && probeY > target->py && probeY < (target->py + 1.0f)) {
                                 if (target->Friendly) {
-                                    CurrentMap->OnInteraction(ListObjects, target, InteractNature::TALK);
+                                    bool processed = false;
+                                    for (auto &quest : ListQuests) {
+                                        if (quest->OnInteraction(ListObjects, target, Quest::QuestNature::TALK)) {
+                                            processed = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!processed) {
+                                        CurrentMap->OnInteraction(ListObjects, target, Map::InteractNature::TALK);
+                                    }
                                 }
                                 else {
                                     // TODO: Handle attack
@@ -162,7 +170,17 @@ namespace Rpg {
                     }
                     else {
                         if (GameUtil::RectOverlap(newDynamicPosX, newDynamicPosY, 1.0f, 1.0f, other->px, other->py, 1.0f, 1.0f)) {
-                            CurrentMap->OnInteraction(ListObjects, other, InteractNature::WALK);
+                            bool processed = false;
+                            for (auto &quest : ListQuests) {
+                                if (quest->OnInteraction(ListObjects, other, Quest::QuestNature::WALK)) {
+                                    processed = true;
+                                    break;
+                                }
+                            }
+                            if (!processed) {
+                                CurrentMap->OnInteraction(ListObjects, other, Map::InteractNature::WALK);
+                            }
+
                         }
                     }
                 }
@@ -260,6 +278,9 @@ namespace Rpg {
         Player->px = x;
         Player->py = y;
         CurrentMap->PopulateDynamics(ListObjects);
+        for (auto &quest : ListQuests) {
+            quest->PopulateDynamics(ListObjects, map);
+        }
     }
 
 }

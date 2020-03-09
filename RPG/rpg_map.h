@@ -7,8 +7,6 @@
 
 namespace Rpg {
 
-    enum InteractNature { WALK, TALK };
-
     class Map {
 
     public:
@@ -17,6 +15,8 @@ namespace Rpg {
         olc::Sprite *Sprite = nullptr;
 
         static ScriptProcessor *Script;
+
+        enum InteractNature { WALK, TALK };
 
         Map();
         ~Map();

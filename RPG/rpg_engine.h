@@ -5,12 +5,13 @@
 #include "rpg_assets.h"
 #include "rpg_dynamic.h"
 #include "rpg_command.h"
+#include "rpg_quest.h"
 
 namespace Rpg {
 
     class GameEngine : public olc::PixelGameEngine
     {
-    public:
+    private:
         Map * CurrentMap = nullptr;
         Dynamic_Creature *Player = nullptr;
         olc::Sprite *Font = nullptr;
@@ -20,7 +21,9 @@ namespace Rpg {
         std::list<Dynamic *> ListObjects;
         bool DialogDisplay = false;
         std::vector<std::string> DialogContent;
+        std::list<Quest *> ListQuests;
 
+    public:
         bool OnUserCreate() override;
         bool OnUserUpdate(float fElapsedTime) override;
         void ShowDialog(std::vector<std::string> content);
