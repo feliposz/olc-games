@@ -30,6 +30,7 @@ namespace Rpg {
         void DrawText(std::string text, float x, float y);
         void DrawDialog(std::vector<std::string> content);
         void ChangeMap(std::string map, float x, float y);
+        void AddQuest(Quest *quest);
     };
 
 }

@@ -12,6 +12,7 @@ namespace Rpg {
         Command::Engine = this;
         Map::Script = &Script;
         Quest::Script = &Script;
+        Quest::Engine = this;
 
         Assets::GetInstance().LoadSprites();
         Assets::GetInstance().LoadMaps();
@@ -20,7 +21,7 @@ namespace Rpg {
 
         Player = new Dynamic_Creature("player", Assets::GetInstance().GetSprite("player"));
 
-        ListQuests.push_back(new Quest_Test());
+        ListQuests.push_back(new Quest_MainQuest());
 
         ChangeMap("village", 5, 5);
 
@@ -32,6 +33,13 @@ namespace Rpg {
 
         int visibleTilesX = ScreenWidth() / Assets::TileWidth;
         int visibleTilesY = ScreenHeight() / Assets::TileHeight;
+
+        // Clear completed quests
+
+        auto removeQuestIdx = std::remove_if(ListQuests.begin(), ListQuests.end(), [&](Quest *quest) { return quest->Completed; });
+        if (removeQuestIdx != ListQuests.end()) {
+            ListQuests.erase(removeQuestIdx);
+        }
 
         // Player movement
 
@@ -281,6 +289,11 @@ namespace Rpg {
         for (auto &quest : ListQuests) {
             quest->PopulateDynamics(ListObjects, map);
         }
+    }
+
+    void GameEngine::AddQuest(Quest *quest)
+    {
+        ListQuests.push_front(quest);
     }
 
 }

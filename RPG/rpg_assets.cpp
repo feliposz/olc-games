@@ -30,6 +30,7 @@ namespace Rpg {
         loadSpriteData("font", "rpgdata/gfx/javidx9_nesfont8x8.spr");
         loadSpriteData("skelly", "rpgdata/gfx/toml_char001.png.spr");
         loadSpriteData("hitech", "rpgdata/gfx/toml_modernish.spr");
+        loadSpriteData("purple", "rpgdata/gfx/toml_purple.spr");
     }
 
     void Assets::LoadMaps()

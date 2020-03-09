@@ -26,12 +26,9 @@ namespace Rpg {
 
         void Create(std::string filename, olc::Sprite *sprite);
 
-        virtual bool PopulateDynamics(std::list<Dynamic *> &ListDynamics)
-        {
-            return false;
-        }
+        virtual bool PopulateDynamics(std::list<Dynamic *> &ListDynamics) { return false; }
 
-        virtual void OnInteraction(std::list<Dynamic *> &ListDynamics, Dynamic *object, InteractNature nature) {}
+        virtual bool OnInteraction(std::list<Dynamic *> &ListDynamics, Dynamic *object, InteractNature nature) { return false; }
 
     private:
         int *m_indices = nullptr;
@@ -42,14 +39,14 @@ namespace Rpg {
     public:
         MapVillage1();
         bool PopulateDynamics(std::list<Dynamic *> &ListDynamics) override;
-        void OnInteraction(std::list<Dynamic *> &ListDynamics, Dynamic *object, InteractNature nature) override;
+        bool OnInteraction(std::list<Dynamic *> &ListDynamics, Dynamic *object, InteractNature nature) override;
     };
 
     class MapHome1 : public Map {
     public:
         MapHome1();
         bool PopulateDynamics(std::list<Dynamic *> &ListDynamics) override;
-        void OnInteraction(std::list<Dynamic *> &ListDynamics, Dynamic *object, InteractNature nature) override;
+        bool OnInteraction(std::list<Dynamic *> &ListDynamics, Dynamic *object, InteractNature nature) override;
     };
 
 }
