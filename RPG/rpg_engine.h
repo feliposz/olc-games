@@ -12,7 +12,7 @@ namespace Rpg {
     {
     public:
         Map * CurrentMap = nullptr;
-        Dynamic *Player = nullptr;
+        Dynamic_Creature *Player = nullptr;
         olc::Sprite *Font = nullptr;
         ScriptProcessor Script;
         float CameraPosX = 0;

@@ -7,6 +7,8 @@
 
 namespace Rpg {
 
+    enum InteractNature { WALK, TALK };
+
     class Map {
 
     public:
@@ -29,7 +31,7 @@ namespace Rpg {
             return false;
         }
 
-        virtual void OnInteraction(std::list<Dynamic *> &ListDynamics, Dynamic *object) {}
+        virtual void OnInteraction(std::list<Dynamic *> &ListDynamics, Dynamic *object, InteractNature nature) {}
 
     private:
         int *m_indices = nullptr;
@@ -40,14 +42,14 @@ namespace Rpg {
     public:
         MapVillage1();
         bool PopulateDynamics(std::list<Dynamic *> &ListDynamics) override;
-        void OnInteraction(std::list<Dynamic *> &ListDynamics, Dynamic *object) override;
+        void OnInteraction(std::list<Dynamic *> &ListDynamics, Dynamic *object, InteractNature nature) override;
     };
 
     class MapHome1 : public Map {
     public:
         MapHome1();
         bool PopulateDynamics(std::list<Dynamic *> &ListDynamics) override;
-        void OnInteraction(std::list<Dynamic *> &ListDynamics, Dynamic *object) override;
+        void OnInteraction(std::list<Dynamic *> &ListDynamics, Dynamic *object, InteractNature nature) override;
     };
 
 }

@@ -76,9 +76,9 @@ namespace Rpg {
         return true;
     }
 
-    void MapVillage1::OnInteraction(std::list<Dynamic*>& ListDynamics, Dynamic * object)
+    void MapVillage1::OnInteraction(std::list<Dynamic*>& ListDynamics, Dynamic * object, InteractNature nature)
     {
-        if (object->Name == "teleport") {
+        if (object->Name == "teleport" && nature == InteractNature::WALK) {
             Dynamic_Teleport *t = (Dynamic_Teleport*) object;
             Script->AddCommand(new Command_ChangeMap(t->TargetMap, t->TargetX, t->TargetY));
         }
@@ -93,14 +93,21 @@ namespace Rpg {
     {
         ListDynamics.push_back(new Dynamic_Teleport(5, 13, "village", 12, 7));
         ListDynamics.push_back(new Dynamic_Teleport(4, 13, "village", 12, 7));
+        Dynamic_Creature *bob = new Dynamic_Creature("bob", Assets::GetInstance().GetSprite("skelly"));
+        bob->px = 11;
+        bob->py = 4;
+        ListDynamics.push_back(bob);
         return true;
     }
 
-    void MapHome1::OnInteraction(std::list<Dynamic*>& ListDynamics, Dynamic * object)
+    void MapHome1::OnInteraction(std::list<Dynamic*>& ListDynamics, Dynamic * object, InteractNature nature)
     {
-        if (object->Name == "teleport") {
+        if (object->Name == "teleport" && nature == InteractNature::WALK) {
             Dynamic_Teleport *t = (Dynamic_Teleport*)object;
             Script->AddCommand(new Command_ChangeMap(t->TargetMap, t->TargetX, t->TargetY));
+        }
+        if (object->Name == "bob" && nature == InteractNature::TALK) {
+            Script->AddCommand(new Command_Say({ "[BOB]", "Hello.", "I'm bob!" }));
         }
     }
 }

@@ -5,6 +5,9 @@
 
 namespace Rpg {
 
+    enum FacingDirection { SOUTH = 0, WEST = 1, NORTH = 2, EAST = 3 };
+    enum CreatureState { STANDING, WALKING, CELEBRATING, DEAD };
+
     class Dynamic {
 
     public:
@@ -27,8 +30,8 @@ namespace Rpg {
 
     protected:
         olc::Sprite *m_sprite;
-        enum { SOUTH = 0, WEST = 1, NORTH = 2, EAST = 3 } m_direction;
-        enum { STANDING, WALKING, CELEBRATING, DEAD } m_state;
+        FacingDirection m_direction;
+        CreatureState m_state;
         int m_frame;
         float m_timer;
         float m_stateTick;
@@ -41,6 +44,7 @@ namespace Rpg {
         void Update(float elapsed, Dynamic *player) override;
         void Draw(olc::PixelGameEngine *engine, float ox, float oy) override;
         virtual void Behavior(float elapsed, Dynamic *player) {}
+        FacingDirection GetDirection() { return m_direction; }
     };
 
     class Dynamic_Creature_Skelly : public Dynamic_Creature {

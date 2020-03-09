@@ -53,6 +53,36 @@ namespace Rpg {
                 if (GetKey(olc::DOWN).bHeld) {
                     Player->vy = 4.0f;
                 }
+                if (GetKey(olc::SPACE).bReleased) {
+                    float probeX = Player->px + 0.5f;
+                    float probeY = Player->py + 0.5f;
+                    switch (Player->GetDirection()) {
+                    case FacingDirection::EAST:
+                        probeX += 1.0f;
+                        break;
+                    case FacingDirection::WEST:
+                        probeX -= 1.0f;
+                        break;
+                    case FacingDirection::NORTH:
+                        probeY -= 1.0f;
+                        break;
+                    case FacingDirection::SOUTH:
+                        probeY += 1.0f;
+                        break;
+                    }
+                    for (auto &target : ListObjects) {
+                        if (target != Player) {
+                            if (probeX > target->px && probeX < (target->px + 1.0f) && probeY > target->py && probeY < (target->py + 1.0f)) {
+                                if (target->Friendly) {
+                                    CurrentMap->OnInteraction(ListObjects, target, InteractNature::TALK);
+                                }
+                                else {
+                                    // TODO: Handle attack
+                                }
+                            }
+                        }
+                    }
+                }
             }
             else {
                 if (DialogDisplay) {
@@ -132,7 +162,7 @@ namespace Rpg {
                     }
                     else {
                         if (GameUtil::RectOverlap(newDynamicPosX, newDynamicPosY, 1.0f, 1.0f, other->px, other->py, 1.0f, 1.0f)) {
-                            CurrentMap->OnInteraction(ListObjects, other);
+                            CurrentMap->OnInteraction(ListObjects, other, InteractNature::WALK);
                         }
                     }
                 }
