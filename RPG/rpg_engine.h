@@ -10,6 +10,7 @@
 
 namespace Rpg {
 
+
     class GameEngine : public olc::PixelGameEngine
     {
     private:
@@ -24,10 +25,16 @@ namespace Rpg {
         std::vector<std::string> DialogContent;
         std::list<Quest *> ListQuests;
         std::list<Item *> ListItems;
+        enum {
+            GM_LocalMap,
+            GM_Inventory
+        } GameMode;
 
     public:
         bool OnUserCreate() override;
         bool OnUserUpdate(float fElapsedTime) override;
+        bool UpdateLocalMap(float fElapsedTime);
+        bool UpdateInventory(float fElapsedTime);
         void ShowDialog(std::vector<std::string> content);
         void DrawText(std::string text, float x, float y);
         void DrawDialog(std::vector<std::string> content);

@@ -33,7 +33,17 @@ namespace Rpg {
 
     bool GameEngine::OnUserUpdate(float fElapsedTime)
     {
+        switch (GameMode) {
+        case GM_LocalMap:
+            return UpdateLocalMap(fElapsedTime);
+        case GM_Inventory:
+            return UpdateInventory(fElapsedTime);
+        }
+        return true;
+    }
 
+    bool GameEngine::UpdateLocalMap(float fElapsedTime)
+    {
         int visibleTilesX = ScreenWidth() / Assets::TileWidth;
         int visibleTilesY = ScreenHeight() / Assets::TileHeight;
 
@@ -62,6 +72,9 @@ namespace Rpg {
                 }
                 if (GetKey(olc::DOWN).bHeld) {
                     Player->vy = 4.0f;
+                }
+                if (GetKey(olc::Z).bReleased) {
+                    GameMode = GM_Inventory;
                 }
                 if (GetKey(olc::SPACE).bReleased) {
                     float probeX = Player->px + 0.5f;
@@ -232,6 +245,18 @@ namespace Rpg {
 
         DrawText( "HP:" + std::to_string((int)Player->Health) + "/" + std::to_string((int)Player->MaxHealth), 180, 16);
 
+        return true;
+    }
+
+    bool GameEngine::UpdateInventory(float fElapsedTime)
+    {
+        FillRect(0, 0, ScreenWidth(), ScreenHeight(), olc::BLACK);
+        DrawText("INVENTORY", 4, 4);
+        if (IsFocused()) {
+            if (GetKey(olc::Z).bReleased) {
+                GameMode = GM_LocalMap;
+            }
+        }
         return true;
     }
 
