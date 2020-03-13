@@ -2,11 +2,15 @@
 
 #include <string>
 #include "olcPixelGameEngine.h"
+#include "rpg_item.h"
+
 
 namespace Rpg {
 
     enum FacingDirection { SOUTH = 0, WEST = 1, NORTH = 2, EAST = 3 };
     enum CreatureState { STANDING, WALKING, CELEBRATING, DEAD };
+
+    class GameEngine;
 
     class Dynamic {
 
@@ -18,11 +22,14 @@ namespace Rpg {
         bool Friendly;
         std::string Name;
 
+        static GameEngine *Engine;
+
         Dynamic(std::string name);
         ~Dynamic();
 
         virtual void Update(float elapsed, Dynamic *player) {}
         virtual void Draw(olc::PixelGameEngine *engine, float ox, float oy) {}
+        virtual void OnInteract(Dynamic *player) {}
 
     };
 
@@ -62,6 +69,17 @@ namespace Rpg {
 
         Dynamic_Teleport(float x, float y, std::string map, float tx, float ty);
         void Draw(olc::PixelGameEngine *engine, float ox, float oy) override;
+    };
+    
+    class Dynamic_Item : public Dynamic {
+
+    public:
+        Item * PItem;
+        bool Collected = false;
+        
+        Dynamic_Item(float x, float y, Item *item);
+        void Draw(olc::PixelGameEngine *engine, float ox, float oy) override;
+        void OnInteract(Dynamic *player) override;
     };
 
 }

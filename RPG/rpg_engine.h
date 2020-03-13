@@ -6,6 +6,7 @@
 #include "rpg_dynamic.h"
 #include "rpg_command.h"
 #include "rpg_quest.h"
+#include "rpg_item.h"
 
 namespace Rpg {
 
@@ -22,6 +23,7 @@ namespace Rpg {
         bool DialogDisplay = false;
         std::vector<std::string> DialogContent;
         std::list<Quest *> ListQuests;
+        std::list<Item *> ListItems;
 
     public:
         bool OnUserCreate() override;
@@ -31,6 +33,9 @@ namespace Rpg {
         void DrawDialog(std::vector<std::string> content);
         void ChangeMap(std::string map, float x, float y);
         void AddQuest(Quest *quest);
+        bool GiveItem(Item *item);
+        bool TakeItem(Item *item);
+        bool HasItem(Item *item);
     };
 
 }

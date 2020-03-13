@@ -1,8 +1,11 @@
 #include "rpg_dynamic.h"
 #include "rpg_assets.h"
+#include "rpg_engine.h"
 #include "game_util.h"
 
 namespace Rpg {
+
+    GameEngine *Dynamic::Engine = nullptr;
 
     Dynamic::Dynamic(std::string name)
     {
@@ -134,6 +137,33 @@ namespace Rpg {
     void Dynamic_Teleport::Draw(olc::PixelGameEngine * engine, float ox, float oy)
     {
         engine->DrawCircle((px + 0.5f - ox) * Assets::TileWidth, (py + 0.5f - oy) * Assets::TileHeight, Assets::TileWidth * 0.5f);
+    }
+
+    Dynamic_Item::Dynamic_Item(float x, float y, Item * item) : Dynamic (item->Name)
+    {
+        px = x;
+        py = y;
+        PItem = item;
+        SolidMap = false;
+        SolidDynamic = false;
+        Collected = false;
+    }
+
+    void Dynamic_Item::Draw(olc::PixelGameEngine * engine, float ox, float oy)
+    {
+        if (Collected)
+            return;
+        engine->DrawPartialSprite((px - ox) * Assets::TileWidth, (py - oy) * Assets::TileHeight, PItem->Sprite, 0, 0, Assets::TileWidth, Assets::TileHeight);
+    }
+
+    void Dynamic_Item::OnInteract(Dynamic * player)
+    {
+        if (Collected)
+            return;
+        if (PItem->OnInteract(player)) {
+            Engine->GiveItem(PItem);
+        }
+        Collected = true;
     }
 
 }

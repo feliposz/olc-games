@@ -9,17 +9,20 @@ namespace Rpg {
 
     bool GameEngine::OnUserCreate()
     {
-        Command::Engine = this;
         Map::Script = &Script;
         Quest::Script = &Script;
+        Command::Engine = this;
         Quest::Engine = this;
+        Dynamic::Engine = this;
 
         Assets::GetInstance().LoadSprites();
+        Assets::GetInstance().LoadItems();
         Assets::GetInstance().LoadMaps();
 
         Font = Assets::GetInstance().GetSprite("font");
 
         Player = new Dynamic_Creature("player", Assets::GetInstance().GetSprite("player"));
+        Player->Health = 5; // DEBUG
 
         ListQuests.push_back(new Quest_MainQuest());
 
@@ -81,16 +84,12 @@ namespace Rpg {
                         if (target != Player) {
                             if (probeX > target->px && probeX < (target->px + 1.0f) && probeY > target->py && probeY < (target->py + 1.0f)) {
                                 if (target->Friendly) {
-                                    bool processed = false;
                                     for (auto &quest : ListQuests) {
                                         if (quest->OnInteraction(ListObjects, target, Quest::QuestNature::TALK)) {
-                                            processed = true;
                                             break;
                                         }
                                     }
-                                    if (!processed) {
-                                        CurrentMap->OnInteraction(ListObjects, target, Map::InteractNature::TALK);
-                                    }
+                                    CurrentMap->OnInteraction(ListObjects, target, Map::InteractNature::TALK);
                                 }
                                 else {
                                     // TODO: Handle attack
@@ -178,17 +177,13 @@ namespace Rpg {
                     }
                     else {
                         if (GameUtil::RectOverlap(newDynamicPosX, newDynamicPosY, 1.0f, 1.0f, other->px, other->py, 1.0f, 1.0f)) {
-                            bool processed = false;
                             for (auto &quest : ListQuests) {
                                 if (quest->OnInteraction(ListObjects, other, Quest::QuestNature::WALK)) {
-                                    processed = true;
                                     break;
                                 }
                             }
-                            if (!processed) {
-                                CurrentMap->OnInteraction(ListObjects, other, Map::InteractNature::WALK);
-                            }
-
+                            CurrentMap->OnInteraction(ListObjects, other, Map::InteractNature::WALK);
+                            other->OnInteract(object);
                         }
                     }
                 }
@@ -234,6 +229,8 @@ namespace Rpg {
         if (DialogDisplay) {
             DrawDialog(DialogContent);
         }
+
+        DrawText( "HP:" + std::to_string((int)Player->Health) + "/" + std::to_string((int)Player->MaxHealth), 180, 16);
 
         return true;
     }
@@ -294,6 +291,26 @@ namespace Rpg {
     void GameEngine::AddQuest(Quest *quest)
     {
         ListQuests.push_front(quest);
+    }
+
+    bool GameEngine::GiveItem(Item *item)
+    {
+        ListItems.push_back(item);
+        return true;
+    }
+
+    bool GameEngine::TakeItem(Item *item)
+    {
+        if (item != nullptr) {
+            ListItems.erase(find(ListItems.begin(), ListItems.end(), item));
+            return true;
+        }
+        return false;
+    }
+
+    bool GameEngine::HasItem(Item *item)
+    {
+        return find(ListItems.begin(), ListItems.end(), item) != ListItems.end();
     }
 
 }
