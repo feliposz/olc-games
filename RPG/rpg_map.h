@@ -12,13 +12,14 @@ namespace Rpg {
     public:
         int Width;
         int Height;
+        std::string Name;
         olc::Sprite *Sprite = nullptr;
 
         static ScriptProcessor *Script;
 
         enum InteractNature { WALK, TALK };
 
-        Map();
+        Map(std::string name);
         ~Map();
 
         int GetIndex(int x, int y);

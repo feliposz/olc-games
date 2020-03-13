@@ -8,8 +8,9 @@ namespace Rpg {
 
     ScriptProcessor *Map::Script = nullptr;
 
-    Map::Map()
+    Map::Map(std::string name)
     {
+        Name = name;
     }
 
     Map::~Map()
@@ -57,7 +58,7 @@ namespace Rpg {
         }
     }
 
-    MapVillage1::MapVillage1() : Map()
+    MapVillage1::MapVillage1() : Map("Village")
     {
         Create("rpgdata/map/village1.lvl", Assets::GetInstance().GetSprite("village"));
     }
@@ -87,7 +88,7 @@ namespace Rpg {
         }
     }
 
-    MapHome1::MapHome1() : Map()
+    MapHome1::MapHome1() : Map("Home")
     {
         Create("rpgdata/map/home.lvl", Assets::GetInstance().GetSprite("hitech"));
     }

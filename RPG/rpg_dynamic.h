@@ -44,8 +44,8 @@ namespace Rpg {
         float m_stateTick;
 
     public:
-        float Health;
-        float MaxHealth;
+        int Health;
+        int MaxHealth;
 
         Dynamic_Creature(std::string name, olc::Sprite *sprite);
         void Update(float elapsed, Dynamic *player) override;

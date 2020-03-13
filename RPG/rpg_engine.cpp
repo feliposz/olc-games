@@ -243,7 +243,7 @@ namespace Rpg {
             DrawDialog(DialogContent);
         }
 
-        DrawText( "HP:" + std::to_string((int)Player->Health) + "/" + std::to_string((int)Player->MaxHealth), 180, 16);
+        DrawText("HP:" + std::to_string(Player->Health) + "/" + std::to_string(Player->MaxHealth), 180, 16);
 
         return true;
     }
@@ -251,7 +251,23 @@ namespace Rpg {
     bool GameEngine::UpdateInventory(float fElapsedTime)
     {
         FillRect(0, 0, ScreenWidth(), ScreenHeight(), olc::BLACK);
+
         DrawText("INVENTORY", 4, 4);
+
+        int i = 0;
+        for (auto &item : ListItems) {
+            int x = i % 4;
+            int y = i / 4;
+            i++;
+            DrawPartialSprite(8 + x * (Assets::TileWidth + 4), 20 + y * (Assets::TileHeight + 4), item->Sprite, 0, 0, Assets::TileWidth, Assets::TileHeight);
+        }
+
+        DrawText("LOCATION:", 128, 8);
+        DrawText(CurrentMap->Name, 128, 16);
+
+        DrawText("HEALTH: " + std::to_string(Player->Health), 128, 32);
+        DrawText("MAX HEALTH: " + std::to_string(Player->MaxHealth), 128, 40);
+
         if (IsFocused()) {
             if (GetKey(olc::Z).bReleased) {
                 GameMode = GM_LocalMap;
