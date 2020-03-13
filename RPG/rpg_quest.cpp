@@ -61,6 +61,12 @@ namespace Rpg {
     {
         if (target->Name == "carl") {
             Script->AddCommand(new Command_Say({ "[Carl]", "You have no", "additional quests!" }));
+            if (Engine->HasItem(Assets::GetInstance().GetItem("healthboost"))) {
+                Script->AddCommand(new Command_Say({ "[Carl]", "Yay! You do have", "a health boost." }));
+            }
+            else {
+                Script->AddCommand(new Command_Say({ "[Carl]", "Boo! You don't have", "a health boost." }));
+            }
             return true;
         }
         if (target->Name == "bob") {
