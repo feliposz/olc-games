@@ -60,6 +60,7 @@ namespace Rpg {
             Dynamic_Creature *c = (Dynamic_Creature *)object;
             c->MaxHealth += 10;
             c->Health = c->MaxHealth;
+            return true;
         }
         return false;
     }

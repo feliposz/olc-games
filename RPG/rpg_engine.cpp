@@ -254,12 +254,43 @@ namespace Rpg {
 
         DrawText("INVENTORY", 4, 4);
 
+        Item *selected = nullptr;
+
         int i = 0;
         for (auto &item : ListItems) {
             int x = i % 4;
             int y = i / 4;
             i++;
+            if (SelectX == x && SelectY == y) {
+                selected = item;
+            }
             DrawPartialSprite(8 + x * (Assets::TileWidth + 4), 20 + y * (Assets::TileHeight + 4), item->Sprite, 0, 0, Assets::TileWidth, Assets::TileHeight);
+        }
+
+        DrawRect(8 + SelectX * (Assets::TileWidth + 4), 20 + SelectY * (Assets::TileHeight + 4), Assets::TileWidth, Assets::TileHeight);
+
+        if (GetKey(olc::LEFT).bReleased) SelectX--;
+        if (GetKey(olc::RIGHT).bReleased) SelectX++;
+        if (GetKey(olc::UP).bReleased) SelectY--;
+        if (GetKey(olc::DOWN).bReleased) SelectY++;
+        if (SelectX < 0) SelectX = 3;
+        if (SelectX > 3) SelectX = 0;
+        if (SelectY < 0) SelectY = 3;
+        if (SelectY > 3) SelectY = 0;
+
+        if (selected) {
+            DrawText("SELECTED:", 8, 160);
+            DrawText(selected->Name, 8, 170);
+            DrawText("DESCRIPTION:", 8, 190);
+            DrawText(selected->Description, 8, 200);
+            if (!selected->KeyItem) {
+                DrawText("(Press SPACE to use)", 80, 160);
+                if (GetKey(olc::SPACE).bReleased) {
+                    if (selected->OnUse(Player)) {
+                        TakeItem(selected);
+                    }
+                }
+            }
         }
 
         DrawText("LOCATION:", 128, 8);

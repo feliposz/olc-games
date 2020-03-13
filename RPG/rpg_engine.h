@@ -29,6 +29,8 @@ namespace Rpg {
             GM_LocalMap,
             GM_Inventory
         } GameMode;
+        int SelectX = 0;
+        int SelectY = 0;
 
     public:
         bool OnUserCreate() override;
