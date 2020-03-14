@@ -32,6 +32,7 @@ namespace Rpg {
         loadSpriteData("purple", "rpgdata/gfx/toml_purple.spr");
         loadSpriteData("health", "rpgdata/gfx/item_health.spr");
         loadSpriteData("healthboost", "rpgdata/gfx/item_healthboost.spr");
+        loadSpriteData("sword", "rpgdata/gfx/weapon_basic_sword.spr");
     }
 
     void Assets::LoadMaps()
@@ -44,6 +45,7 @@ namespace Rpg {
     {
         m_items["health"] = new Item_Health();
         m_items["healthboost"] = new Item_HealthBoost();
+        m_items["sword"] = new Weapon_Sword();
     }
 
     olc::Sprite * Assets::GetSprite(std::string name)

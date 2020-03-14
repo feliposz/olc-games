@@ -20,6 +20,8 @@ namespace Rpg {
         bool SolidMap;
         bool SolidDynamic;
         bool Friendly;
+        bool IsProjectile;
+        bool IsAttackable;
         std::string Name;
 
         static GameEngine *Engine;
@@ -46,12 +48,20 @@ namespace Rpg {
     public:
         int Health;
         int MaxHealth;
+        Weapon *EquipedWeapon = nullptr;
 
         Dynamic_Creature(std::string name, olc::Sprite *sprite);
         void Update(float elapsed, Dynamic *player) override;
         void Draw(olc::PixelGameEngine *engine, float ox, float oy) override;
         virtual void Behavior(float elapsed, Dynamic *player) {}
         FacingDirection GetDirection() { return m_direction; }
+        virtual void PerformAttack() {}
+    };
+
+    class Dynamic_Creature_Player : public Dynamic_Creature {
+    public:
+        Dynamic_Creature_Player();
+        void PerformAttack() override;
     };
 
     class Dynamic_Creature_Skelly : public Dynamic_Creature {
@@ -80,6 +90,19 @@ namespace Rpg {
         Dynamic_Item(float x, float y, Item *item);
         void Draw(olc::PixelGameEngine *engine, float ox, float oy) override;
         void OnInteract(Dynamic *player) override;
+    };
+
+    class Dynamic_Projectile : public Dynamic {
+    public:
+        Dynamic_Projectile(float px, float py, bool friendly, float vx, float vy, float duration, olc::Sprite *sprite, int tx, int ty);
+        void Update(float elapsed, Dynamic *player) override;
+        void Draw(olc::PixelGameEngine *engine, float ox, float oy) override;
+    private:
+        float m_duration;
+        bool m_oneHit;
+        olc::Sprite *m_sprite;
+        int m_tileX, m_tileY;
+        int m_damage;
     };
 
 }

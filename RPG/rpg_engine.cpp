@@ -21,8 +21,7 @@ namespace Rpg {
 
         Font = Assets::GetInstance().GetSprite("font");
 
-        Player = new Dynamic_Creature("player", Assets::GetInstance().GetSprite("player"));
-        Player->Health = 5; // DEBUG
+        Player = new Dynamic_Creature_Player();
 
         ListQuests.push_back(new Quest_MainQuest());
 
@@ -93,10 +92,12 @@ namespace Rpg {
                         probeY += 1.0f;
                         break;
                     }
+                    bool hitSomething = false;
                     for (auto &target : ListObjects) {
                         if (target != Player) {
                             if (probeX > target->px && probeX < (target->px + 1.0f) && probeY > target->py && probeY < (target->py + 1.0f)) {
                                 if (target->Friendly) {
+                                    hitSomething = true;
                                     for (auto &quest : ListQuests) {
                                         if (quest->OnInteraction(ListObjects, target, Quest::QuestNature::TALK)) {
                                             break;
@@ -105,10 +106,13 @@ namespace Rpg {
                                     CurrentMap->OnInteraction(ListObjects, target, Map::InteractNature::TALK);
                                 }
                                 else {
-                                    // TODO: Handle attack
+                                    Player->PerformAttack();
                                 }
                             }
                         }
+                    }
+                    if (!hitSomething) {
+                        Player->PerformAttack();
                     }
                 }
             }

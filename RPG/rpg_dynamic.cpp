@@ -16,6 +16,8 @@ namespace Rpg {
         SolidMap = true;
         SolidDynamic = true;
         Friendly = true;
+        IsProjectile = false;
+        IsAttackable = false;
         Name = name;
     }
 
@@ -30,6 +32,7 @@ namespace Rpg {
         m_sprite = sprite;
         m_frame = 0;
         m_timer = 0;
+        IsAttackable = true;
     }
 
     void Dynamic_Creature::Update(float elapsed, Dynamic *player)
@@ -139,7 +142,7 @@ namespace Rpg {
         engine->DrawCircle((px + 0.5f - ox) * Assets::TileWidth, (py + 0.5f - oy) * Assets::TileHeight, Assets::TileWidth * 0.5f);
     }
 
-    Dynamic_Item::Dynamic_Item(float x, float y, Item * item) : Dynamic (item->Name)
+    Dynamic_Item::Dynamic_Item(float x, float y, Item * item) : Dynamic(item->Name)
     {
         px = x;
         py = y;
@@ -164,6 +167,47 @@ namespace Rpg {
             Engine->GiveItem(PItem);
         }
         Collected = true;
+    }
+
+    Dynamic_Projectile::Dynamic_Projectile(float px, float py, bool friendly, float vx, float vy, float duration, olc::Sprite * sprite, int tx, int ty) : Dynamic("projectile")
+    {
+        this->px = px;
+        this->py = py;
+        this->vx = vx;
+        this->vy = vy;
+        Friendly = friendly;
+        m_duration = duration;
+        m_sprite = sprite;
+        m_tileX = tx;
+        m_tileY = ty;
+    }
+
+    void Dynamic_Projectile::Update(float elapsed, Dynamic * player)
+    {
+        m_duration -= elapsed;
+        if (m_duration < 0) {
+            m_duration = 0;
+        }
+    }
+
+    void Dynamic_Projectile::Draw(olc::PixelGameEngine * engine, float ox, float oy)
+    {
+        if (m_duration > 0) {
+            engine->DrawPartialSprite((px - ox) * Assets::TileWidth, (py - oy) * Assets::TileHeight, m_sprite, m_tileX, m_tileY, Assets::TileWidth, Assets::TileHeight);
+        }
+    }
+
+    Dynamic_Creature_Player::Dynamic_Creature_Player() : Dynamic_Creature("Player", Assets::GetInstance().GetSprite("player"))
+    {
+        Health = 5;
+        EquipedWeapon = (Weapon*)Assets::GetInstance().GetItem("sword");
+    }
+
+    void Dynamic_Creature_Player::PerformAttack()
+    {
+        if (EquipedWeapon != nullptr) {
+            EquipedWeapon->OnUse(this);
+        }
     }
 
 }

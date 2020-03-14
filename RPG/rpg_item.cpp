@@ -65,4 +65,29 @@ namespace Rpg {
         return false;
     }
 
+    Weapon::Weapon(std::string name, std::string description, olc::Sprite * sprite, int damage) : Item(name, description, sprite, true, false)
+    {
+        m_damage = damage;
+    }
+
+    bool Weapon::OnInteract(Dynamic * object)
+    {
+        return false;
+    }
+
+    bool Weapon::OnUse(Dynamic * object)
+    {
+        return false;
+    }
+
+    Weapon_Sword::Weapon_Sword() : Weapon("Basic sword", "A wooden sword, 5 dmg", Assets::GetInstance().GetSprite("sword"), 5)
+    {
+    }
+
+    bool Weapon_Sword::OnUse(Dynamic * object)
+    {
+        // TODO: Create projectile
+        return false;
+    }
+
 }

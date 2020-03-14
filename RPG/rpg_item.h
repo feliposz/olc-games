@@ -37,4 +37,19 @@ namespace Rpg {
         bool OnUse(Dynamic *object) override;
     };
 
+    class Weapon : public Item {
+    public:
+        Weapon(std::string name, std::string description, olc::Sprite *sprite, int damage);
+        bool OnInteract(Dynamic *object) override;
+        bool OnUse(Dynamic *object) override;
+    private:
+        int m_damage = 0;
+    };
+
+    class Weapon_Sword : public Weapon {
+    public:
+        Weapon_Sword();
+        bool OnUse(Dynamic *object) override;
+    };
+
 }
