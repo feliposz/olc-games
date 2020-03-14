@@ -14,6 +14,7 @@ namespace Rpg {
         Command::Engine = this;
         Quest::Engine = this;
         Dynamic::Engine = this;
+        Item::Engine = this;
 
         Assets::GetInstance().LoadSprites();
         Assets::GetInstance().LoadItems();
@@ -52,6 +53,17 @@ namespace Rpg {
         if (removeQuestIdx != ListQuests.end()) {
             ListQuests.erase(removeQuestIdx);
         }
+
+        // Clear projectiles
+
+        auto removeProjIdx = std::remove_if(ListProjectiles.begin(), ListProjectiles.end(), [&](Dynamic *projectile) { return ((Dynamic_Projectile*)projectile)->Redundant; });
+        for (auto &projectile : ListProjectiles) {
+            if (projectile && ((Dynamic_Projectile *)projectile)->Redundant) {
+                delete projectile;
+                projectile = nullptr;
+            }
+        }
+        ListProjectiles.erase(removeProjIdx, ListProjectiles.end());
 
         // Player movement
 
@@ -96,8 +108,8 @@ namespace Rpg {
                     for (auto &target : ListObjects) {
                         if (target != Player) {
                             if (probeX > target->px && probeX < (target->px + 1.0f) && probeY > target->py && probeY < (target->py + 1.0f)) {
+                                hitSomething = true;
                                 if (target->Friendly) {
-                                    hitSomething = true;
                                     for (auto &quest : ListQuests) {
                                         if (quest->OnInteraction(ListObjects, target, Quest::QuestNature::TALK)) {
                                             break;
@@ -128,88 +140,97 @@ namespace Rpg {
 
         Script.ProcessCommands(fElapsedTime);
 
-        for (auto &object : ListObjects) {
+        for (auto &list : { ListObjects, ListProjectiles }) {
+            for (auto &object : list) {
 
-            float newObjectPosX = object->px + object->vx * fElapsedTime;
-            float newObjectPosY = object->py + object->vy * fElapsedTime;
+                float newObjectPosX = object->px + object->vx * fElapsedTime;
+                float newObjectPosY = object->py + object->vy * fElapsedTime;
 
-            // Collisions with map wall
+                // Collisions with map wall
 
-            float border = 0.1f;
+                if (object->SolidMap) {
+                    float border = 0.1f;
 
-            // Test horizontal first
-            if (object->vx <= 0) {
-                if (CurrentMap->GetSolid(newObjectPosX + 0.0f, object->py + (0.0f + border)) || CurrentMap->GetSolid(newObjectPosX + 0.0f, object->py + (1.0f - border))) {
-                    newObjectPosX = (int)newObjectPosX + 1;
-                    object->vx = 0;
-                }
-            }
-            else {
-                if (CurrentMap->GetSolid(newObjectPosX + 1.0f, object->py + (0.0f + border)) || CurrentMap->GetSolid(newObjectPosX + 1.0f, object->py + (1.0f - border))) {
-                    newObjectPosX = (int)newObjectPosX;
-                    object->vx = 0;
-                }
-            }
-
-            // Test vertical second
-            if (object->vy <= 0) {
-                if (CurrentMap->GetSolid(newObjectPosX + (0.0f + border), newObjectPosY + 0.0f) || CurrentMap->GetSolid(newObjectPosX + (1.0f - border), newObjectPosY + 0.0f)) {
-                    newObjectPosY = (int)newObjectPosY + 1;
-                    object->vy = 0;
-                }
-            }
-            else {
-                if (CurrentMap->GetSolid(newObjectPosX + (0.0f + border), newObjectPosY + 1.0f) || CurrentMap->GetSolid(newObjectPosX + (1.0f - border), newObjectPosY + 1.0f)) {
-                    newObjectPosY = (int)newObjectPosY;
-                    object->vy = 0;
-                }
-            }
-
-            // Handle collision with other dynamic objects
-
-            float newDynamicPosX = newObjectPosX;
-            float newDynamicPosY = newObjectPosY;
-
-            for (auto &other : ListObjects) {
-                if (object != other) {
-                    if (object->SolidDynamic && other->SolidDynamic) {
-                        // Test horizontal first
-                        if (GameUtil::RectOverlap(newDynamicPosX, object->py, 1.0f, 1.0f, other->px, other->py, 1.0f, 1.0f)) {
-                            if (object->vx <= 0) {
-                                newDynamicPosX = other->px + 1.0f;
-                            }
-                            else {
-                                newDynamicPosX = other->px - 1.0f;
-                            }
-                        }
-                        // Test vertical second
-                        if (GameUtil::RectOverlap(newDynamicPosX, newDynamicPosY, 1.0f, 1.0f, other->px, other->py, 1.0f, 1.0f)) {
-                            if (object->vy <= 0) {
-                                newDynamicPosY = other->py + 1.0f;
-                            }
-                            else {
-                                newDynamicPosY = other->py - 1.0f;
-                            }
+                    // Test horizontal first
+                    if (object->vx <= 0) {
+                        if (CurrentMap->GetSolid(newObjectPosX + 0.0f, object->py + (0.0f + border)) || CurrentMap->GetSolid(newObjectPosX + 0.0f, object->py + (1.0f - border))) {
+                            newObjectPosX = (int)newObjectPosX + 1;
+                            object->vx = 0;
                         }
                     }
                     else {
-                        if (GameUtil::RectOverlap(newDynamicPosX, newDynamicPosY, 1.0f, 1.0f, other->px, other->py, 1.0f, 1.0f)) {
-                            for (auto &quest : ListQuests) {
-                                if (quest->OnInteraction(ListObjects, other, Quest::QuestNature::WALK)) {
-                                    break;
-                                }
-                            }
-                            CurrentMap->OnInteraction(ListObjects, other, Map::InteractNature::WALK);
-                            other->OnInteract(object);
+                        if (CurrentMap->GetSolid(newObjectPosX + 1.0f, object->py + (0.0f + border)) || CurrentMap->GetSolid(newObjectPosX + 1.0f, object->py + (1.0f - border))) {
+                            newObjectPosX = (int)newObjectPosX;
+                            object->vx = 0;
+                        }
+                    }
+
+                    // Test vertical second
+                    if (object->vy <= 0) {
+                        if (CurrentMap->GetSolid(newObjectPosX + (0.0f + border), newObjectPosY + 0.0f) || CurrentMap->GetSolid(newObjectPosX + (1.0f - border), newObjectPosY + 0.0f)) {
+                            newObjectPosY = (int)newObjectPosY + 1;
+                            object->vy = 0;
+                        }
+                    }
+                    else {
+                        if (CurrentMap->GetSolid(newObjectPosX + (0.0f + border), newObjectPosY + 1.0f) || CurrentMap->GetSolid(newObjectPosX + (1.0f - border), newObjectPosY + 1.0f)) {
+                            newObjectPosY = (int)newObjectPosY;
+                            object->vy = 0;
                         }
                     }
                 }
+
+                // Handle collision with other dynamic objects
+
+                float newDynamicPosX = newObjectPosX;
+                float newDynamicPosY = newObjectPosY;
+
+                for (auto &other : ListObjects) {
+                    if (object != other) {
+                        if (object->SolidDynamic && other->SolidDynamic) {
+                            // Test horizontal first
+                            if (GameUtil::RectOverlap(newDynamicPosX, object->py, 1.0f, 1.0f, other->px, other->py, 1.0f, 1.0f)) {
+                                if (object->vx <= 0) {
+                                    newDynamicPosX = other->px + 1.0f;
+                                }
+                                else {
+                                    newDynamicPosX = other->px - 1.0f;
+                                }
+                            }
+                            // Test vertical second
+                            if (GameUtil::RectOverlap(newDynamicPosX, newDynamicPosY, 1.0f, 1.0f, other->px, other->py, 1.0f, 1.0f)) {
+                                if (object->vy <= 0) {
+                                    newDynamicPosY = other->py + 1.0f;
+                                }
+                                else {
+                                    newDynamicPosY = other->py - 1.0f;
+                                }
+                            }
+                        }
+                        else {
+                            if (object == Player) { // Only player interacts with objects
+                                if (GameUtil::RectOverlap(newDynamicPosX, newDynamicPosY, 1.0f, 1.0f, other->px, other->py, 1.0f, 1.0f)) {
+                                    for (auto &quest : ListQuests) {
+                                        if (quest->OnInteraction(ListObjects, other, Quest::QuestNature::WALK)) {
+                                            break;
+                                        }
+                                    }
+                                    CurrentMap->OnInteraction(ListObjects, other, Map::InteractNature::WALK);
+                                    other->OnInteract(object);
+                                }
+                            }
+                            else {
+                                // TODO: Handle projectile collisions
+                            }
+                        }
+                    }
+                }
+
+                object->px = newDynamicPosX;
+                object->py = newDynamicPosY;
+
+                object->Update(fElapsedTime, Player);
             }
-
-            object->px = newDynamicPosX;
-            object->py = newDynamicPosY;
-
-            object->Update(fElapsedTime, Player);
         }
 
         // Rendering
@@ -239,8 +260,10 @@ namespace Rpg {
             }
         }
 
-        for (auto &object : ListObjects) {
-            object->Draw(this, levelOffsetX, levelOffsetY);
+        for (auto &list : { ListObjects, ListProjectiles }) {
+            for (auto &object : list) {
+                object->Draw(this, levelOffsetX, levelOffsetY);
+            }
         }
 
         if (DialogDisplay) {
@@ -387,6 +410,11 @@ namespace Rpg {
     bool GameEngine::HasItem(Item *item)
     {
         return find(ListItems.begin(), ListItems.end(), item) != ListItems.end();
+    }
+
+    void GameEngine::AddProjectile(Dynamic_Projectile *projectile)
+    {
+        ListProjectiles.push_back(projectile);
     }
 
 }

@@ -187,13 +187,14 @@ namespace Rpg {
         m_duration -= elapsed;
         if (m_duration < 0) {
             m_duration = 0;
+            Redundant = true;
         }
     }
 
     void Dynamic_Projectile::Draw(olc::PixelGameEngine * engine, float ox, float oy)
     {
-        if (m_duration > 0) {
-            engine->DrawPartialSprite((px - ox) * Assets::TileWidth, (py - oy) * Assets::TileHeight, m_sprite, m_tileX, m_tileY, Assets::TileWidth, Assets::TileHeight);
+        if (!Redundant) {
+            engine->DrawPartialSprite((px - ox) * Assets::TileWidth, (py - oy) * Assets::TileHeight, m_sprite, m_tileX * Assets::TileWidth, m_tileY * Assets::TileHeight, Assets::TileWidth, Assets::TileHeight);
         }
     }
 

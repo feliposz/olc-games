@@ -94,15 +94,17 @@ namespace Rpg {
 
     class Dynamic_Projectile : public Dynamic {
     public:
+        bool OneHit = false;
+        bool Redundant = false;
+        int Damage = 0;
+
         Dynamic_Projectile(float px, float py, bool friendly, float vx, float vy, float duration, olc::Sprite *sprite, int tx, int ty);
         void Update(float elapsed, Dynamic *player) override;
         void Draw(olc::PixelGameEngine *engine, float ox, float oy) override;
     private:
         float m_duration;
-        bool m_oneHit;
         olc::Sprite *m_sprite;
         int m_tileX, m_tileY;
-        int m_damage;
     };
 
 }

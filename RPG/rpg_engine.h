@@ -25,6 +25,7 @@ namespace Rpg {
         std::vector<std::string> DialogContent;
         std::list<Quest *> ListQuests;
         std::list<Item *> ListItems;
+        std::list<Dynamic *> ListProjectiles;
         enum {
             GM_LocalMap,
             GM_Inventory
@@ -45,6 +46,7 @@ namespace Rpg {
         bool GiveItem(Item *item);
         bool TakeItem(Item *item);
         bool HasItem(Item *item);
+        void AddProjectile(Dynamic_Projectile *projectile);
     };
 
 }

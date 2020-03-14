@@ -6,6 +6,7 @@
 namespace Rpg {
 
     class Dynamic;
+    class GameEngine;
 
     class Item {
     public:
@@ -14,6 +15,8 @@ namespace Rpg {
         olc::Sprite *Sprite;
         bool Equipable;
         bool KeyItem;
+
+        static GameEngine *Engine;
 
         Item(std::string name, std::string description, olc::Sprite *sprite, bool equipable, bool keyItem);
         ~Item();
@@ -42,7 +45,7 @@ namespace Rpg {
         Weapon(std::string name, std::string description, olc::Sprite *sprite, int damage);
         bool OnInteract(Dynamic *object) override;
         bool OnUse(Dynamic *object) override;
-    private:
+    protected:
         int m_damage = 0;
     };
 

@@ -1,7 +1,10 @@
 #include "rpg_item.h"
 #include "rpg_assets.h"
+#include "rpg_engine.h"
 
 namespace Rpg {
+
+    GameEngine *Item::Engine = nullptr;
 
     Item::Item(std::string name, std::string description, olc::Sprite * sprite, bool equipable, bool keyItem)
     {
@@ -86,8 +89,47 @@ namespace Rpg {
 
     bool Weapon_Sword::OnUse(Dynamic * object)
     {
-        // TODO: Create projectile
-        return false;
+        Dynamic_Creature *creature = (Dynamic_Creature *)object;
+
+        float originX = object->px;
+        float originY = object->py;
+        float velX = object->vx;
+        float velY = object->vy;
+        int tileX = 0;
+        int tileY = 0;
+
+        switch (creature->GetDirection()) {
+        case EAST:
+            tileX = 3;
+            originX += 1.0f;
+            velX += 1.0f;
+            break;
+        case WEST:
+            tileX = 1;
+            originX -= 1.0f;
+            velX -= 1.0f;
+            break;
+        case NORTH:
+            tileX = 2;
+            originY -= 1.0f;
+            velY -= 1.0f;
+            break;
+        case SOUTH:
+            tileX = 4;
+            originY += 1.0f;
+            velY += 1.0f;
+            break;
+        }
+
+        Dynamic_Projectile *p = new Dynamic_Projectile(originX, originY, false, velX, velY, 0.1f, Assets::GetInstance().GetSprite("sword"), tileX, tileY);
+        p->OneHit = true;
+        p->Damage = m_damage;
+        p->SolidMap = false;
+        p->SolidDynamic = false;
+
+        Engine->AddProjectile(p);
+
+        return true;
     }
 
 }
