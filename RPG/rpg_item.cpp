@@ -93,8 +93,8 @@ namespace Rpg {
 
         float originX = object->px;
         float originY = object->py;
-        float velX = object->vx;
-        float velY = object->vy;
+        float velX = 0;
+        float velY = 0;
         int tileX = 0;
         int tileY = 0;
 
@@ -119,6 +119,16 @@ namespace Rpg {
             originY += 1.0f;
             velY += 1.0f;
             break;
+        }
+
+        if (creature->Health == creature->MaxHealth) {
+            // Beam sword
+            Dynamic_Projectile *p = new Dynamic_Projectile(originX, originY, object->Friendly, velX * 15.0f, velY * 15.0f, 1.0f, Assets::GetInstance().GetSprite("sword"), tileX, 1);
+            p->OneHit = false;
+            p->Damage = m_damage;
+            p->SolidMap = true;
+            p->SolidDynamic = false;
+            Engine->AddProjectile(p);
         }
 
         Dynamic_Projectile *p = new Dynamic_Projectile(originX, originY, object->Friendly, velX, velY, 0.1f, Assets::GetInstance().GetSprite("sword"), tileX, tileY);

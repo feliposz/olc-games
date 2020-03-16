@@ -151,18 +151,21 @@ namespace Rpg {
 
                 if (object->SolidMap) {
                     float border = 0.1f;
+                    bool collidedWithMap = false;
 
                     // Test horizontal first
                     if (object->vx <= 0) {
                         if (CurrentMap->GetSolid(newObjectPosX + 0.0f, object->py + (0.0f + border)) || CurrentMap->GetSolid(newObjectPosX + 0.0f, object->py + (1.0f - border))) {
                             newObjectPosX = (int)newObjectPosX + 1;
                             object->vx = 0;
+                            collidedWithMap = true;
                         }
                     }
                     else {
                         if (CurrentMap->GetSolid(newObjectPosX + 1.0f, object->py + (0.0f + border)) || CurrentMap->GetSolid(newObjectPosX + 1.0f, object->py + (1.0f - border))) {
                             newObjectPosX = (int)newObjectPosX;
                             object->vx = 0;
+                            collidedWithMap = true;
                         }
                     }
 
@@ -171,13 +174,19 @@ namespace Rpg {
                         if (CurrentMap->GetSolid(newObjectPosX + (0.0f + border), newObjectPosY + 0.0f) || CurrentMap->GetSolid(newObjectPosX + (1.0f - border), newObjectPosY + 0.0f)) {
                             newObjectPosY = (int)newObjectPosY + 1;
                             object->vy = 0;
+                            collidedWithMap = true;
                         }
                     }
                     else {
                         if (CurrentMap->GetSolid(newObjectPosX + (0.0f + border), newObjectPosY + 1.0f) || CurrentMap->GetSolid(newObjectPosX + (1.0f - border), newObjectPosY + 1.0f)) {
                             newObjectPosY = (int)newObjectPosY;
                             object->vy = 0;
+                            collidedWithMap = true;
                         }
+                    }
+
+                    if (handlingProjectiles && collidedWithMap) {
+                        ((Dynamic_Projectile *)object)->Redundant = true;
                     }
                 }
 
