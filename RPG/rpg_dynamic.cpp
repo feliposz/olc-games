@@ -67,7 +67,7 @@ namespace Rpg {
             m_state = STANDING;
         }
 
-        Behavior(elapsed, player);
+        Behavior(elapsed, (Dynamic_Creature *)player);
     }
 
     void Dynamic_Creature::Draw(olc::PixelGameEngine *engine, float ox, float oy)
@@ -104,7 +104,7 @@ namespace Rpg {
         m_stateTick = 2.0f;
     }
 
-    void Dynamic_Creature_Skelly::Behavior(float elapsed, Dynamic *player)
+    void Dynamic_Creature_Skelly::Behavior(float elapsed, Dynamic_Creature *player)
     {
         if (m_state == DEAD) {
             vx = 0;
@@ -116,24 +116,29 @@ namespace Rpg {
         m_stateTick -= elapsed;
         if (m_stateTick <= 0.0f) {
             m_stateTick += 1.0f;
+            vx = 0;
+            vy = 0;
             float dist = GameUtil::Distance(player->px, player->py, px, py);
-
-            if (dist < 6.0f) {
-                if (player->px > px) {
-                    vx = 1.5f;
+            if (dist < 6.0f && player->Health > 0) {
+                if (fabs(player->px - px) > 1.0f) {
+                    if (player->px > px) {
+                        vx = 1.5f;
+                    }
+                    else if (player->px < px) {
+                        vx = -1.5f;
+                    }
                 }
-                else if (player->px < px) {
-                    vx = -1.5f;
-                }
-                if (player->py > py) {
-                    vy = 1.5f;
-                }
-                else if (player->py < py) {
-                    vy = -1.5f;
+                if (fabs(player->py - py) > 1.0f) {
+                    if (player->py > py) {
+                        vy = 1.5f;
+                    }
+                    else if (player->py < py) {
+                        vy = -1.5f;
+                    }
                 }
             }
 
-            if (dist < 1.5f) {
+            if (dist < 1.5f && player->Health > 0) {
                 PerformAttack();
             }
         }

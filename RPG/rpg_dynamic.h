@@ -53,7 +53,7 @@ namespace Rpg {
         Dynamic_Creature(std::string name, olc::Sprite *sprite);
         void Update(float elapsed, Dynamic *player) override;
         void Draw(olc::PixelGameEngine *engine, float ox, float oy) override;
-        virtual void Behavior(float elapsed, Dynamic *player) {}
+        virtual void Behavior(float elapsed, Dynamic_Creature *player) {}
         FacingDirection GetDirection() { return m_direction; }
         virtual void PerformAttack();
     };
@@ -66,7 +66,7 @@ namespace Rpg {
     class Dynamic_Creature_Skelly : public Dynamic_Creature {
     public:
         Dynamic_Creature_Skelly();
-        void Behavior(float elapsed, Dynamic *player) override;
+        void Behavior(float elapsed, Dynamic_Creature *player) override;
     };
 
     class Dynamic_Teleport : public Dynamic {
