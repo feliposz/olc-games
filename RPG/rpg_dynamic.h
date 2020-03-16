@@ -55,13 +55,12 @@ namespace Rpg {
         void Draw(olc::PixelGameEngine *engine, float ox, float oy) override;
         virtual void Behavior(float elapsed, Dynamic *player) {}
         FacingDirection GetDirection() { return m_direction; }
-        virtual void PerformAttack() {}
+        virtual void PerformAttack();
     };
 
     class Dynamic_Creature_Player : public Dynamic_Creature {
     public:
         Dynamic_Creature_Player();
-        void PerformAttack() override;
     };
 
     class Dynamic_Creature_Skelly : public Dynamic_Creature {

@@ -121,7 +121,7 @@ namespace Rpg {
             break;
         }
 
-        Dynamic_Projectile *p = new Dynamic_Projectile(originX, originY, false, velX, velY, 0.1f, Assets::GetInstance().GetSprite("sword"), tileX, tileY);
+        Dynamic_Projectile *p = new Dynamic_Projectile(originX, originY, object->Friendly, velX, velY, 0.1f, Assets::GetInstance().GetSprite("sword"), tileX, tileY);
         p->OneHit = true;
         p->Damage = m_damage;
         p->SolidMap = false;

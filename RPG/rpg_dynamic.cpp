@@ -99,11 +99,20 @@ namespace Rpg {
     {
         Health = 5;
         MaxHealth = 5;
+        Friendly = false;
+        EquipedWeapon = (Weapon*)Assets::GetInstance().GetItem("sword");
         m_stateTick = 2.0f;
     }
 
     void Dynamic_Creature_Skelly::Behavior(float elapsed, Dynamic *player)
     {
+        if (m_state == DEAD) {
+            vx = 0;
+            vy = 0;
+            IsAttackable = false;
+            SolidDynamic = false;
+            return;
+        }
         m_stateTick -= elapsed;
         if (m_stateTick <= 0.0f) {
             m_stateTick += 1.0f;
@@ -122,6 +131,10 @@ namespace Rpg {
                 else if (player->py < py) {
                     vy = -1.5f;
                 }
+            }
+
+            if (dist < 1.5f) {
+                PerformAttack();
             }
         }
     }
@@ -204,7 +217,7 @@ namespace Rpg {
         EquipedWeapon = (Weapon*)Assets::GetInstance().GetItem("sword");
     }
 
-    void Dynamic_Creature_Player::PerformAttack()
+    void Dynamic_Creature::PerformAttack()
     {
         if (EquipedWeapon != nullptr) {
             EquipedWeapon->OnUse(this);

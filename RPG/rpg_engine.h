@@ -47,6 +47,7 @@ namespace Rpg {
         bool TakeItem(Item *item);
         bool HasItem(Item *item);
         void AddProjectile(Dynamic_Projectile *projectile);
+        void DoDamage(Dynamic_Creature * victim, Dynamic_Projectile * projectile);
     };
 
 }

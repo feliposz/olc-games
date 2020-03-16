@@ -46,12 +46,14 @@ namespace Rpg {
             Dynamic_Creature *carl = new Dynamic_Creature("carl", Assets::GetInstance().GetSprite("purple"));
             carl->px = 6;
             carl->py = 4;
+            carl->Friendly = true;
             objects.push_back(carl);
         }
         else if (map == "home") {
             Dynamic_Creature *bob = new Dynamic_Creature("bob", Assets::GetInstance().GetSprite("skelly"));
             bob->px = 11;
             bob->py = 4;
+            bob->Friendly = true;
             objects.push_back(bob);
         }
     }

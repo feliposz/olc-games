@@ -140,6 +140,7 @@ namespace Rpg {
 
         Script.ProcessCommands(fElapsedTime);
 
+        bool handlingProjectiles = false;
         for (auto &list : { ListObjects, ListProjectiles }) {
             for (auto &object : list) {
 
@@ -220,7 +221,15 @@ namespace Rpg {
                                 }
                             }
                             else {
-                                // TODO: Handle projectile collisions
+                                if (handlingProjectiles) {
+                                    if (other->IsAttackable && other->Friendly != object->Friendly) {
+                                        if (GameUtil::RectOverlap(newDynamicPosX, newDynamicPosY, 1.0f, 1.0f, other->px, other->py, 1.0f, 1.0f)) {
+                                            Dynamic_Projectile *projectile = (Dynamic_Projectile *)object;
+                                            Dynamic_Creature *victim = (Dynamic_Creature *)other;
+                                            DoDamage(victim, projectile);
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -231,6 +240,7 @@ namespace Rpg {
 
                 object->Update(fElapsedTime, Player);
             }
+            handlingProjectiles = true;
         }
 
         // Rendering
@@ -415,6 +425,16 @@ namespace Rpg {
     void GameEngine::AddProjectile(Dynamic_Projectile *projectile)
     {
         ListProjectiles.push_back(projectile);
+    }
+
+    void GameEngine::DoDamage(Dynamic_Creature * victim, Dynamic_Projectile * projectile)
+    {
+        if (victim != nullptr && projectile != nullptr) {
+            victim->Health -= projectile->Damage;
+            if (projectile->OneHit) {
+                projectile->Redundant = true;
+            }
+        }
     }
 
 }
