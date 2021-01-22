@@ -36,6 +36,35 @@ void MultiplyMatrixVector(vec3d &i, vec3d &o, mat4x4 &m)
     }
 }
 
+vec3d CrossProduct(vec3d a, vec3d b)
+{
+    return { a.y * b.z - a.z * b.y,
+             a.z * b.x - a.x * b.z,
+             a.x * b.y - a.y * b.x };
+}
+
+float DotProduct(vec3d a, vec3d b)
+{
+    return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+vec3d TriangleNormal(triangle tri)
+{
+    vec3d a = { tri.p[1].x - tri.p[0].x,
+                tri.p[1].y - tri.p[0].y,
+                tri.p[1].z - tri.p[0].z };
+    vec3d b = { tri.p[2].x - tri.p[0].x,
+                tri.p[2].y - tri.p[0].y,
+                tri.p[2].z - tri.p[0].z };
+    vec3d n = CrossProduct(a, b);
+    float length = sqrtf(DotProduct(n, n));
+    n.x /= length;
+    n.y /= length;
+    n.z /= length;
+    return n;
+}
+
+
 class Engine3D : public olc::PixelGameEngine
 {
     mesh cube;
@@ -98,11 +127,14 @@ public:
         float offY = 1.0f;
         float scale = 0.5f * (float)ScreenWidth();
 
+        vec3d camera = { 0, 0, 0 };
+        vec3d light = { 0, 0, -1 };
+
         time += fElapsedTime;
 
         float a = time;
         float b = time * 0.5f;
-
+        
         rotZ.m[0][0] = cosf(a);
         rotZ.m[0][1] = -sinf(a);
         rotZ.m[1][0] = sinf(a);
@@ -119,7 +151,7 @@ public:
   
         for (auto tri : cube.tris)
         {
-            triangle triRotZ, triRotXZ, triProj;
+            triangle triRotZ, triRotXZ, triTran, triProj;
             MultiplyMatrixVector(tri.p[0], triRotZ.p[0], rotZ);
             MultiplyMatrixVector(tri.p[1], triRotZ.p[1], rotZ);
             MultiplyMatrixVector(tri.p[2], triRotZ.p[2], rotZ);
@@ -128,23 +160,37 @@ public:
             MultiplyMatrixVector(triRotZ.p[1], triRotXZ.p[1], rotX);
             MultiplyMatrixVector(triRotZ.p[2], triRotXZ.p[2], rotX);
 
-            triRotXZ.p[0].z += 3.0f;
-            triRotXZ.p[1].z += 3.0f;
-            triRotXZ.p[2].z += 3.0f;
+            triTran = triRotXZ;
+            triTran.p[0].z += 3.0f;
+            triTran.p[1].z += 3.0f;
+            triTran.p[2].z += 3.0f;
 
-            MultiplyMatrixVector(triRotXZ.p[0], triProj.p[0], proj);
-            MultiplyMatrixVector(triRotXZ.p[1], triProj.p[1], proj);
-            MultiplyMatrixVector(triRotXZ.p[2], triProj.p[2], proj);
+            vec3d normal = TriangleNormal(triTran);
+            vec3d visibility = { triTran.p[0].x - camera.x,
+                                 triTran.p[0].y - camera.y,
+                                 triTran.p[0].z - camera.z };
+            float culling = DotProduct(normal, visibility);
 
-            triProj.p[0].x += offX; triProj.p[0].y += offY;
-            triProj.p[1].x += offX; triProj.p[1].y += offY;
-            triProj.p[2].x += offX; triProj.p[2].y += offY;
+            if (culling < 0)
+            {
+                MultiplyMatrixVector(triTran.p[0], triProj.p[0], proj);
+                MultiplyMatrixVector(triTran.p[1], triProj.p[1], proj);
+                MultiplyMatrixVector(triTran.p[2], triProj.p[2], proj);
 
-            triProj.p[0].x *= scale; triProj.p[0].y *= scale;
-            triProj.p[1].x *= scale; triProj.p[1].y *= scale;
-            triProj.p[2].x *= scale; triProj.p[2].y *= scale;
+                triProj.p[0].x += offX; triProj.p[0].y += offY;
+                triProj.p[1].x += offX; triProj.p[1].y += offY;
+                triProj.p[2].x += offX; triProj.p[2].y += offY;
 
-            DrawTriangle(triProj.p[0].x, triProj.p[0].y, triProj.p[1].x, triProj.p[1].y, triProj.p[2].x, triProj.p[2].y, olc::WHITE);
+                triProj.p[0].x *= scale; triProj.p[0].y *= scale;
+                triProj.p[1].x *= scale; triProj.p[1].y *= scale;
+                triProj.p[2].x *= scale; triProj.p[2].y *= scale;
+
+                uint8_t shade = (uint8_t) (255.0f * DotProduct(normal, light));
+                olc::Pixel color = { shade, shade, shade };
+
+                FillTriangle(triProj.p[0].x, triProj.p[0].y, triProj.p[1].x, triProj.p[1].y, triProj.p[2].x, triProj.p[2].y, color);
+                //DrawTriangle(triProj.p[0].x, triProj.p[0].y, triProj.p[1].x, triProj.p[1].y, triProj.p[2].x, triProj.p[2].y, olc::BLUE);
+            }
         }
 
         return true;
