@@ -1,5 +1,8 @@
 #define OLC_PGE_APPLICATION
 #include "olcPixelGameEngine.h"
+#include <fstream>
+#include <strstream>
+#include <algorithm>
 
 struct vec3d
 {
@@ -9,11 +12,54 @@ struct vec3d
 struct triangle
 {
     vec3d p[3];
+    olc::Pixel color;
 };
 
 struct mesh
 {
     std::vector<triangle> tris;
+
+    bool LoadFromOBJFile(std::string filename)
+    {
+        std::ifstream file(filename);
+        if (!file.is_open())
+        {
+            return false;
+        }
+
+        std::vector<vec3d> vertices;
+
+        while (!file.eof())
+        {
+            char line[256];
+            file.getline(line, 256);
+
+            char prefix;
+            vec3d v;
+
+            std::strstream ss(line, 256);
+            ss >> prefix;
+
+            if (prefix == 'v')
+            {
+                ss >> v.x >> v.y >> v.z;
+                vertices.push_back(v);
+            }
+            else if (prefix == 'f')
+            {
+                int a, b, c;
+                ss >> a >> b >> c;
+                a--;
+                b--;
+                c--;
+                tris.push_back({ vertices[a], vertices[b], vertices[c] });
+            }
+        }
+
+        file.close();
+
+        return true;
+    }
 };
 
 struct mat4x4
@@ -68,6 +114,7 @@ vec3d TriangleNormal(triangle tri)
 class Engine3D : public olc::PixelGameEngine
 {
     mesh cube;
+    mesh ship;
     mat4x4 proj;
     mat4x4 rotZ;
     mat4x4 rotX;
@@ -101,7 +148,12 @@ public:
             { 1.0f, 0.0f, 1.0f,    0.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f },
             { 1.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f,    1.0f, 0.0f, 0.0f },
         };
-        
+
+        if (!ship.LoadFromOBJFile("VideoShip.obj"))
+        {
+            return false;
+        }
+
         float aspectRatio = (float)ScreenHeight() / (float)ScreenWidth();
         float zNear = 0.1f;
         float zFar = 1000.0f;
@@ -134,7 +186,7 @@ public:
 
         float a = time;
         float b = time * 0.5f;
-        
+
         rotZ.m[0][0] = cosf(a);
         rotZ.m[0][1] = -sinf(a);
         rotZ.m[1][0] = sinf(a);
@@ -148,8 +200,10 @@ public:
         rotX.m[2][1] = sinf(b);
         rotX.m[2][2] = cosf(b);
         rotX.m[3][3] = 1;
-  
-        for (auto tri : cube.tris)
+
+        std::vector<triangle> renderTris;
+
+        for (auto tri : ship.tris)
         {
             triangle triRotZ, triRotXZ, triTran, triProj;
             MultiplyMatrixVector(tri.p[0], triRotZ.p[0], rotZ);
@@ -161,9 +215,9 @@ public:
             MultiplyMatrixVector(triRotZ.p[2], triRotXZ.p[2], rotX);
 
             triTran = triRotXZ;
-            triTran.p[0].z += 3.0f;
-            triTran.p[1].z += 3.0f;
-            triTran.p[2].z += 3.0f;
+            triTran.p[0].z += 8.0f;
+            triTran.p[1].z += 8.0f;
+            triTran.p[2].z += 8.0f;
 
             vec3d normal = TriangleNormal(triTran);
             vec3d visibility = { triTran.p[0].x - camera.x,
@@ -185,12 +239,25 @@ public:
                 triProj.p[1].x *= scale; triProj.p[1].y *= scale;
                 triProj.p[2].x *= scale; triProj.p[2].y *= scale;
 
-                uint8_t shade = (uint8_t) (255.0f * DotProduct(normal, light));
+                uint8_t shade = (uint8_t)(255.0f * DotProduct(normal, light));
                 olc::Pixel color = { shade, shade, shade };
 
-                FillTriangle(triProj.p[0].x, triProj.p[0].y, triProj.p[1].x, triProj.p[1].y, triProj.p[2].x, triProj.p[2].y, color);
-                //DrawTriangle(triProj.p[0].x, triProj.p[0].y, triProj.p[1].x, triProj.p[1].y, triProj.p[2].x, triProj.p[2].y, olc::BLUE);
+                triProj.color = color;
+                renderTris.push_back(triProj);
             }
+        }
+
+        // sort by the average z of the triangles
+        std::sort(renderTris.begin(), renderTris.end(), [](triangle a, triangle b)
+        {
+            float za = (a.p[0].z + a.p[1].z + a.p[2].z) / 3.0f;
+            float zb = (b.p[0].z + b.p[1].z + b.p[2].z) / 3.0f;
+            return za > zb;
+        });
+
+        for (auto tri : renderTris)
+        {
+            FillTriangle(tri.p[0].x, tri.p[0].y, tri.p[1].x, tri.p[1].y, tri.p[2].x, tri.p[2].y, tri.color);
         }
 
         return true;
@@ -204,4 +271,5 @@ int main()
     {
         game.Start();
     }
+    return 0;
 }
