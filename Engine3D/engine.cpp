@@ -81,7 +81,73 @@ vec3d Vector_CrossProduct(vec3d a, vec3d b)
         a.x * b.y - a.y * b.x };
 }
 
-vec3d TriangleNormal(triangle tri)
+vec3d Vector_IntersectPlane(vec3d planePos, vec3d planeNormal, vec3d lineStart, vec3d lineEnd)
+{
+    planeNormal = Vector_Normalize(planeNormal);
+    float planeD = Vector_DotProduct(planeNormal, planePos);
+    float aD = Vector_DotProduct(lineStart, planeNormal);
+    float bD = Vector_DotProduct(lineEnd, planeNormal);
+    float t = (planeD - aD) / (bD - aD);
+    vec3d lineStartToEnd = Vector_Sub(lineEnd, lineStart);
+    vec3d lineToIntersect = Vector_Mul(lineStartToEnd, t);
+    return Vector_Add(lineStart, lineToIntersect);
+}
+
+int Triangle_ClipAgainstPlane(vec3d planePos, vec3d planeNormal, triangle &inTri, triangle &out1, triangle &out2, bool enableDebug = false)
+{
+    int insideCount = 0;
+    int outsideCount = 0;
+    vec3d insidePoints[3];
+    vec3d outsidePoints[3];
+
+    // Classify which points are "inside" and "outside" the clipping plane
+    for (int i = 0; i < 3; i++)
+    {
+        if (Vector_DotProduct(planeNormal, Vector_Sub(inTri.p[i], planePos)) > 0)
+        {
+            insidePoints[insideCount++] = inTri.p[i];
+        }
+        else
+        {
+            outsidePoints[outsideCount++] = inTri.p[i];
+        }
+    }
+
+    if (insideCount == 3)
+    {
+        out1 = inTri;
+        return 1;
+    }
+    else if (insideCount == 1)
+    {
+        out1.p[0] = insidePoints[0];
+        out1.p[1] = Vector_IntersectPlane(planePos, planeNormal, insidePoints[0], outsidePoints[0]);
+        out1.p[2] = Vector_IntersectPlane(planePos, planeNormal, insidePoints[0], outsidePoints[1]);
+        out1.color = enableDebug ? olc::BLUE : inTri.color;
+        return 1;
+    }
+    else if (insideCount == 2)
+    {
+        vec3d newP2 = Vector_IntersectPlane(planePos, planeNormal, insidePoints[0], outsidePoints[0]);
+        vec3d newP0 = Vector_IntersectPlane(planePos, planeNormal, insidePoints[1], outsidePoints[0]);
+
+        out1.p[0] = insidePoints[0];
+        out1.p[1] = insidePoints[1];
+        out1.p[2] = newP2;
+        out1.color = enableDebug ? olc::GREEN : inTri.color;
+
+        out2.p[0] = insidePoints[1];
+        out2.p[1] = newP2;
+        out2.p[2] = newP0;
+        out2.color = enableDebug ? olc::RED : inTri.color;
+
+        return 2;
+    }
+
+    return 0;
+}
+
+vec3d Triangle_Normal(triangle tri)
 {
     vec3d a = Vector_Sub(tri.p[1], tri.p[0]);
     vec3d b = Vector_Sub(tri.p[2], tri.p[0]);
@@ -306,12 +372,14 @@ struct mesh
 
 class Engine3D : public olc::PixelGameEngine
 {
+    float zNear = 0.1f;
 
     mesh *obj;
     mesh cube;
     mesh ship;
     mesh axis;
     mesh teapot;
+    mesh mountains;
 
     mat4x4 proj;
     vec3d camera;
@@ -320,6 +388,8 @@ class Engine3D : public olc::PixelGameEngine
     float time;
     float yaw;
     bool enableRotation;
+    bool enableDebug;
+    bool enableWireframe;
 
 public:
     Engine3D()
@@ -353,35 +423,24 @@ public:
         ship.LoadFromOBJFile("VideoShip.obj");
         teapot.LoadFromOBJFile("teapot.obj");
         axis.LoadFromOBJFile("axis.obj");
+        mountains.LoadFromOBJFile("mountains.obj");
 
         obj = &axis;
 
         float aspectRatio = (float)ScreenHeight() / (float)ScreenWidth();
-        float zNear = 0.1f;
         float zFar = 1000.0f;
         float fov = 90.0f;
         proj = Matrix_MakeProjection(aspectRatio, zNear, zFar, fov);
 
         camera = { 0, 0, 0 };
-        light = { 1, 1, -1 };
+        light = { 2, 1, -1 };
         light = Vector_Normalize(light);
         yaw = 0;
         enableRotation = false;
+        enableDebug = false;
+        enableWireframe = false;
 
         return true;
-    }
-
-    void SafeFillTriangle(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3, olc::Pixel p)
-    {
-        int32_t minX = -ScreenWidth();
-        int32_t minY = -ScreenHeight();
-        int32_t maxX = 2 * ScreenWidth();
-        int32_t maxY = 2 * ScreenHeight();
-        if ((x1 >= minX) && (y1 >= minY) && (x2 >= minX) && (y2 >= minY) && (x3 >= minX) && (y3 >= minY) &&
-            (x1 < maxX) && (y1 < maxY) && (x2 < maxX) && (y2 < maxY) && (x3 < maxX) && (y3 < maxY))
-        {
-            FillTriangle(x1, y1, x2, y2, x3, y3, p);
-        }
     }
 
     bool OnUserUpdate(float fElapsedTime) override
@@ -414,13 +473,25 @@ public:
         {
             yaw -= fElapsedTime * 2.0f;
         }
+
+        vec3d forwardMove = Vector_Mul(lookDir, 8.0f * fElapsedTime);
+        vec3d rightMove = Vector_CrossProduct(forwardMove, { 0, 1, 0 });
+
         if (GetKey(olc::W).bHeld)
         {
-            camera = Vector_Add(camera, Vector_Mul(lookDir, 8.0f * fElapsedTime));
+            camera = Vector_Add(camera, forwardMove);
         }
         if (GetKey(olc::S).bHeld)
         {
-            camera = Vector_Sub(camera, Vector_Mul(lookDir, 8.0f * fElapsedTime));
+            camera = Vector_Sub(camera, forwardMove);
+        }
+        if (GetKey(olc::Q).bHeld)
+        {
+            camera = Vector_Add(camera, rightMove);
+        }
+        if (GetKey(olc::E).bHeld)
+        {
+            camera = Vector_Sub(camera, rightMove);
         }
 
         if (GetKey(olc::K1).bPressed)
@@ -439,11 +510,22 @@ public:
         {
             obj = &cube;
         }
+        if (GetKey(olc::K5).bPressed)
+        {
+            obj = &mountains;
+        }
         if (GetKey(olc::R).bPressed)
         {
             enableRotation = !enableRotation;
         }
-
+        if (GetKey(olc::G).bPressed)
+        {
+            enableDebug = !enableDebug;
+        }
+        if (GetKey(olc::Z).bPressed)
+        {
+            enableWireframe = !enableWireframe;
+        }
 
         FillRect(0, 0, ScreenWidth(), ScreenHeight(), olc::BLACK);
 
@@ -480,7 +562,7 @@ public:
             triWorld.p[1] = Matrix_MultiplyVector(tri.p[1], world);
             triWorld.p[2] = Matrix_MultiplyVector(tri.p[2], world);
 
-            vec3d normal = TriangleNormal(triWorld);
+            vec3d normal = Triangle_Normal(triWorld);
             vec3d visibility = Vector_Sub(triWorld.p[0], camera);
             float culling = Vector_DotProduct(normal, visibility);
 
@@ -491,32 +573,44 @@ public:
                 triView.p[1] = Matrix_MultiplyVector(triWorld.p[1], view);
                 triView.p[2] = Matrix_MultiplyVector(triWorld.p[2], view);
 
-                triangle triProj;
-                triProj.p[0] = Matrix_MultiplyVector(triView.p[0], proj);
-                triProj.p[1] = Matrix_MultiplyVector(triView.p[1], proj);
-                triProj.p[2] = Matrix_MultiplyVector(triView.p[2], proj);
-
-                // Normalize projection
-                triProj.p[0] = Vector_Div(triProj.p[0], triProj.p[0].w);
-                triProj.p[1] = Vector_Div(triProj.p[1], triProj.p[1].w);
-                triProj.p[2] = Vector_Div(triProj.p[2], triProj.p[2].w);
-
-                triProj.p[0] = Vector_Add(triProj.p[0], { offX, offY, 0, 0 });
-                triProj.p[1] = Vector_Add(triProj.p[1], { offX, offY, 0, 0 });
-                triProj.p[2] = Vector_Add(triProj.p[2], { offX, offY, 0, 0 });
-
-                triProj.p[0] = Vector_Mul(triProj.p[0], scale);
-                triProj.p[1] = Vector_Mul(triProj.p[1], scale);
-                triProj.p[2] = Vector_Mul(triProj.p[2], scale);
-
+                // shading
                 float fShade = Vector_DotProduct(normal, light);
                 fShade = fShade < 0.1f ? 0.1f : (fShade > 1.0f ? 1.0f : fShade);
                 uint8_t shade = (uint8_t)(255.0f * fShade);
+                triView.color = { shade, shade, shade };
 
-                olc::Pixel color = { shade, shade, shade };
+                // clip triangles against camera "near" plane
 
-                triProj.color = color;
-                renderTris.push_back(triProj);
+                triangle triClipped[2];
+                vec3d nearPlanePos = { 0, 0, zNear };
+                vec3d nearPlaneNormal = { 0, 0, 1 }; // forward
+                int numTriangles = Triangle_ClipAgainstPlane(nearPlanePos, nearPlaneNormal, triView, triClipped[0], triClipped[1], enableDebug);
+
+                for (int i = 0; i < numTriangles; i++)
+                {
+                    triangle triProj;
+                    triProj.p[0] = Matrix_MultiplyVector(triClipped[i].p[0], proj);
+                    triProj.p[1] = Matrix_MultiplyVector(triClipped[i].p[1], proj);
+                    triProj.p[2] = Matrix_MultiplyVector(triClipped[i].p[2], proj);
+                    triProj.color = triClipped[i].color;
+
+                    // Normalize projection
+                    triProj.p[0] = Vector_Div(triProj.p[0], triProj.p[0].w);
+                    triProj.p[1] = Vector_Div(triProj.p[1], triProj.p[1].w);
+                    triProj.p[2] = Vector_Div(triProj.p[2], triProj.p[2].w);
+
+                    // offset and scale to screen coords
+
+                    triProj.p[0] = Vector_Add(triProj.p[0], { offX, offY, 0, 0 });
+                    triProj.p[1] = Vector_Add(triProj.p[1], { offX, offY, 0, 0 });
+                    triProj.p[2] = Vector_Add(triProj.p[2], { offX, offY, 0, 0 });
+
+                    triProj.p[0] = Vector_Mul(triProj.p[0], scale);
+                    triProj.p[1] = Vector_Mul(triProj.p[1], scale);
+                    triProj.p[2] = Vector_Mul(triProj.p[2], scale);
+
+                    renderTris.push_back(triProj);
+                }
             }
         }
 
@@ -528,18 +622,66 @@ public:
             return za > zb;
         });
 
+        // clip triangles agains screen border "planes"
+        vec3d planePos[4] = { {0, 0, 0}, { 0, ScreenHeight() - 1, 0 }, { 0, 0, 0 }, { ScreenWidth() - 1, 0, 0 } };
+        vec3d planeNormal[4] = { { 0, 1, 0 }, { 0, -1, 0 }, { 1, 0, 0 }, { -1, 0, 0 } };
+
+        // render resulting triangles
+
         for (auto tri : renderTris)
         {
-            SafeFillTriangle(tri.p[0].x, height - tri.p[0].y, tri.p[1].x, height - tri.p[1].y, tri.p[2].x, height - tri.p[2].y, tri.color);
+            std::list<triangle> current;
+            std::list<triangle> next;
+
+            // place current triangle into queue to be clipped agains 4 planes
+            current.push_back(tri);
+
+            for (int plane = 0; plane < 4; plane++)
+            {
+                while (current.size() > 0)
+                {
+                    triangle test = current.front();
+                    current.pop_front();
+
+                    // clip agains current plane
+                    triangle triClipped[2];
+                    int numTriangles = Triangle_ClipAgainstPlane(planePos[plane], planeNormal[plane], test, triClipped[0], triClipped[1], enableDebug);
+
+                    // place triangles on the next queue to be clipped
+                    for (int i = 0; i < numTriangles; i++)
+                    {
+                        next.push_back(triClipped[i]);
+                    }
+                }
+                // move to next plane queue
+                current = next;
+                next.clear();
+            }
+
+            for (auto tri : current)
+            {
+                // reverse Y!
+                if (enableWireframe)
+                {
+                    DrawTriangle(tri.p[0].x, height - tri.p[0].y, tri.p[1].x, height - tri.p[1].y, tri.p[2].x, height - tri.p[2].y, olc::YELLOW);
+                }
+                else
+                {
+                    FillTriangle(tri.p[0].x, height - tri.p[0].y, tri.p[1].x, height - tri.p[1].y, tri.p[2].x, height - tri.p[2].y, tri.color);
+                }
+            }
         }
 
-        char Buffer[256];
-        sprintf_s(Buffer, sizeof(Buffer), "C: %.2f %.2f %.2f", camera.x, camera.y, camera.z);
-        DrawString(0, 0, Buffer, olc::YELLOW);
-        sprintf_s(Buffer, sizeof(Buffer), "L: %.2f %.2f %.2f", lookDir.x, lookDir.y, lookDir.z);
-        DrawString(0, 15, Buffer, olc::YELLOW);
-        sprintf_s(Buffer, sizeof(Buffer), "T: %.2f %.2f %.2f", target.x, target.y, target.z);
-        DrawString(0, 30, Buffer, olc::YELLOW);
+        if (enableDebug)
+        {
+            char Buffer[256];
+            sprintf_s(Buffer, sizeof(Buffer), "C: %.2f %.2f %.2f", camera.x, camera.y, camera.z);
+            DrawString(0, 0, Buffer, olc::YELLOW);
+            sprintf_s(Buffer, sizeof(Buffer), "L: %.2f %.2f %.2f", lookDir.x, lookDir.y, lookDir.z);
+            DrawString(0, 15, Buffer, olc::YELLOW);
+            sprintf_s(Buffer, sizeof(Buffer), "T: %.2f %.2f %.2f", target.x, target.y, target.z);
+            DrawString(0, 30, Buffer, olc::YELLOW);
+        }
 
         return true;
     }
