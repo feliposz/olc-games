@@ -4,6 +4,13 @@
 #include <strstream>
 #include <algorithm>
 
+struct vec2d
+{
+    float u = 0.0f;
+    float v = 0.0f;
+    float w = 1.0f;
+};
+
 struct vec3d
 {
     float x = 0.0f;
@@ -15,6 +22,7 @@ struct vec3d
 struct triangle
 {
     vec3d p[3];
+    vec2d t[3];
     olc::Pixel color;
 };
 
@@ -81,13 +89,13 @@ vec3d Vector_CrossProduct(vec3d a, vec3d b)
         a.x * b.y - a.y * b.x };
 }
 
-vec3d Vector_IntersectPlane(vec3d planePos, vec3d planeNormal, vec3d lineStart, vec3d lineEnd)
+vec3d Vector_IntersectPlane(vec3d planePos, vec3d planeNormal, vec3d lineStart, vec3d lineEnd, float &t)
 {
     planeNormal = Vector_Normalize(planeNormal);
     float planeD = Vector_DotProduct(planeNormal, planePos);
     float aD = Vector_DotProduct(lineStart, planeNormal);
     float bD = Vector_DotProduct(lineEnd, planeNormal);
-    float t = (planeD - aD) / (bD - aD);
+    t = (planeD - aD) / (bD - aD);
     vec3d lineStartToEnd = Vector_Sub(lineEnd, lineStart);
     vec3d lineToIntersect = Vector_Mul(lineStartToEnd, t);
     return Vector_Add(lineStart, lineToIntersect);
@@ -99,17 +107,23 @@ int Triangle_ClipAgainstPlane(vec3d planePos, vec3d planeNormal, triangle &inTri
     int outsideCount = 0;
     vec3d insidePoints[3];
     vec3d outsidePoints[3];
+    vec2d insideTex[3];
+    vec2d outsideTex[3];
 
     // Classify which points are "inside" and "outside" the clipping plane
     for (int i = 0; i < 3; i++)
     {
         if (Vector_DotProduct(planeNormal, Vector_Sub(inTri.p[i], planePos)) > 0)
         {
-            insidePoints[insideCount++] = inTri.p[i];
+            insidePoints[insideCount] = inTri.p[i];
+            insideTex[insideCount] = inTri.t[i];
+            insideCount++;
         }
         else
         {
-            outsidePoints[outsideCount++] = inTri.p[i];
+            outsidePoints[outsideCount] = inTri.p[i];
+            outsideTex[outsideCount] = inTri.t[i];
+            outsideCount++;
         }
     }
 
@@ -120,26 +134,47 @@ int Triangle_ClipAgainstPlane(vec3d planePos, vec3d planeNormal, triangle &inTri
     }
     else if (insideCount == 1)
     {
+        float t0, t1;
         out1.p[0] = insidePoints[0];
-        out1.p[1] = Vector_IntersectPlane(planePos, planeNormal, insidePoints[0], outsidePoints[0]);
-        out1.p[2] = Vector_IntersectPlane(planePos, planeNormal, insidePoints[0], outsidePoints[1]);
+        out1.p[1] = Vector_IntersectPlane(planePos, planeNormal, insidePoints[0], outsidePoints[0], t0);
+        out1.p[2] = Vector_IntersectPlane(planePos, planeNormal, insidePoints[0], outsidePoints[1], t1);
+
         out1.color = enableDebug ? olc::BLUE : inTri.color;
+
+        out1.t[0] = insideTex[0];
+        out1.t[1].u = insideTex[1].u + t0 * (outsideTex[1].u - insideTex[1].u);
+        out1.t[1].v = insideTex[1].v + t0 * (outsideTex[1].v - insideTex[1].v);
+        out1.t[2].u = insideTex[2].u + t1 * (outsideTex[2].u - insideTex[2].u);
+        out1.t[2].v = insideTex[2].v + t1 * (outsideTex[2].v - insideTex[2].v);
+
         return 1;
     }
     else if (insideCount == 2)
     {
-        vec3d newP2 = Vector_IntersectPlane(planePos, planeNormal, insidePoints[0], outsidePoints[0]);
-        vec3d newP0 = Vector_IntersectPlane(planePos, planeNormal, insidePoints[1], outsidePoints[0]);
+        float t0, t1;
+        vec3d newP2 = Vector_IntersectPlane(planePos, planeNormal, insidePoints[0], outsidePoints[0], t0);
+        vec3d newP0 = Vector_IntersectPlane(planePos, planeNormal, insidePoints[1], outsidePoints[0], t1);
 
         out1.p[0] = insidePoints[0];
         out1.p[1] = insidePoints[1];
         out1.p[2] = newP2;
         out1.color = enableDebug ? olc::GREEN : inTri.color;
 
+        out1.t[0] = insideTex[0];
+        out1.t[1] = insideTex[1];
+        out1.t[2].u = insideTex[2].u + t1 * (outsideTex[2].u - insideTex[2].u);
+        out1.t[2].v = insideTex[2].v + t1 * (outsideTex[2].v - insideTex[2].v);
+
         out2.p[0] = insidePoints[1];
         out2.p[1] = newP2;
         out2.p[2] = newP0;
         out2.color = enableDebug ? olc::RED : inTri.color;
+
+        out2.t[0] = insideTex[0];
+        out2.t[1].u = insideTex[1].u + t0 * (outsideTex[1].u - insideTex[1].u);
+        out2.t[1].v = insideTex[1].v + t0 * (outsideTex[1].v - insideTex[1].v);
+        out2.t[2].u = insideTex[2].u + t1 * (outsideTex[2].u - insideTex[2].u);
+        out2.t[2].v = insideTex[2].v + t1 * (outsideTex[2].v - insideTex[2].v);
 
         return 2;
     }
@@ -391,6 +426,8 @@ class Engine3D : public olc::PixelGameEngine
     bool enableDebug;
     bool enableWireframe;
 
+    olc::Sprite texture;
+
 public:
     Engine3D()
     {
@@ -401,29 +438,39 @@ public:
     {
         cube.tris = {
             // SOUTH
-            { 0.0f, 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 0.0f, 1.0f },
-            { 0.0f, 0.0f, 0.0f, 1.0f,    1.0f, 1.0f, 0.0f, 1.0f,    1.0f, 0.0f, 0.0f, 1.0f },
+            { 0.0f, 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 0.0f, 1.0f,    0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 1.0f,    1.0f, 0.0f, 1.0f, },
+            { 0.0f, 0.0f, 0.0f, 1.0f,    1.0f, 1.0f, 0.0f, 1.0f,    1.0f, 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 1.0f,    1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f, },
+
             // EAST
-            { 1.0f, 0.0f, 0.0f, 1.0f,    1.0f, 1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f, 1.0f },
-            { 1.0f, 0.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f, 1.0f,    1.0f, 0.0f, 1.0f, 1.0f },
+            { 1.0f, 0.0f, 0.0f, 1.0f,    1.0f, 1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f, 1.0f,    0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 1.0f,    1.0f, 0.0f, 1.0f, },
+            { 1.0f, 0.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f, 1.0f,    1.0f, 0.0f, 1.0f, 1.0f,    0.0f, 1.0f, 1.0f,    1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f, },
+
             // NORTH
-            { 1.0f, 0.0f, 1.0f, 1.0f,    1.0f, 1.0f, 1.0f, 1.0f,    0.0f, 1.0f, 1.0f, 1.0f },
-            { 1.0f, 0.0f, 1.0f, 1.0f,    0.0f, 1.0f, 1.0f, 1.0f,    0.0f, 0.0f, 1.0f, 1.0f },
+            { 1.0f, 0.0f, 1.0f, 1.0f,    1.0f, 1.0f, 1.0f, 1.0f,    0.0f, 1.0f, 1.0f, 1.0f,    0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 1.0f,    1.0f, 0.0f, 1.0f, },
+            { 1.0f, 0.0f, 1.0f, 1.0f,    0.0f, 1.0f, 1.0f, 1.0f,    0.0f, 0.0f, 1.0f, 1.0f,    0.0f, 1.0f, 1.0f,    1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f, },
+
             // WEST
-            { 0.0f, 0.0f, 1.0f, 1.0f,    0.0f, 1.0f, 1.0f, 1.0f,    0.0f, 1.0f, 0.0f, 1.0f },
-            { 0.0f, 0.0f, 1.0f, 1.0f,    0.0f, 1.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f, 1.0f },
+            { 0.0f, 0.0f, 1.0f, 1.0f,    0.0f, 1.0f, 1.0f, 1.0f,    0.0f, 1.0f, 0.0f, 1.0f,    0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 1.0f,    1.0f, 0.0f, 1.0f, },
+            { 0.0f, 0.0f, 1.0f, 1.0f,    0.0f, 1.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 1.0f,    1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f, },
+
             // TOP
-            { 0.0f, 1.0f, 0.0f, 1.0f,    0.0f, 1.0f, 1.0f, 1.0f,    1.0f, 1.0f, 1.0f, 1.0f },
-            { 0.0f, 1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f, 1.0f,    1.0f, 1.0f, 0.0f, 1.0f },
+            { 0.0f, 1.0f, 0.0f, 1.0f,    0.0f, 1.0f, 1.0f, 1.0f,    1.0f, 1.0f, 1.0f, 1.0f,    0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 1.0f,    1.0f, 0.0f, 1.0f, },
+            { 0.0f, 1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f, 1.0f,    1.0f, 1.0f, 0.0f, 1.0f,    0.0f, 1.0f, 1.0f,    1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f, },
+
             // BOTTOM
-            { 1.0f, 0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 0.0f, 1.0f },
-            { 1.0f, 0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 0.0f, 1.0f,    1.0f, 0.0f, 0.0f, 1.0f },
+            { 1.0f, 0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 1.0f,    1.0f, 0.0f, 1.0f, },
+            { 1.0f, 0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 0.0f, 1.0f,    1.0f, 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 1.0f,    1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f, },
+
         };
 
-        ship.LoadFromOBJFile("VideoShip.obj");
-        teapot.LoadFromOBJFile("teapot.obj");
-        axis.LoadFromOBJFile("axis.obj");
-        mountains.LoadFromOBJFile("mountains.obj");
+        //ship.LoadFromOBJFile("VideoShip.obj");
+        //teapot.LoadFromOBJFile("teapot.obj");
+        //axis.LoadFromOBJFile("axis.obj");
+        //mountains.LoadFromOBJFile("mountains.obj");
+
+        texture = olc::Sprite();
+        texture.LoadFromPGESprFile("toml_modernish.spr");
+        
 
         obj = &cube;
 
@@ -561,6 +608,9 @@ public:
             triWorld.p[0] = Matrix_MultiplyVector(tri.p[0], world);
             triWorld.p[1] = Matrix_MultiplyVector(tri.p[1], world);
             triWorld.p[2] = Matrix_MultiplyVector(tri.p[2], world);
+            triWorld.t[0] = tri.t[0];
+            triWorld.t[1] = tri.t[1];
+            triWorld.t[2] = tri.t[2];
 
             vec3d normal = Triangle_Normal(triWorld);
             vec3d visibility = Vector_Sub(triWorld.p[0], camera);
@@ -572,6 +622,9 @@ public:
                 triView.p[0] = Matrix_MultiplyVector(triWorld.p[0], view);
                 triView.p[1] = Matrix_MultiplyVector(triWorld.p[1], view);
                 triView.p[2] = Matrix_MultiplyVector(triWorld.p[2], view);
+                triView.t[0] = triWorld.t[0];
+                triView.t[1] = triWorld.t[1];
+                triView.t[2] = triWorld.t[2];
 
                 // shading
                 float fShade = Vector_DotProduct(normal, light);
@@ -593,6 +646,9 @@ public:
                     triProj.p[1] = Matrix_MultiplyVector(triClipped[i].p[1], proj);
                     triProj.p[2] = Matrix_MultiplyVector(triClipped[i].p[2], proj);
                     triProj.color = triClipped[i].color;
+                    triProj.t[0] = triClipped[i].t[0];
+                    triProj.t[1] = triClipped[i].t[1];
+                    triProj.t[2] = triClipped[i].t[2];
 
                     // Normalize projection
                     triProj.p[0] = Vector_Div(triProj.p[0], triProj.p[0].w);
@@ -661,7 +717,10 @@ public:
             for (auto tri : current)
             {
                 // reverse Y!
-                TexturedTriangle(tri.p[0].x, height - tri.p[0].y, tri.p[1].x, height - tri.p[1].y, tri.p[2].x, height - tri.p[2].y);
+                TexturedTriangle(tri.p[0].x, height - tri.p[0].y, tri.t[0].u, tri.t[0].v, 
+                                 tri.p[1].x, height - tri.p[1].y, tri.t[1].u, tri.t[1].v, 
+                                 tri.p[2].x, height - tri.p[2].y, tri.t[2].u, tri.t[2].v,
+                                 texture);
                 if (enableWireframe)
                 {
                     DrawTriangle(tri.p[0].x, height - tri.p[0].y, tri.p[1].x, height - tri.p[1].y, tri.p[2].x, height - tri.p[2].y, olc::YELLOW);
@@ -683,23 +742,29 @@ public:
         return true;
     }
 
-    void TexturedTriangle(int x1, int y1, int x2, int y2, int x3, int y3)
+    void TexturedTriangle(int x1, int y1, float u1, float v1, int x2, int y2, float u2, float v2, int x3, int y3, float u3, float v3, olc::Sprite &Texture)
     {
         // sort vertices vertically
         if (y1 > y2)
         {
             std::swap(x1, x2);
             std::swap(y1, y2);
+            std::swap(u1, u2);
+            std::swap(v1, v2);
         }
         if (y1 > y3)
         {
             std::swap(x1, x3);
             std::swap(y1, y3);
+            std::swap(u1, u3);
+            std::swap(v1, v3);
         }
         if (y2 > y3)
         {
             std::swap(x2, x3);
             std::swap(y2, y3);
+            std::swap(u2, u3);
+            std::swap(v2, v3);
         }
 
         // draw first half (y1 to y2)
@@ -709,8 +774,19 @@ public:
         float dx2 = x3 - x1;
         float dy2 = y3 - y1;
 
+        float du1 = u2 - u1;
+        float dv1 = v2 - v1;
+        float du2 = u3 - u1;
+        float dv2 = v3 - v1;
+
         float dax = dy1 ? (dx1 / fabs(dy1)) : 0;
         float dbx = dy2 ? (dx2 / fabs(dy2)) : 0;
+
+        float dau = dy1 ? (du1 / fabs(dy1)) : 0;
+        float dav = dy1 ? (dv1 / fabs(dy1)) : 0;
+
+        float dbu = dy2 ? (du2 / fabs(dy2)) : 0;
+        float dbv = dy2 ? (dv2 / fabs(dy2)) : 0;
 
         if (dy1)
         {
@@ -718,13 +794,24 @@ public:
             {
                 int ax = x1 + dax * (y - y1);
                 int bx = x1 + dbx * (y - y1);
+                float au = u1 + dau * (y - y1);
+                float av = v1 + dav * (y - y1);
+                float bu = u1 + dbu * (y - y1);
+                float bv = v1 + dbv * (y - y1);
                 if (ax > bx)
                 {
                     std::swap(ax, bx);
+                    std::swap(au, bu);
+                    std::swap(av, bv);
                 }
+                float t = 0;
+                float tStep = 1.0f / (bx - ax);
                 for (int x = ax; x <= bx; x++)
                 {
-                    Draw(x, y, olc::BLUE);
+                    float u = au + t * (bu - au);
+                    float v = av + t * (bv - av);
+                    Draw(x, y, texture.SampleBL(u, v));
+                    t += tStep;
                 }
             }
         }
@@ -733,24 +820,40 @@ public:
 
         dx1 = x3 - x2;
         dy1 = y3 - y2;
+        du1 = u3 - u2;
+        dv1 = v3 - v2;
         dax = (dy1 != 0) ? (dx1 / fabs(dy1)) : 0;
+        dau = (dy1 != 0) ? (du1 / fabs(dy1)) : 0;
+        dav = (dy1 != 0) ? (dv1 / fabs(dy1)) : 0;
 
         if (dy1)
         {
             for (int y = y2; y <= y3; y++)
             {
                 int ax = x2 + dax * (y - y2);
+                float au = u2 + dau * (y - y2);
+                float av = v2 + dav * (y - y2);
                 int bx = x1 + dbx * (y - y1);
+                float bu = u1 + dbu * (y - y1);
+                float bv = v1 + dbv * (y - y1);
                 if (ax > bx)
                 {
                     std::swap(ax, bx);
+                    std::swap(au, bu);
+                    std::swap(av, bv);
                 }
+                float t = 0;
+                float tStep = 1.0f / (bx - ax);
                 for (int x = ax; x <= bx; x++)
                 {
-                    Draw(x, y, olc::GREEN);
+                    float u = au + t * (bu - au);
+                    float v = av + t * (bv - av);
+                    Draw(x, y, texture.SampleBL(u, v));
+                    t += tStep;
                 }
             }
         }
+
     }
 };
 
