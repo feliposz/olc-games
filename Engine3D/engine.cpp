@@ -425,7 +425,7 @@ public:
         axis.LoadFromOBJFile("axis.obj");
         mountains.LoadFromOBJFile("mountains.obj");
 
-        obj = &axis;
+        obj = &cube;
 
         float aspectRatio = (float)ScreenHeight() / (float)ScreenWidth();
         float zFar = 1000.0f;
@@ -661,13 +661,10 @@ public:
             for (auto tri : current)
             {
                 // reverse Y!
+                TexturedTriangle(tri.p[0].x, height - tri.p[0].y, tri.p[1].x, height - tri.p[1].y, tri.p[2].x, height - tri.p[2].y);
                 if (enableWireframe)
                 {
                     DrawTriangle(tri.p[0].x, height - tri.p[0].y, tri.p[1].x, height - tri.p[1].y, tri.p[2].x, height - tri.p[2].y, olc::YELLOW);
-                }
-                else
-                {
-                    FillTriangle(tri.p[0].x, height - tri.p[0].y, tri.p[1].x, height - tri.p[1].y, tri.p[2].x, height - tri.p[2].y, tri.color);
                 }
             }
         }
@@ -684,6 +681,76 @@ public:
         }
 
         return true;
+    }
+
+    void TexturedTriangle(int x1, int y1, int x2, int y2, int x3, int y3)
+    {
+        // sort vertices vertically
+        if (y1 > y2)
+        {
+            std::swap(x1, x2);
+            std::swap(y1, y2);
+        }
+        if (y1 > y3)
+        {
+            std::swap(x1, x3);
+            std::swap(y1, y3);
+        }
+        if (y2 > y3)
+        {
+            std::swap(x2, x3);
+            std::swap(y2, y3);
+        }
+
+        // draw first half (y1 to y2)
+
+        float dx1 = x2 - x1;
+        float dy1 = y2 - y1;
+        float dx2 = x3 - x1;
+        float dy2 = y3 - y1;
+
+        float dax = dy1 ? (dx1 / fabs(dy1)) : 0;
+        float dbx = dy2 ? (dx2 / fabs(dy2)) : 0;
+
+        if (dy1)
+        {
+            for (int y = y1; y <= y2; y++)
+            {
+                int ax = x1 + dax * (y - y1);
+                int bx = x1 + dbx * (y - y1);
+                if (ax > bx)
+                {
+                    std::swap(ax, bx);
+                }
+                for (int x = ax; x <= bx; x++)
+                {
+                    Draw(x, y, olc::BLUE);
+                }
+            }
+        }
+
+        // draw second half (y2 to y3)
+
+        dx1 = x3 - x2;
+        dy1 = y3 - y2;
+        dax = (dy1 != 0) ? (dx1 / fabs(dy1)) : 0;
+
+        if (dy1)
+        {
+            for (int y = y2; y <= y3; y++)
+            {
+                int ax = x2 + dax * (y - y2);
+                int bx = x1 + dbx * (y - y1);
+                if (ax > bx)
+                {
+                    std::swap(ax, bx);
+                }
+                for (int x = ax; x <= bx; x++)
+                {
+                    Draw(x, y, olc::GREEN);
+                }
+            }
+        }
     }
 };
 
