@@ -142,10 +142,12 @@ int Triangle_ClipAgainstPlane(vec3d planePos, vec3d planeNormal, triangle &inTri
         out1.color = enableDebug ? olc::BLUE : inTri.color;
 
         out1.t[0] = insideTex[0];
-        out1.t[1].u = insideTex[1].u + t0 * (outsideTex[1].u - insideTex[1].u);
-        out1.t[1].v = insideTex[1].v + t0 * (outsideTex[1].v - insideTex[1].v);
-        out1.t[2].u = insideTex[2].u + t1 * (outsideTex[2].u - insideTex[2].u);
-        out1.t[2].v = insideTex[2].v + t1 * (outsideTex[2].v - insideTex[2].v);
+        out1.t[1].u = insideTex[0].u + t0 * (outsideTex[0].u - insideTex[0].u);
+        out1.t[1].v = insideTex[0].v + t0 * (outsideTex[0].v - insideTex[0].v);
+        out1.t[1].w = insideTex[0].w + t0 * (outsideTex[0].w - insideTex[0].w);
+        out1.t[2].u = insideTex[0].u + t1 * (outsideTex[1].u - insideTex[0].u);
+        out1.t[2].v = insideTex[0].v + t1 * (outsideTex[1].v - insideTex[0].v);
+        out1.t[2].w = insideTex[0].w + t1 * (outsideTex[1].w - insideTex[0].w);
 
         return 1;
     }
@@ -154,27 +156,32 @@ int Triangle_ClipAgainstPlane(vec3d planePos, vec3d planeNormal, triangle &inTri
         float t0, t1;
         vec3d newP2 = Vector_IntersectPlane(planePos, planeNormal, insidePoints[0], outsidePoints[0], t0);
         vec3d newP0 = Vector_IntersectPlane(planePos, planeNormal, insidePoints[1], outsidePoints[0], t1);
+        vec2d newT2 = {
+            insideTex[0].u + t0 * (outsideTex[0].u - insideTex[0].u),
+            insideTex[0].v + t0 * (outsideTex[0].v - insideTex[0].v),
+            insideTex[0].w + t0 * (outsideTex[0].w - insideTex[0].w),
+        };
+        vec2d newT0 = {
+            insideTex[1].u + t1 * (outsideTex[0].u - insideTex[1].u),
+            insideTex[1].v + t1 * (outsideTex[0].v - insideTex[1].v),
+            insideTex[1].w + t1 * (outsideTex[0].w - insideTex[1].w),            
+        };
 
         out1.p[0] = insidePoints[0];
         out1.p[1] = insidePoints[1];
         out1.p[2] = newP2;
-        out1.color = enableDebug ? olc::GREEN : inTri.color;
-
         out1.t[0] = insideTex[0];
         out1.t[1] = insideTex[1];
-        out1.t[2].u = insideTex[2].u + t1 * (outsideTex[2].u - insideTex[2].u);
-        out1.t[2].v = insideTex[2].v + t1 * (outsideTex[2].v - insideTex[2].v);
+        out1.t[2] = newT2;
+        out1.color = enableDebug ? olc::GREEN : inTri.color;
 
         out2.p[0] = insidePoints[1];
         out2.p[1] = newP2;
         out2.p[2] = newP0;
+        out2.t[0] = insideTex[1];
+        out2.t[1] = newT2;
+        out2.t[2] = newT0;
         out2.color = enableDebug ? olc::RED : inTri.color;
-
-        out2.t[0] = insideTex[0];
-        out2.t[1].u = insideTex[1].u + t0 * (outsideTex[1].u - insideTex[1].u);
-        out2.t[1].v = insideTex[1].v + t0 * (outsideTex[1].v - insideTex[1].v);
-        out2.t[2].u = insideTex[2].u + t1 * (outsideTex[2].u - insideTex[2].u);
-        out2.t[2].v = insideTex[2].v + t1 * (outsideTex[2].v - insideTex[2].v);
 
         return 2;
     }
@@ -494,34 +501,37 @@ public:
     {
         int32_t height = ScreenHeight();
 
+        float moveSpeed = 2.0f;
+        float turnSpeed = 2.0f;
+
         if (GetKey(olc::UP).bHeld)
         {
-            camera.y += fElapsedTime * 8.0f;
+            camera.y += fElapsedTime * moveSpeed;
         }
         if (GetKey(olc::DOWN).bHeld)
         {
-            camera.y -= fElapsedTime * 8.0f;
+            camera.y -= fElapsedTime * moveSpeed;
         }
 
         if (GetKey(olc::RIGHT).bHeld)
         {
-            camera.x += fElapsedTime * 8.0f;
+            camera.x += fElapsedTime * moveSpeed;
         }
         if (GetKey(olc::LEFT).bHeld)
         {
-            camera.x -= fElapsedTime * 8.0f;
+            camera.x -= fElapsedTime * moveSpeed;
         }
 
         if (GetKey(olc::A).bHeld)
         {
-            yaw += fElapsedTime * 2.0f;
+            yaw += fElapsedTime * turnSpeed;
         }
         if (GetKey(olc::D).bHeld)
         {
-            yaw -= fElapsedTime * 2.0f;
+            yaw -= fElapsedTime * turnSpeed;
         }
 
-        vec3d forwardMove = Vector_Mul(lookDir, 8.0f * fElapsedTime);
+        vec3d forwardMove = Vector_Mul(lookDir, moveSpeed * fElapsedTime);
         vec3d rightMove = Vector_CrossProduct(forwardMove, { 0, 1, 0 });
 
         if (GetKey(olc::W).bHeld)
@@ -650,6 +660,17 @@ public:
                     triProj.t[1] = triClipped[i].t[1];
                     triProj.t[2] = triClipped[i].t[2];
 
+                    // Normalize texture coordinates by project "w"
+                    triProj.t[0].u = triProj.t[0].u / triProj.p[0].w;
+                    triProj.t[1].u = triProj.t[1].u / triProj.p[1].w;
+                    triProj.t[2].u = triProj.t[2].u / triProj.p[2].w;
+                    triProj.t[0].v = triProj.t[0].v / triProj.p[0].w;
+                    triProj.t[1].v = triProj.t[1].v / triProj.p[1].w;
+                    triProj.t[2].v = triProj.t[2].v / triProj.p[2].w;
+                    triProj.t[0].w = 1.0f / triProj.p[0].w;
+                    triProj.t[1].w = 1.0f / triProj.p[1].w;
+                    triProj.t[2].w = 1.0f / triProj.p[2].w;
+
                     // Normalize projection
                     triProj.p[0] = Vector_Div(triProj.p[0], triProj.p[0].w);
                     triProj.p[1] = Vector_Div(triProj.p[1], triProj.p[1].w);
@@ -717,9 +738,9 @@ public:
             for (auto tri : current)
             {
                 // reverse Y!
-                TexturedTriangle(tri.p[0].x, height - tri.p[0].y, tri.t[0].u, tri.t[0].v, 
-                                 tri.p[1].x, height - tri.p[1].y, tri.t[1].u, tri.t[1].v, 
-                                 tri.p[2].x, height - tri.p[2].y, tri.t[2].u, tri.t[2].v,
+                TexturedTriangle(tri.p[0].x, height - tri.p[0].y, tri.t[0].u, tri.t[0].v, tri.t[0].w,
+                                 tri.p[1].x, height - tri.p[1].y, tri.t[1].u, tri.t[1].v, tri.t[1].w,
+                                 tri.p[2].x, height - tri.p[2].y, tri.t[2].u, tri.t[2].v, tri.t[2].w,
                                  texture);
                 if (enableWireframe)
                 {
@@ -742,7 +763,7 @@ public:
         return true;
     }
 
-    void TexturedTriangle(int x1, int y1, float u1, float v1, int x2, int y2, float u2, float v2, int x3, int y3, float u3, float v3, olc::Sprite &Texture)
+    void TexturedTriangle(int x1, int y1, float u1, float v1, float w1, int x2, int y2, float u2, float v2, float w2, int x3, int y3, float u3, float v3, float w3, olc::Sprite &Texture)
     {
         // sort vertices vertically
         if (y1 > y2)
@@ -751,6 +772,7 @@ public:
             std::swap(y1, y2);
             std::swap(u1, u2);
             std::swap(v1, v2);
+            std::swap(w1, w2);
         }
         if (y1 > y3)
         {
@@ -758,6 +780,7 @@ public:
             std::swap(y1, y3);
             std::swap(u1, u3);
             std::swap(v1, v3);
+            std::swap(w1, w3);
         }
         if (y2 > y3)
         {
@@ -765,6 +788,7 @@ public:
             std::swap(y2, y3);
             std::swap(u2, u3);
             std::swap(v2, v3);
+            std::swap(w2, w3);
         }
 
         // draw first half (y1 to y2)
@@ -776,17 +800,21 @@ public:
 
         float du1 = u2 - u1;
         float dv1 = v2 - v1;
+        float dw1 = w2 - w1;
         float du2 = u3 - u1;
         float dv2 = v3 - v1;
+        float dw2 = w3 - w1;
 
         float dax = dy1 ? (dx1 / fabs(dy1)) : 0;
         float dbx = dy2 ? (dx2 / fabs(dy2)) : 0;
 
         float dau = dy1 ? (du1 / fabs(dy1)) : 0;
         float dav = dy1 ? (dv1 / fabs(dy1)) : 0;
+        float daw = dy1 ? (dw1 / fabs(dy1)) : 0;
 
         float dbu = dy2 ? (du2 / fabs(dy2)) : 0;
         float dbv = dy2 ? (dv2 / fabs(dy2)) : 0;
+        float dbw = dy2 ? (dw2 / fabs(dy2)) : 0;
 
         if (dy1)
         {
@@ -796,13 +824,16 @@ public:
                 int bx = x1 + dbx * (y - y1);
                 float au = u1 + dau * (y - y1);
                 float av = v1 + dav * (y - y1);
+                float aw = w1 + daw * (y - y1);
                 float bu = u1 + dbu * (y - y1);
                 float bv = v1 + dbv * (y - y1);
+                float bw = w1 + dbw * (y - y1);
                 if (ax > bx)
                 {
                     std::swap(ax, bx);
                     std::swap(au, bu);
                     std::swap(av, bv);
+                    std::swap(aw, bw);
                 }
                 float t = 0;
                 float tStep = 1.0f / (bx - ax);
@@ -810,7 +841,8 @@ public:
                 {
                     float u = au + t * (bu - au);
                     float v = av + t * (bv - av);
-                    Draw(x, y, texture.SampleBL(u, v));
+                    float w = aw + t * (bw - aw);
+                    Draw(x, y, texture.Sample(u / w, v / w));
                     t += tStep;
                 }
             }
@@ -822,9 +854,11 @@ public:
         dy1 = y3 - y2;
         du1 = u3 - u2;
         dv1 = v3 - v2;
+        dw1 = w3 - w2;
         dax = (dy1 != 0) ? (dx1 / fabs(dy1)) : 0;
         dau = (dy1 != 0) ? (du1 / fabs(dy1)) : 0;
         dav = (dy1 != 0) ? (dv1 / fabs(dy1)) : 0;
+        daw = (dy1 != 0) ? (dw1 / fabs(dy1)) : 0;
 
         if (dy1)
         {
@@ -833,14 +867,17 @@ public:
                 int ax = x2 + dax * (y - y2);
                 float au = u2 + dau * (y - y2);
                 float av = v2 + dav * (y - y2);
+                float aw = w2 + daw * (y - y2);
                 int bx = x1 + dbx * (y - y1);
                 float bu = u1 + dbu * (y - y1);
                 float bv = v1 + dbv * (y - y1);
+                float bw = w1 + dbw * (y - y1);
                 if (ax > bx)
                 {
                     std::swap(ax, bx);
                     std::swap(au, bu);
                     std::swap(av, bv);
+                    std::swap(aw, bw);
                 }
                 float t = 0;
                 float tStep = 1.0f / (bx - ax);
@@ -848,7 +885,8 @@ public:
                 {
                     float u = au + t * (bu - au);
                     float v = av + t * (bv - av);
-                    Draw(x, y, texture.SampleBL(u, v));
+                    float w = aw + t * (bw - aw);
+                    Draw(x, y, texture.Sample(u / w, v / w));
                     t += tStep;
                 }
             }
