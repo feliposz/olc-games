@@ -470,6 +470,8 @@ class Engine3D : public olc::PixelGameEngine
     olc::Sprite cubeTexture;
     olc::Sprite artisanTexture;
 
+    float *depthBuffer;
+
 public:
     Engine3D()
     {
@@ -478,6 +480,8 @@ public:
 
     bool OnUserCreate() override
     {
+        depthBuffer = new float[ScreenWidth() * ScreenHeight()];
+
         cube.tris = {
             // SOUTH
             { 0.0f, 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 0.0f, 1.0f,    0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 1.0f,    1.0f, 0.0f, 1.0f, },
@@ -646,6 +650,11 @@ public:
         }
 
         FillRect(0, 0, ScreenWidth(), ScreenHeight(), olc::BLUE);
+        int depthBufferSize = ScreenWidth() * ScreenHeight();
+        for (int i = 0; i < depthBufferSize; i++)
+        {
+            depthBuffer[i] = 0;
+        }
 
         float offX = 1.0f;
         float offY = 1.0f;
@@ -752,6 +761,7 @@ public:
             }
         }
 
+#if 0 // sorting not needed with depth buffer (except in case of transparency...)
         // sort by the average z of the triangles
         std::sort(renderTris.begin(), renderTris.end(), [](triangle a, triangle b)
         {
@@ -759,6 +769,7 @@ public:
             float zb = (b.p[0].z + b.p[1].z + b.p[2].z) / 3.0f;
             return za > zb;
         });
+#endif
 
         // clip triangles agains screen border "planes"
         vec3d planePos[4] = { {0, 0, 0}, { 0, ScreenHeight() - 1, 0 }, { 0, 0, 0 }, { ScreenWidth() - 1, 0, 0 } };
@@ -905,7 +916,7 @@ public:
                 }
                 float t = 0;
                 float tStep = 1.0f / (bx - ax);
-                for (int x = ax; x <= bx; x++)
+                for (int x = ax; x < bx; x++)
                 {
                     float u = au + t * (bu - au);
                     float v = av + t * (bv - av);
@@ -919,7 +930,10 @@ public:
                         sample.g = (sample.g * color.g) / 255;
                         sample.b = (sample.b * color.b) / 255;
                     }
-                    Draw(x, y, sample);
+                    if (TestDepthBuffer(x, y, w))
+                    {
+                        Draw(x, y, sample);
+                    }
                     t += tStep;
                 }
             }
@@ -958,7 +972,7 @@ public:
                 }
                 float t = 0;
                 float tStep = 1.0f / (bx - ax);
-                for (int x = ax; x <= bx; x++)
+                for (int x = ax; x < bx; x++)
                 {
                     float u = au + t * (bu - au);
                     float v = av + t * (bv - av);
@@ -972,12 +986,29 @@ public:
                         sample.g = (sample.g * color.g) / 255;
                         sample.b = (sample.b * color.b) / 255;
                     }
-                    Draw(x, y, sample);
+                    if (TestDepthBuffer(x, y, w))
+                    {
+                        Draw(x, y, sample);                        
+                    }
                     t += tStep;
                 }
             }
         }
 
+    }
+
+    bool TestDepthBuffer(int x, int y, float z)
+    {
+        if (x >= 0 && x < ScreenWidth() && y >= 0 && y < ScreenHeight())
+        {
+            int i = y * ScreenWidth() + x;
+            if (z > depthBuffer[i])
+            {
+                depthBuffer[i] = z;
+                return true;
+            }
+        }
+        return false;
     }
 };
 
