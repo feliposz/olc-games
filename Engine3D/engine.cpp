@@ -368,7 +368,7 @@ struct mesh
 {
     std::vector<triangle> tris;
 
-    bool LoadFromOBJFile(std::string filename)
+    bool LoadFromOBJFile(std::string filename, bool HasTexture = false)
     {
         std::ifstream file(filename);
         if (!file.is_open())
@@ -377,6 +377,7 @@ struct mesh
         }
 
         std::vector<vec3d> vertices;
+        std::vector<vec2d> texUVs;
 
         while (!file.eof())
         {
@@ -385,23 +386,52 @@ struct mesh
 
             char prefix;
             vec3d v;
+            vec2d t;
 
             std::strstream ss(line, 256);
             ss >> prefix;
 
             if (prefix == 'v')
             {
-                ss >> v.x >> v.y >> v.z;
-                vertices.push_back(v);
+                if (ss.peek() == 't')
+                {
+                    ss >> prefix >> t.u >> t.v;
+                    // UV coordinates start at left/bottom corner of texture
+                    t.v = 1.0f - t.v;
+                    texUVs.push_back(t);
+                }
+                else
+                {
+                    ss >> v.x >> v.y >> v.z;
+                    vertices.push_back(v);
+                }
             }
             else if (prefix == 'f')
             {
-                int a, b, c;
-                ss >> a >> b >> c;
-                a--;
-                b--;
-                c--;
-                tris.push_back({ vertices[a], vertices[b], vertices[c] });
+                if (!HasTexture)
+                {
+                    int a, b, c;
+                    ss >> a >> b >> c;
+                    tris.push_back({ vertices[a - 1], vertices[b - 1], vertices[c - 1] });
+                }
+                else
+                {
+                    int va, vb, vc, vd, ta, tb, tc, td;
+                    char dummy; // for handling '/'
+                    ss >> va >> dummy >> ta;
+                    ss >> vb >> dummy >> tb;
+                    ss >> vc >> dummy >> tc;
+                    triangle triABC = { vertices[va - 1], vertices[vb - 1], vertices[vc - 1], texUVs[ta - 1], texUVs[tb - 1], texUVs[tc - 1] };
+                    tris.push_back(triABC);
+
+                    // if there is a fourth vertex, it is a quad, composed of 2 triangles ABC and ACD
+                    if (ss.peek())
+                    {
+                        ss >> vd >> dummy >> td;
+                        triangle triACD = { vertices[va - 1], vertices[vc - 1], vertices[vd - 1], texUVs[ta - 1], texUVs[tc - 1], texUVs[td - 1] };
+                        tris.push_back(triACD);
+                    }
+                }
             }
         }
 
@@ -422,6 +452,7 @@ class Engine3D : public olc::PixelGameEngine
     mesh axis;
     mesh teapot;
     mesh mountains;
+    mesh artisan;
 
     mat4x4 proj;
     vec3d camera;
@@ -432,8 +463,12 @@ class Engine3D : public olc::PixelGameEngine
     bool enableRotation;
     bool enableDebug;
     bool enableWireframe;
+    bool enableBilinearFiltering;
+    bool enableShading;
 
-    olc::Sprite texture;
+    olc::Sprite *texture;
+    olc::Sprite cubeTexture;
+    olc::Sprite artisanTexture;
 
 public:
     Engine3D()
@@ -470,16 +505,19 @@ public:
 
         };
 
-        //ship.LoadFromOBJFile("VideoShip.obj");
-        //teapot.LoadFromOBJFile("teapot.obj");
-        //axis.LoadFromOBJFile("axis.obj");
-        //mountains.LoadFromOBJFile("mountains.obj");
+        ship.LoadFromOBJFile("VideoShip.obj");
+        teapot.LoadFromOBJFile("teapot.obj");
+        axis.LoadFromOBJFile("axis.obj");
+        mountains.LoadFromOBJFile("mountains.obj");
+        artisan.LoadFromOBJFile("Artisans Hub.obj", true);
+        artisanTexture = olc::Sprite();
+        artisanTexture.LoadFromFile("High.png");
 
-        texture = olc::Sprite();
-        texture.LoadFromPGESprFile("toml_modernish.spr");
-        
+        cubeTexture = olc::Sprite();
+        cubeTexture.LoadFromPGESprFile("toml_modernish.spr");
 
-        obj = &cube;
+        obj = &artisan;
+        texture = &artisanTexture;
 
         float aspectRatio = (float)ScreenHeight() / (float)ScreenWidth();
         float zFar = 1000.0f;
@@ -501,7 +539,7 @@ public:
     {
         int32_t height = ScreenHeight();
 
-        float moveSpeed = 2.0f;
+        float moveSpeed = 8.0f;
         float turnSpeed = 2.0f;
 
         if (GetKey(olc::UP).bHeld)
@@ -554,22 +592,37 @@ public:
         if (GetKey(olc::K1).bPressed)
         {
             obj = &axis;
+            texture = NULL;
         }
         if (GetKey(olc::K2).bPressed)
         {
             obj = &teapot;
+            texture = NULL;
         }
         if (GetKey(olc::K3).bPressed)
         {
             obj = &ship;
+            texture = NULL;
         }
         if (GetKey(olc::K4).bPressed)
         {
             obj = &cube;
+            texture = NULL;
         }
         if (GetKey(olc::K5).bPressed)
         {
             obj = &mountains;
+            texture = NULL;
+        }
+        if (GetKey(olc::K6).bPressed)
+        {
+            obj = &artisan;
+            texture = &artisanTexture;
+        }
+        if (GetKey(olc::K7).bPressed)
+        {
+            obj = &cube;
+            texture = &cubeTexture;
         }
         if (GetKey(olc::R).bPressed)
         {
@@ -583,8 +636,16 @@ public:
         {
             enableWireframe = !enableWireframe;
         }
+        if (GetKey(olc::F).bPressed)
+        {
+            enableBilinearFiltering = !enableBilinearFiltering;
+        }
+        if (GetKey(olc::H).bPressed)
+        {
+            enableShading = !enableShading;
+        }
 
-        FillRect(0, 0, ScreenWidth(), ScreenHeight(), olc::BLACK);
+        FillRect(0, 0, ScreenWidth(), ScreenHeight(), olc::BLUE);
 
         float offX = 1.0f;
         float offY = 1.0f;
@@ -738,10 +799,17 @@ public:
             for (auto tri : current)
             {
                 // reverse Y!
-                TexturedTriangle(tri.p[0].x, height - tri.p[0].y, tri.t[0].u, tri.t[0].v, tri.t[0].w,
-                                 tri.p[1].x, height - tri.p[1].y, tri.t[1].u, tri.t[1].v, tri.t[1].w,
-                                 tri.p[2].x, height - tri.p[2].y, tri.t[2].u, tri.t[2].v, tri.t[2].w,
-                                 texture);
+                if (texture)
+                {
+                    TexturedTriangle(tri.p[0].x, height - tri.p[0].y, tri.t[0].u, tri.t[0].v, tri.t[0].w,
+                                     tri.p[1].x, height - tri.p[1].y, tri.t[1].u, tri.t[1].v, tri.t[1].w,
+                                     tri.p[2].x, height - tri.p[2].y, tri.t[2].u, tri.t[2].v, tri.t[2].w,
+                                     *texture, tri.color);
+                }
+                else
+                {
+                    FillTriangle(tri.p[0].x, height - tri.p[0].y, tri.p[1].x, height - tri.p[1].y, tri.p[2].x, height - tri.p[2].y, tri.color);
+                }
                 if (enableWireframe)
                 {
                     DrawTriangle(tri.p[0].x, height - tri.p[0].y, tri.p[1].x, height - tri.p[1].y, tri.p[2].x, height - tri.p[2].y, olc::YELLOW);
@@ -763,7 +831,7 @@ public:
         return true;
     }
 
-    void TexturedTriangle(int x1, int y1, float u1, float v1, float w1, int x2, int y2, float u2, float v2, float w2, int x3, int y3, float u3, float v3, float w3, olc::Sprite &Texture)
+    void TexturedTriangle(int x1, int y1, float u1, float v1, float w1, int x2, int y2, float u2, float v2, float w2, int x3, int y3, float u3, float v3, float w3, olc::Sprite &texture, olc::Pixel color)
     {
         // sort vertices vertically
         if (y1 > y2)
@@ -842,7 +910,16 @@ public:
                     float u = au + t * (bu - au);
                     float v = av + t * (bv - av);
                     float w = aw + t * (bw - aw);
-                    Draw(x, y, texture.Sample(u / w, v / w));
+                    u /= w;
+                    v /= w;
+                    olc::Pixel sample = enableBilinearFiltering ? texture.SampleBL(u, v) : texture.Sample(u, v);
+                    if (enableShading)
+                    {
+                        sample.r = (sample.r * color.r) / 255;
+                        sample.g = (sample.g * color.g) / 255;
+                        sample.b = (sample.b * color.b) / 255;
+                    }
+                    Draw(x, y, sample);
                     t += tStep;
                 }
             }
@@ -886,7 +963,16 @@ public:
                     float u = au + t * (bu - au);
                     float v = av + t * (bv - av);
                     float w = aw + t * (bw - aw);
-                    Draw(x, y, texture.Sample(u / w, v / w));
+                    u /= w;
+                    v /= w;
+                    olc::Pixel sample = enableBilinearFiltering ? texture.SampleBL(u, v) : texture.Sample(u, v);
+                    if (enableShading)
+                    {
+                        sample.r = (sample.r * color.r) / 255;
+                        sample.g = (sample.g * color.g) / 255;
+                        sample.b = (sample.b * color.b) / 255;
+                    }
+                    Draw(x, y, sample);
                     t += tStep;
                 }
             }
