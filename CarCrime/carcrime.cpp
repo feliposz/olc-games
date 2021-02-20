@@ -2,6 +2,12 @@
 #include "olcPixelGameEngine.h"
 #include "olcPGEX_Graphics3D.h"
 
+struct MapCell
+{
+    bool road;
+    int height;
+};
+
 class CarCrime : public olc::PixelGameEngine
 {
     float theta;
@@ -11,9 +17,14 @@ class CarCrime : public olc::PixelGameEngine
     olc::GFX3D::vec3d up = { 0, 1, 0 };
 
     olc::Sprite allTexture;
+    olc::Sprite *grass;
 
     olc::GFX3D::PipeLine pipeRender;
-    olc::GFX3D::mesh meshCube;
+    olc::GFX3D::mesh flatQuad;
+    olc::GFX3D::mesh walls;
+
+    int mapWidth, mapHeight;
+    MapCell *map;
 
 public:
     CarCrime()
@@ -24,33 +35,50 @@ public:
 
     bool OnUserCreate() override
     {
+        mapWidth = 64;
+        mapHeight = 32;
+        map = new MapCell[mapWidth * mapHeight];
+        for (int y = 0; y < mapHeight; y++)
+        {
+            for (int x = 0; x < mapWidth; x++)
+            {
+                MapCell *cell = &map[y * mapWidth + x];
+                cell->road = false;
+                cell->height = 0;
+            }
+        }
+
         allTexture.LoadFromFile("City_Roads1_mip0.png");
 
-        meshCube.tris =
-        {
-            // SOUTH
-            { 0.0f, 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f, 1.0f,     1.0f, 1.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,    0.0f, 0.0f, 0.0f,    1.0f, 0.0f, 0.0f, },
-            { 0.0f, 0.0f, 0.0f, 1.0f,    1.0f, 1.0f, 0.0f, 1.0f,     1.0f, 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,    1.0f, 0.0f, 0.0f,    1.0f, 1.0f, 0.0f, },
+        grass = new olc::Sprite(96, 96);
+        SetDrawTarget(grass);
+        DrawPartialSprite(0, 0, &allTexture, 192, 0, 96, 96);
 
+        SetDrawTarget(nullptr);
+
+        walls.tris =
+        {
             // EAST
             { 1.0f, 0.0f, 0.0f, 1.0f,    1.0f, 1.0f, 0.0f, 1.0f,    1.0f , 1.0f, 1.0f, 1.0f,    0.0f, 1.0f, 0.0f,    0.0f, 0.0f, 0.0f,    1.0f, 0.0f, 0.0f, },
             { 1.0f, 0.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f, 1.0f,    1.0f , 0.0f, 1.0f, 1.0f,    0.0f, 1.0f, 0.0f,    1.0f, 0.0f, 0.0f,    1.0f, 1.0f, 0.0f, },
-
-            // NORTH
-            { 1.0f, 0.0f, 1.0f, 1.0f,    1.0f, 1.0f, 1.0f, 1.0f,    0.0f , 1.0f, 1.0f, 1.0f,    0.0f, 1.0f, 0.0f,    0.0f, 0.0f, 0.0f,    1.0f, 0.0f, 0.0f, },
-            { 1.0f, 0.0f, 1.0f, 1.0f,    0.0f, 1.0f, 1.0f, 1.0f,    0.0f , 0.0f, 1.0f, 1.0f,    0.0f, 1.0f, 0.0f,    1.0f, 0.0f, 0.0f,    1.0f, 1.0f, 0.0f, },
 
             // WEST
             { 0.0f, 0.0f, 1.0f, 1.0f,    0.0f, 1.0f, 1.0f, 1.0f,    0.0f , 1.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,    0.0f, 0.0f, 0.0f,    1.0f, 0.0f, 0.0f, },
             { 0.0f, 0.0f, 1.0f, 1.0f,    0.0f, 1.0f, 0.0f, 1.0f,    0.0f , 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,    1.0f, 0.0f, 0.0f,    1.0f, 1.0f, 0.0f, },
 
-            // TOP
+            // SOUTH
             { 0.0f, 1.0f, 0.0f, 1.0f,    0.0f, 1.0f, 1.0f, 1.0f,    1.0f , 1.0f, 1.0f, 1.0f,    0.0f, 1.0f, 0.0f,    0.0f, 0.0f, 0.0f,    1.0f, 0.0f, 0.0f, },
             { 0.0f, 1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f, 1.0f,    1.0f , 1.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,    1.0f, 0.0f, 0.0f,    1.0f, 1.0f, 0.0f, },
 
-            // BOTTOM
+            // NORTH
             { 1.0f, 0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 1.0f, 1.0f,    0.0f , 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,    0.0f, 0.0f, 0.0f,    1.0f, 0.0f, 0.0f, },
             { 1.0f, 0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 0.0f, 1.0f,    1.0f , 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,    1.0f, 0.0f, 0.0f,    1.0f, 1.0f, 0.0f, },
+        };
+
+        flatQuad.tris =
+        {
+            { 0.0f, 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f, 1.0f,     1.0f, 1.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,    0.0f, 0.0f, 0.0f,    1.0f, 0.0f, 0.0f, },
+            { 0.0f, 0.0f, 0.0f, 1.0f,    1.0f, 1.0f, 0.0f, 1.0f,     1.0f, 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,    1.0f, 0.0f, 0.0f,    1.0f, 1.0f, 0.0f, },
         };
 
         olc::GFX3D::ConfigureDisplay();
@@ -68,20 +96,38 @@ public:
 
     bool OnUserUpdate(float fElapsedTime) override
     {
-        Clear(olc::BLACK);
+        Clear(olc::BLUE);
         olc::GFX3D::ClearDepth();
 
         olc::GFX3D::vec3d lookTarget = olc::GFX3D::Math::Vec_Add(eye, lookDir);
 
         pipeRender.SetCamera(eye, lookTarget, up);
 
-        olc::GFX3D::mat4x4 rotX = olc::GFX3D::Math::Mat_MakeRotationX(theta);
-        olc::GFX3D::mat4x4 rotZ = olc::GFX3D::Math::Mat_MakeRotationZ(2.0f * theta);
-        olc::GFX3D::mat4x4 transform = olc::GFX3D::Math::Mat_MultiplyMatrix(rotX, rotZ);
+        for (int y = 0; y < mapHeight; y++)
+        {
+            for (int x = 0; x < mapWidth; x++)
+            {
+                MapCell *cell = &map[y * mapWidth + x];
+                if (cell->road)
+                {
 
-        pipeRender.SetTransform(transform);
-        pipeRender.SetTexture(&allTexture);
-        pipeRender.Render(meshCube.tris);
+                }
+                else
+                {
+                    if (cell->height == 0)
+                    {
+                        olc::GFX3D::mat4x4 transform = olc::GFX3D::Math::Mat_MakeTranslation(x, y, 0);
+                        pipeRender.SetTransform(transform);
+                        pipeRender.SetTexture(grass);
+                        pipeRender.Render(flatQuad.tris);
+                    }
+                    else
+                    {
+
+                    }
+                }
+            }
+        }
 
         theta += fElapsedTime;
 
