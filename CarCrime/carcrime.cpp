@@ -10,6 +10,8 @@ class CarCrime : public olc::PixelGameEngine
     olc::GFX3D::vec3d lookDir = { 0, 0, 1 };
     olc::GFX3D::vec3d up = { 0, 1, 0 };
 
+    olc::Sprite allTexture;
+
     olc::GFX3D::PipeLine pipeRender;
     olc::GFX3D::mesh meshCube;
 
@@ -22,6 +24,8 @@ public:
 
     bool OnUserCreate() override
     {
+        allTexture.LoadFromFile("City_Roads1_mip0.png");
+
         meshCube.tris =
         {
             // SOUTH
@@ -65,6 +69,7 @@ public:
     bool OnUserUpdate(float fElapsedTime) override
     {
         Clear(olc::BLACK);
+        olc::GFX3D::ClearDepth();
 
         olc::GFX3D::vec3d lookTarget = olc::GFX3D::Math::Vec_Add(eye, lookDir);
 
@@ -75,7 +80,8 @@ public:
         olc::GFX3D::mat4x4 transform = olc::GFX3D::Math::Mat_MultiplyMatrix(rotX, rotZ);
 
         pipeRender.SetTransform(transform);
-        pipeRender.Render(meshCube.tris, olc::GFX3D::RENDER_WIRE);
+        pipeRender.SetTexture(&allTexture);
+        pipeRender.Render(meshCube.tris);
 
         theta += fElapsedTime;
 
