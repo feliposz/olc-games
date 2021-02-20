@@ -96,6 +96,32 @@ public:
 
     bool OnUserUpdate(float fElapsedTime) override
     {
+        float cameraSpeed = 2.0f;
+        if (GetKey(olc::S).bHeld)
+        {
+            eye.y += cameraSpeed * fElapsedTime;
+        }
+        if (GetKey(olc::W).bHeld)
+        {
+            eye.y -= cameraSpeed * fElapsedTime;
+        }
+        if (GetKey(olc::D).bHeld)
+        {
+            eye.x += cameraSpeed * fElapsedTime;
+        }
+        if (GetKey(olc::A).bHeld)
+        {
+            eye.x -= cameraSpeed * fElapsedTime;
+        }
+        if (GetKey(olc::X).bHeld)
+        {
+            eye.z += cameraSpeed * fElapsedTime;
+        }
+        if (GetKey(olc::Z).bHeld)
+        {
+            eye.z -= cameraSpeed * fElapsedTime;
+        }
+
         Clear(olc::BLUE);
         olc::GFX3D::ClearDepth();
 
