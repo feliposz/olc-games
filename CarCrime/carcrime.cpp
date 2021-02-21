@@ -10,13 +10,16 @@ struct MapCell
 
 class CarCrime : public olc::PixelGameEngine
 {
-    float theta;
+    float carAngle = 0;
+    float carX = 0;
+    float carY = 0;
 
     olc::GFX3D::vec3d eye = { 0, 0, -5 };
     olc::GFX3D::vec3d lookDir = { 0, 0, 1 };
     olc::GFX3D::vec3d up = { 0, 1, 0 };
 
     olc::Sprite allTexture;
+    olc::Sprite car;
     olc::Sprite *grass;
 
     olc::GFX3D::PipeLine pipeRender;
@@ -49,6 +52,7 @@ public:
         }
 
         allTexture.LoadFromFile("City_Roads1_mip0.png");
+        car.LoadFromFile("car_top1.png");
 
         grass = new olc::Sprite(96, 96);
         SetDrawTarget(grass);
@@ -89,29 +93,32 @@ public:
         float farZ = 1000.0f;
         pipeRender.SetProjection(fov, aspect, nearZ, farZ, 0, 0, ScreenWidth(), ScreenHeight());
 
-        theta = 0;
-
         return true;
     }
 
     bool OnUserUpdate(float fElapsedTime) override
     {
         float cameraSpeed = 2.0f;
+        bool followCar = true;
         if (GetKey(olc::S).bHeld)
         {
             eye.y += cameraSpeed * fElapsedTime;
+            followCar = false;
         }
         if (GetKey(olc::W).bHeld)
         {
             eye.y -= cameraSpeed * fElapsedTime;
+            followCar = false;
         }
         if (GetKey(olc::D).bHeld)
         {
             eye.x += cameraSpeed * fElapsedTime;
+            followCar = false;
         }
         if (GetKey(olc::A).bHeld)
         {
             eye.x -= cameraSpeed * fElapsedTime;
+            followCar = false;
         }
         if (GetKey(olc::X).bHeld)
         {
@@ -120,6 +127,38 @@ public:
         if (GetKey(olc::Z).bHeld)
         {
             eye.z -= cameraSpeed * fElapsedTime;
+        }
+
+        float carSpeed = 2.0f;
+        float turnSpeed = 2.0f;
+        float deltaCarX = 0;
+        float deltaCarY = 0;
+        if (GetKey(olc::RIGHT).bHeld)
+        {
+            carAngle += turnSpeed * fElapsedTime;
+        }
+        if (GetKey(olc::LEFT).bHeld)
+        {
+            carAngle -= turnSpeed * fElapsedTime;
+        }
+        if (GetKey(olc::UP).bHeld)
+        {
+            deltaCarX = carSpeed * fElapsedTime * cos(carAngle);
+            deltaCarY = carSpeed * fElapsedTime * sin(carAngle);
+        }
+        if (GetKey(olc::DOWN).bHeld)
+        {
+            deltaCarX = -carSpeed * fElapsedTime * cos(carAngle);
+            deltaCarY = -carSpeed * fElapsedTime * sin(carAngle);
+        }
+
+        carX += deltaCarX;
+        carY += deltaCarY;
+
+        if (followCar)
+        {
+            eye.x += (carX - eye.x) * fElapsedTime * carSpeed + 1.5f * deltaCarX;
+            eye.y += (carY - eye.y) * fElapsedTime * carSpeed + 1.5f * deltaCarY;
         }
 
         Clear(olc::BLUE);
@@ -155,7 +194,21 @@ public:
             }
         }
 
-        theta += fElapsedTime;
+        {
+            olc::GFX3D::mat4x4 carOffset = olc::GFX3D::Math::Mat_MakeTranslation(-0.5f, -0.5f, 0);
+            olc::GFX3D::mat4x4 carScale = olc::GFX3D::Math::Mat_MakeScale(0.4f, 0.2f, 0);
+            olc::GFX3D::mat4x4 carRotZ = olc::GFX3D::Math::Mat_MakeRotationZ(carAngle);
+            olc::GFX3D::mat4x4 carWorld = olc::GFX3D::Math::Mat_MakeTranslation(carX, carY, -0.1f);
+            olc::GFX3D::mat4x4 carTransform = olc::GFX3D::Math::Mat_MultiplyMatrix(carOffset, carScale);
+            carTransform = olc::GFX3D::Math::Mat_MultiplyMatrix(carTransform, carRotZ);
+            carTransform = olc::GFX3D::Math::Mat_MultiplyMatrix(carTransform, carWorld);
+            pipeRender.SetTransform(carTransform);
+            pipeRender.SetTexture(&car);
+
+            SetPixelMode(olc::Pixel::ALPHA);
+            pipeRender.Render(flatQuad.tris);
+            SetPixelMode(olc::Pixel::NORMAL);
+        }
 
         return true;
     }
