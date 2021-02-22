@@ -209,8 +209,11 @@ public:
         }
 
         if (GetMouse(0).bHeld)
-        {            
-            selected.insert(cell);
+        {
+            if (cell)
+            {
+                selected.insert(cell);
+            }
         }
 
         if (GetMouse(1).bPressed)
@@ -317,10 +320,20 @@ public:
 
         pipeRender.SetCamera(eye, lookTarget, up);
 
+        olc::GFX3D::vec3d minWorld, maxWorld;
+        ScreenToWorldCoord(0, 0, minWorld);
+        ScreenToWorldCoord(ScreenWidth(), ScreenHeight(), maxWorld);
+
+        // expand one extra cell (drawing partial cells on border of screen) and clamp to map dimensions
+        int minX = std::max(0, (int)minWorld.x - 1);
+        int minY = std::max(0, (int)minWorld.y - 1);
+        int maxX = std::min(mapWidth - 1, (int)maxWorld.x + 1);
+        int maxY = std::min(mapHeight - 1, (int)maxWorld.y + 1);
+
         // render map
-        for (int y = 0; y < mapHeight; y++)
+        for (int y = minY; y <= maxY; y++)
         {
-            for (int x = 0; x < mapWidth; x++)
+            for (int x = minX; x <= maxX; x++)
             {
                 MapCell *cell = &map[y * mapWidth + x];
                 if (cell->road)
@@ -362,10 +375,13 @@ public:
         {
             int x = cell->x;
             int y = cell->y;
-            olc::GFX3D::mat4x4 transform = olc::GFX3D::Math::Mat_MakeTranslation(x, y, 0);
-            pipeRender.SetTransform(transform);
-            pipeRender.SetTexture(road[GetRoadIndex(x, y)]);
-            pipeRender.Render(flatQuad.tris, olc::GFX3D::RENDER_WIRE);
+            if ((x >= minX) && (x <= maxX) && (y >= minY) && (y <= maxY))
+            {
+                olc::GFX3D::mat4x4 transform = olc::GFX3D::Math::Mat_MakeTranslation(x, y, 0);
+                pipeRender.SetTransform(transform);
+                pipeRender.SetTexture(road[GetRoadIndex(x, y)]);
+                pipeRender.Render(flatQuad.tris, olc::GFX3D::RENDER_WIRE);
+            }
         }
 
         // render car
@@ -432,14 +448,15 @@ public:
 
         // cast a ray from player point of view that passes through given screen coordinate
         olc::GFX3D::vec3d orig = { 0, 0, 0 };
-        float relX = 2.0f * ((float)screenX / (float)ScreenWidth() - 0.5f) / proj.m[0][0];
-        float relY = 2.0f * ((float)screenY / (float)ScreenHeight() - 0.5f) / proj.m[1][1];
+        float relX = 2.0f * (((float)screenX / (float)ScreenWidth()) - 0.5f) / proj.m[0][0];
+        float relY = 2.0f * (((float)screenY / (float)ScreenHeight()) - 0.5f) / proj.m[1][1];
         olc::GFX3D::vec3d direction = { relX, relY, 1.0f, 0.0f };
         orig = olc::GFX3D::Math::Mat_MultiplyVector(view, orig);
         direction = olc::GFX3D::Math::Mat_MultiplyVector(view, direction);
 
         // extend to make ray cross ground plane
         direction = olc::GFX3D::Math::Vec_Mul(direction, 1000.0f);
+        direction = olc::GFX3D::Math::Vec_Add(orig, direction);
 
         // ground plane
         olc::GFX3D::vec3d planePos = { 0, 0, 0 };
