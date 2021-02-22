@@ -13,10 +13,14 @@ class CarCrime : public olc::PixelGameEngine
     float carAngle = 0;
     float carX = 0;
     float carY = 0;
+    bool followCar = true;
+    int mapX = -1;
+    int mapY = -1;
 
-    olc::GFX3D::vec3d eye = { 0, 0, -5 };
+    olc::GFX3D::vec3d eye = { 0, 0, -4 };
     olc::GFX3D::vec3d lookDir = { 0, 0, 1 };
     olc::GFX3D::vec3d up = { 0, 1, 0 };
+    olc::GFX3D::mat4x4 proj;
 
     olc::Sprite allTexture;
     olc::Sprite car;
@@ -147,45 +151,64 @@ public:
         float nearZ = 0.1f;
         float farZ = 1000.0f;
         pipeRender.SetProjection(fov, aspect, nearZ, farZ, 0, 0, ScreenWidth(), ScreenHeight());
+        proj = olc::GFX3D::Math::Mat_MakeProjection(fov, aspect, nearZ, farZ);
 
         return true;
     }
 
     bool OnUserUpdate(float fElapsedTime) override
     {
-        float cameraSpeed = 2.0f;
-        bool followCar = true;
-        if (GetKey(olc::S).bHeld)
+        // camera control
         {
-            eye.y += cameraSpeed * fElapsedTime;
-            followCar = false;
-        }
-        if (GetKey(olc::W).bHeld)
-        {
-            eye.y -= cameraSpeed * fElapsedTime;
-            followCar = false;
-        }
-        if (GetKey(olc::D).bHeld)
-        {
-            eye.x += cameraSpeed * fElapsedTime;
-            followCar = false;
-        }
-        if (GetKey(olc::A).bHeld)
-        {
-            eye.x -= cameraSpeed * fElapsedTime;
-            followCar = false;
-        }
-        if (GetKey(olc::X).bHeld)
-        {
-            eye.z += cameraSpeed * fElapsedTime;
-        }
-        if (GetKey(olc::Z).bHeld)
-        {
-            eye.z -= cameraSpeed * fElapsedTime;
+            float cameraSpeed = 2.0f;
+            if (GetKey(olc::S).bHeld)
+            {
+                eye.y += cameraSpeed * fElapsedTime;
+                followCar = false;
+            }
+            if (GetKey(olc::W).bHeld)
+            {
+                eye.y -= cameraSpeed * fElapsedTime;
+                followCar = false;
+            }
+            if (GetKey(olc::D).bHeld)
+            {
+                eye.x += cameraSpeed * fElapsedTime;
+                followCar = false;
+            }
+            if (GetKey(olc::A).bHeld)
+            {
+                eye.x -= cameraSpeed * fElapsedTime;
+                followCar = false;
+            }
+            if (GetKey(olc::X).bHeld)
+            {
+                eye.z += cameraSpeed * fElapsedTime;
+            }
+            if (GetKey(olc::Z).bHeld)
+            {
+                eye.z -= cameraSpeed * fElapsedTime;
+            }
         }
 
-        int mapX = (int)floorf(carX);
-        int mapY = (int)floorf(carY);
+        // map editor
+
+        olc::GFX3D::vec3d mouseWorld;
+        ScreenToWorldCoord(GetMouseX(), GetMouseY(), mouseWorld);
+
+
+        if (GetMouse(0).bPressed)
+        {
+            mapX = (int)floorf(mouseWorld.x);
+            mapY = (int)floorf(mouseWorld.y);
+        }
+
+        if (GetMouse(1).bPressed)
+        {
+            mapX = -1;
+            mapY = -1;
+        }
+
         MapCell *cell = nullptr;
         if ((mapX >= 0) && (mapX < mapWidth) && (mapY >= 0) && (mapY < mapHeight))
         {
@@ -216,36 +239,43 @@ public:
             }
         }
 
-        float carSpeed = 2.0f;
-        float turnSpeed = 2.0f;
-        float deltaCarX = 0;
-        float deltaCarY = 0;
-        if (GetKey(olc::RIGHT).bHeld)
-        {
-            carAngle += turnSpeed * fElapsedTime;
-        }
-        if (GetKey(olc::LEFT).bHeld)
-        {
-            carAngle -= turnSpeed * fElapsedTime;
-        }
-        if (GetKey(olc::UP).bHeld)
-        {
-            deltaCarX = carSpeed * fElapsedTime * cos(carAngle);
-            deltaCarY = carSpeed * fElapsedTime * sin(carAngle);
-        }
-        if (GetKey(olc::DOWN).bHeld)
-        {
-            deltaCarX = -carSpeed * fElapsedTime * cos(carAngle);
-            deltaCarY = -carSpeed * fElapsedTime * sin(carAngle);
-        }
 
-        carX += deltaCarX;
-        carY += deltaCarY;
-
-        if (followCar)
+        // car control
         {
-            eye.x += (carX - eye.x) * fElapsedTime * carSpeed + 1.5f * deltaCarX;
-            eye.y += (carY - eye.y) * fElapsedTime * carSpeed + 1.5f * deltaCarY;
+            float carSpeed = 2.0f;
+            float turnSpeed = 2.0f;
+            float deltaCarX = 0;
+            float deltaCarY = 0;
+            if (GetKey(olc::RIGHT).bHeld)
+            {
+                carAngle += turnSpeed * fElapsedTime;
+            }
+            if (GetKey(olc::LEFT).bHeld)
+            {
+                carAngle -= turnSpeed * fElapsedTime;
+            }
+            if (GetKey(olc::UP).bHeld)
+            {
+                deltaCarX = carSpeed * fElapsedTime * cos(carAngle);
+                deltaCarY = carSpeed * fElapsedTime * sin(carAngle);
+                followCar = true;
+            }
+            if (GetKey(olc::DOWN).bHeld)
+            {
+                deltaCarX = -carSpeed * fElapsedTime * cos(carAngle);
+                deltaCarY = -carSpeed * fElapsedTime * sin(carAngle);
+                followCar = true;
+            }
+
+            // camera autofollow
+            carX += deltaCarX;
+            carY += deltaCarY;
+
+            if (followCar)
+            {
+                eye.x += (carX - eye.x) * fElapsedTime * carSpeed + 1.5f * deltaCarX;
+                eye.y += (carY - eye.y) * fElapsedTime * carSpeed + 1.5f * deltaCarY;
+            }
         }
 
         Clear(olc::BLUE);
@@ -255,6 +285,7 @@ public:
 
         pipeRender.SetCamera(eye, lookTarget, up);
 
+        // render map
         for (int y = 0; y < mapHeight; y++)
         {
             for (int x = 0; x < mapWidth; x++)
@@ -294,6 +325,24 @@ public:
             }
         }
 
+        // render selected cells
+        for (int y = 0; y < mapHeight; y++)
+        {
+            for (int x = 0; x < mapWidth; x++)
+            {
+                MapCell *cell = &map[y * mapWidth + x];
+                bool selected = (mapX == x && mapY == y);
+                if (selected)
+                {
+                    olc::GFX3D::mat4x4 transform = olc::GFX3D::Math::Mat_MakeTranslation(x, y, 0);
+                    pipeRender.SetTransform(transform);
+                    pipeRender.SetTexture(road[GetRoadIndex(x, y)]);
+                    pipeRender.Render(flatQuad.tris, olc::GFX3D::RENDER_WIRE);
+                }
+            }
+        }
+
+        // render car
         {
             olc::GFX3D::mat4x4 carOffset = olc::GFX3D::Math::Mat_MakeTranslation(-0.5f, -0.5f, 0);
             olc::GFX3D::mat4x4 carScale = olc::GFX3D::Math::Mat_MakeScale(0.4f, 0.2f, 0);
@@ -347,6 +396,32 @@ public:
         else if ((west || east) && !north && !south) i = 1;
 
         return i;
+    }
+
+    void ScreenToWorldCoord(int screenX, int screenY, olc::GFX3D::vec3d &world)
+    {
+        // inverse of camera transform
+        olc::GFX3D::vec3d lookTarget = olc::GFX3D::Math::Vec_Add(eye, lookDir);
+        olc::GFX3D::mat4x4 view = olc::GFX3D::Math::Mat_PointAt(eye, lookTarget, up);
+
+        // cast a ray from player point of view that passes through given screen coordinate
+        olc::GFX3D::vec3d orig = { 0, 0, 0 };
+        float relX = 2.0f * ((float)screenX / (float)ScreenWidth() - 0.5f) / proj.m[0][0];
+        float relY = 2.0f * ((float)screenY / (float)ScreenHeight() - 0.5f) / proj.m[1][1];
+        olc::GFX3D::vec3d direction = { relX, relY, 1.0f, 0.0f };
+        orig = olc::GFX3D::Math::Mat_MultiplyVector(view, orig);
+        direction = olc::GFX3D::Math::Mat_MultiplyVector(view, direction);
+
+        // extend to make ray cross ground plane
+        direction = olc::GFX3D::Math::Vec_Mul(direction, 1000.0f);
+
+        // ground plane
+        olc::GFX3D::vec3d planePos = { 0, 0, 0 };
+        olc::GFX3D::vec3d planeNormal = { 0, 0, 1 };
+
+        // calculate point of intersection of ray into ground plane
+        float t = 0;
+        world = olc::GFX3D::Math::Vec_IntersectPlane(planePos, planeNormal, orig, direction, t);
     }
 
 };
