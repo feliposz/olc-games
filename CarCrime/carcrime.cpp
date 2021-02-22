@@ -22,6 +22,9 @@ class CarCrime : public olc::PixelGameEngine
     olc::Sprite car;
     olc::Sprite *grass;
     olc::Sprite *road[12];
+    olc::Sprite *roof;
+    olc::Sprite *doorNorth, *doorSouth, *doorWest, *doorEast;
+    olc::Sprite *windowNorth, *windowSouth, *windowWest, *windowEast;
 
     olc::GFX3D::PipeLine pipeRender;
     olc::GFX3D::mesh flatQuad;
@@ -68,27 +71,67 @@ public:
             }
         }
 
+        // grass texture is just a special case for road tiles
         grass = road[2];
+
+        // split tiles for building textures
+
+        roof = new olc::Sprite(96, 96);
+        SetDrawTarget(roof);
+        DrawPartialSprite(0, 0, &allTexture, 352, 64, 96, 96);
+
+        doorNorth = new olc::Sprite(96, 32);
+        SetDrawTarget(doorNorth);
+        DrawPartialSprite(0, 0, &allTexture, 352, 0, 96, 32);
+
+        windowNorth = new olc::Sprite(96, 32);
+        SetDrawTarget(windowNorth);
+        DrawPartialSprite(0, 0, &allTexture, 352, 32, 96, 32);
+
+        windowSouth = new olc::Sprite(96, 32);
+        SetDrawTarget(windowSouth);
+        DrawPartialSprite(0, 0, &allTexture, 352, 160, 96, 32);
+
+        doorSouth = new olc::Sprite(96, 32);
+        SetDrawTarget(doorSouth);
+        DrawPartialSprite(0, 0, &allTexture, 352, 192, 96, 32);
+
+        doorWest = new olc::Sprite(32, 96);
+        SetDrawTarget(doorWest);
+        DrawPartialSprite(0, 0, &allTexture, 288, 64, 32, 96);
+
+        windowWest = new olc::Sprite(32, 96);
+        SetDrawTarget(windowWest);
+        DrawPartialSprite(0, 0, &allTexture, 320, 64, 32, 96);
+
+        windowEast = new olc::Sprite(32, 96);
+        SetDrawTarget(windowEast);
+        DrawPartialSprite(0, 0, &allTexture, 448, 64, 32, 96);
+
+        doorEast = new olc::Sprite(32, 96);
+        SetDrawTarget(doorEast);
+        DrawPartialSprite(0, 0, &allTexture, 480, 64, 32, 96);
 
         SetDrawTarget(nullptr);
 
         walls.tris =
         {
             // EAST
-            { 1.0f, 0.0f, 0.0f, 1.0f,    1.0f, 1.0f, 0.0f, 1.0f,    1.0f , 1.0f, 1.0f, 1.0f,    0.0f, 1.0f, 0.0f,    0.0f, 0.0f, 0.0f,    1.0f, 0.0f, 0.0f, },
-            { 1.0f, 0.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f, 1.0f,    1.0f , 0.0f, 1.0f, 1.0f,    0.0f, 1.0f, 0.0f,    1.0f, 0.0f, 0.0f,    1.0f, 1.0f, 0.0f, },
+            { 1.0f, 0.0f, 0.0f, 1.0f,    1.0f, 1.0f, 0.0f, 1.0f,    1.0f , 1.0f, 0.2f, 1.0f,    1.0f, 1.0f, 0.0f,    0.0f, 1.0f, 0.0f,    0.0f, 0.0f, 0.0f, },
+            { 1.0f, 0.0f, 0.0f, 1.0f,    1.0f, 1.0f, 0.2f, 1.0f,    1.0f , 0.0f, 0.2f, 1.0f,    1.0f, 1.0f, 0.0f,    0.0f, 0.0f, 0.0f,    1.0f, 0.0f, 0.0f, },
 
             // WEST
-            { 0.0f, 0.0f, 1.0f, 1.0f,    0.0f, 1.0f, 1.0f, 1.0f,    0.0f , 1.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,    0.0f, 0.0f, 0.0f,    1.0f, 0.0f, 0.0f, },
-            { 0.0f, 0.0f, 1.0f, 1.0f,    0.0f, 1.0f, 0.0f, 1.0f,    0.0f , 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,    1.0f, 0.0f, 0.0f,    1.0f, 1.0f, 0.0f, },
+            { 0.0f, 0.0f, 0.2f, 1.0f,    0.0f, 1.0f, 0.2f, 1.0f,    0.0f , 1.0f, 0.0f, 1.0f,    1.0f, 0.0f, 0.0f,    0.0f, 0.0f, 0.0f,    0.0f, 1.0f, 0.0f, },
+            { 0.0f, 0.0f, 0.2f, 1.0f,    0.0f, 1.0f, 0.0f, 1.0f,    0.0f , 0.0f, 0.0f, 1.0f,    1.0f, 0.0f, 0.0f,    0.0f, 1.0f, 0.0f,    1.0f, 1.0f, 0.0f, },
 
             // SOUTH
-            { 0.0f, 1.0f, 0.0f, 1.0f,    0.0f, 1.0f, 1.0f, 1.0f,    1.0f , 1.0f, 1.0f, 1.0f,    0.0f, 1.0f, 0.0f,    0.0f, 0.0f, 0.0f,    1.0f, 0.0f, 0.0f, },
-            { 0.0f, 1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f, 1.0f,    1.0f , 1.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,    1.0f, 0.0f, 0.0f,    1.0f, 1.0f, 0.0f, },
+            { 0.0f, 1.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.2f, 1.0f,    1.0f , 1.0f, 0.2f, 1.0f,    0.0f, 1.0f, 0.0f,    0.0f, 0.0f, 0.0f,    1.0f, 0.0f, 0.0f, },
+            { 0.0f, 1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 0.2f, 1.0f,    1.0f , 1.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,    1.0f, 0.0f, 0.0f,    1.0f, 1.0f, 0.0f, },
 
             // NORTH
-            { 1.0f, 0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 1.0f, 1.0f,    0.0f , 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,    0.0f, 0.0f, 0.0f,    1.0f, 0.0f, 0.0f, },
-            { 1.0f, 0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 0.0f, 1.0f,    1.0f , 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,    1.0f, 0.0f, 0.0f,    1.0f, 1.0f, 0.0f, },
+            { 1.0f, 0.0f, 0.2f, 1.0f,    0.0f, 0.0f, 0.2f, 1.0f,    0.0f , 0.0f, 0.0f, 1.0f,    1.0f, 0.0f, 0.0f,    0.0f, 0.0f, 0.0f,    0.0f, 1.0f, 0.0f, },
+            { 1.0f, 0.0f, 0.2f, 1.0f,    0.0f, 0.0f, 0.0f, 1.0f,    1.0f , 0.0f, 0.0f, 1.0f,    1.0f, 0.0f, 0.0f,    0.0f, 1.0f, 0.0f,    1.0f, 1.0f, 0.0f, },
+
         };
 
         flatQuad.tris =
@@ -157,6 +200,22 @@ public:
             }
         }
 
+        if (GetKey(olc::T).bPressed)
+        {
+            if (cell)
+            {
+                cell->height++;
+            }
+        }
+
+        if (GetKey(olc::E).bPressed)
+        {
+            if (cell)
+            {
+                cell->height--;
+            }
+        }
+
         float carSpeed = 2.0f;
         float turnSpeed = 2.0f;
         float deltaCarX = 0;
@@ -217,9 +276,19 @@ public:
                         pipeRender.SetTexture(grass);
                         pipeRender.Render(flatQuad.tris);
                     }
-                    else
+                    else if (cell->height > 0)
                     {
-
+                        for (int h = 0; h < cell->height; h++)
+                        {
+                            olc::GFX3D::mat4x4 transform = olc::GFX3D::Math::Mat_MakeTranslation(x, y, -(h + 1) * 0.2f);
+                            pipeRender.SetTransform(transform);
+                            pipeRender.SetTexture(h == 0 ? doorNorth : windowNorth);
+                            pipeRender.Render(walls.tris);
+                        }
+                        olc::GFX3D::mat4x4 transform = olc::GFX3D::Math::Mat_MakeTranslation(x, y, -cell->height * 0.2f);
+                        pipeRender.SetTransform(transform);
+                        pipeRender.SetTexture(roof);
+                        pipeRender.Render(flatQuad.tris);
                     }
                 }
             }
