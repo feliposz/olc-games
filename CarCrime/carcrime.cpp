@@ -1,3 +1,4 @@
+#include <unordered_set>
 #define OLC_PGE_APPLICATION
 #include "olcPixelGameEngine.h"
 #include "olcPGEX_Graphics3D.h"
@@ -6,6 +7,7 @@ struct MapCell
 {
     bool road;
     int height;
+    int x, y;
 };
 
 class CarCrime : public olc::PixelGameEngine
@@ -14,8 +16,6 @@ class CarCrime : public olc::PixelGameEngine
     float carX = 0;
     float carY = 0;
     bool followCar = true;
-    int mapX = -1;
-    int mapY = -1;
 
     olc::GFX3D::vec3d eye = { 0, 0, -4 };
     olc::GFX3D::vec3d lookDir = { 0, 0, 1 };
@@ -33,6 +33,8 @@ class CarCrime : public olc::PixelGameEngine
     olc::GFX3D::PipeLine pipeRender;
     olc::GFX3D::mesh flatQuad;
     olc::GFX3D::mesh walls;
+
+    std::unordered_set<MapCell *> selected;
 
     int mapWidth, mapHeight;
     MapCell *map;
@@ -56,6 +58,8 @@ public:
                 MapCell *cell = &map[y * mapWidth + x];
                 cell->road = false;
                 cell->height = 0;
+                cell->x = x;
+                cell->y = y;
             }
         }
 
@@ -195,19 +199,8 @@ public:
 
         olc::GFX3D::vec3d mouseWorld;
         ScreenToWorldCoord(GetMouseX(), GetMouseY(), mouseWorld);
-
-
-        if (GetMouse(0).bPressed)
-        {
-            mapX = (int)floorf(mouseWorld.x);
-            mapY = (int)floorf(mouseWorld.y);
-        }
-
-        if (GetMouse(1).bPressed)
-        {
-            mapX = -1;
-            mapY = -1;
-        }
+        int mapX = (int)floorf(mouseWorld.x);
+        int mapY = (int)floorf(mouseWorld.y);
 
         MapCell *cell = nullptr;
         if ((mapX >= 0) && (mapX < mapWidth) && (mapY >= 0) && (mapY < mapHeight))
@@ -215,30 +208,69 @@ public:
             cell = &map[mapY * mapWidth + mapX];
         }
 
+        if (GetMouse(0).bHeld)
+        {            
+            selected.insert(cell);
+        }
+
+        if (GetMouse(1).bPressed)
+        {
+            selected.clear();
+        }
+
         if (GetKey(olc::R).bPressed)
         {
-            if (cell)
+            if (selected.size() == 0)
             {
-                cell->road = !cell->road;
+                if (cell)
+                {
+                    cell->road = !cell->road;
+                }
+            }
+            else
+            {
+                for (auto cell : selected)
+                {
+                    cell->road = !cell->road;
+                }
             }
         }
 
         if (GetKey(olc::T).bPressed)
         {
-            if (cell)
+            if (selected.size() == 0)
             {
-                cell->height++;
+                if (cell)
+                {
+                    cell->height++;
+                }
+            }
+            else
+            {
+                for (auto cell : selected)
+                {
+                    cell->height++;
+                }
             }
         }
 
         if (GetKey(olc::E).bPressed)
         {
-            if (cell)
+            if (selected.size() == 0)
             {
-                cell->height--;
+                if (cell)
+                {
+                    cell->height--;
+                }
+            }
+            else
+            {
+                for (auto cell : selected)
+                {
+                    cell->height--;
+                }
             }
         }
-
 
         // car control
         {
@@ -326,20 +358,14 @@ public:
         }
 
         // render selected cells
-        for (int y = 0; y < mapHeight; y++)
+        for (auto cell : selected)
         {
-            for (int x = 0; x < mapWidth; x++)
-            {
-                MapCell *cell = &map[y * mapWidth + x];
-                bool selected = (mapX == x && mapY == y);
-                if (selected)
-                {
-                    olc::GFX3D::mat4x4 transform = olc::GFX3D::Math::Mat_MakeTranslation(x, y, 0);
-                    pipeRender.SetTransform(transform);
-                    pipeRender.SetTexture(road[GetRoadIndex(x, y)]);
-                    pipeRender.Render(flatQuad.tris, olc::GFX3D::RENDER_WIRE);
-                }
-            }
+            int x = cell->x;
+            int y = cell->y;
+            olc::GFX3D::mat4x4 transform = olc::GFX3D::Math::Mat_MakeTranslation(x, y, 0);
+            pipeRender.SetTransform(transform);
+            pipeRender.SetTexture(road[GetRoadIndex(x, y)]);
+            pipeRender.Render(flatQuad.tris, olc::GFX3D::RENDER_WIRE);
         }
 
         // render car
