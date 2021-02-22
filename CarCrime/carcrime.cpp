@@ -21,6 +21,7 @@ class CarCrime : public olc::PixelGameEngine
     olc::Sprite allTexture;
     olc::Sprite car;
     olc::Sprite *grass;
+    olc::Sprite *road[12];
 
     olc::GFX3D::PipeLine pipeRender;
     olc::GFX3D::mesh flatQuad;
@@ -54,9 +55,20 @@ public:
         allTexture.LoadFromFile("City_Roads1_mip0.png");
         car.LoadFromFile("car_top1.png");
 
-        grass = new olc::Sprite(96, 96);
-        SetDrawTarget(grass);
-        DrawPartialSprite(0, 0, &allTexture, 192, 0, 96, 96);
+        // split road tiles into individual sprites
+        int i = 0;
+        for (int y = 0; y < 4; y++)
+        {
+            for (int x = 0; x < 3; x++)
+            {
+                road[i] = new olc::Sprite(96, 96);
+                SetDrawTarget(road[i]);
+                DrawPartialSprite(0, 0, &allTexture, x * 96, y * 96, 96, 96);
+                i++;
+            }
+        }
+
+        grass = road[2];
 
         SetDrawTarget(nullptr);
 
@@ -129,6 +141,22 @@ public:
             eye.z -= cameraSpeed * fElapsedTime;
         }
 
+        int mapX = (int)floorf(carX);
+        int mapY = (int)floorf(carY);
+        MapCell *cell = nullptr;
+        if ((mapX >= 0) && (mapX < mapWidth) && (mapY >= 0) && (mapY < mapHeight))
+        {
+            cell = &map[mapY * mapWidth + mapX];
+        }
+
+        if (GetKey(olc::R).bPressed)
+        {
+            if (cell)
+            {
+                cell->road = !cell->road;
+            }
+        }
+
         float carSpeed = 2.0f;
         float turnSpeed = 2.0f;
         float deltaCarX = 0;
@@ -175,7 +203,10 @@ public:
                 MapCell *cell = &map[y * mapWidth + x];
                 if (cell->road)
                 {
-
+                    olc::GFX3D::mat4x4 transform = olc::GFX3D::Math::Mat_MakeTranslation(x, y, 0);
+                    pipeRender.SetTransform(transform);
+                    pipeRender.SetTexture(road[GetRoadIndex(x, y)]);
+                    pipeRender.Render(flatQuad.tris);
                 }
                 else
                 {
@@ -211,6 +242,42 @@ public:
         }
 
         return true;
+    }
+
+    bool CheckRoad(int x, int y)
+    {
+        if ((x >= 0) && (x < mapWidth) && (y >= 0) && (y < mapHeight))
+        {
+            return map[y * mapWidth + x].road;
+        }
+        else
+        {
+            return false;
+        }
+    };
+
+    int GetRoadIndex(int x, int y)
+    {
+        bool west = CheckRoad(x - 1, y);
+        bool east = CheckRoad(x + 1, y);
+        bool north = CheckRoad(x, y + 1);
+        bool south = CheckRoad(x, y - 1);
+
+        int i = 0;
+
+        if (!west && east && !north && south) i = 3;
+        else if (west && east && !north && south) i = 4;
+        else if (west && !east && !north && south) i = 5;
+        else if (!west && east && north && south) i = 6;
+        else if (west && east && north && south) i = 7;
+        else if (west && !east && north && south) i = 8;
+        else if (!west && east && north && !south) i = 9;
+        else if (west && east && north && !south) i = 10;
+        else if (west && !east && north && !south) i = 11;
+        else if (!west && !east && (north || south)) i = 0;
+        else if ((west || east) && !north && !south) i = 1;
+
+        return i;
     }
 
 };
