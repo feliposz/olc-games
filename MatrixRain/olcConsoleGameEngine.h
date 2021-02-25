@@ -343,7 +343,7 @@ public:
 		m_bEnableSound = true;
 	}
 
-	int ConstructConsole(int width, int height, int fontw, int fonth)
+	int ConstructConsole(int width, int height, int fontw, int fonth, const wchar_t *FaceName = L"Consolas")
 	{
 		if (m_hConsole == INVALID_HANDLE_VALUE)
 			return Error(L"Bad Handle");
@@ -396,7 +396,7 @@ public:
 		//	wcscpy_s(cfi.FaceName, L"Lucida Console"); // Everything else :P
 
 		//wcscpy_s(cfi.FaceName, L"Liberation Mono");
-		wcscpy_s(cfi.FaceName, L"Consolas");
+		wcscpy_s(cfi.FaceName, FaceName);
 		if (!SetCurrentConsoleFontEx(m_hConsole, false, &cfi))
 			return Error(L"SetCurrentConsoleFontEx");
 
