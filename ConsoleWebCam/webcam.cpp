@@ -16,6 +16,7 @@ private:
     SimpleCapParams capture;
     bool mirror = true;
     bool flip = false;
+    int mode = 2;
 
 public:
 
@@ -45,10 +46,17 @@ public:
         {
             mirror = !mirror;
         }
-
         if (GetKey('V').bPressed)
         {
             flip = !flip;
+        }
+        if (GetKey('1').bPressed)
+        {
+            mode = 1;
+        }
+        if (GetKey('2').bPressed)
+        {
+            mode = 2;
         }
 
         for (int y = 0; y < ScreenHeight(); y++)
@@ -59,7 +67,18 @@ public:
                 int offsetY = (flip ? (capture.mHeight - y - 1) : y) * capture.mWidth;
                 Pixel *p = (Pixel *)capture.mTargetBuf + offsetX + offsetY;
                 short sym, fg, bg;
-                BlackWhite(p->c[2], p->c[1], p->c[0], sym, fg, bg);
+                float r = p->c[2] / 255.0f;
+                float g = p->c[1] / 255.0f;
+                float b = p->c[0] / 255.0f;
+                switch (mode)
+                {
+                    case 1:
+                        BlackWhite(r, g, b, sym, fg, bg);
+                        break;
+                    case 2:
+                        Grayscale(r, g, b, sym, fg, bg);
+                        break;
+                }
                 Draw(x, y, sym, fg | bg);
             }
         }
@@ -67,11 +86,33 @@ public:
         return true;
     }
 
-    void BlackWhite(int r, int g, int b, short &sym, short &fg, short &bg)
+    void BlackWhite(float r, float g, float b, short &sym, short &fg, short &bg)
     {
         sym = PIXEL_SOLID;
-        fg = g >= 127 ? FG_WHITE : FG_BLACK;
+        fg = g >= 0.5f ? FG_WHITE : FG_BLACK;
         bg = BG_BLACK;
+    }
+
+    void Grayscale(float r, float g, float b, short &sym, short &fg, short &bg)
+    {
+        float brightness = 0.299f * r + 0.587f * g + 0.114f * b;
+        int index = (int)(13.0f * brightness);
+        switch (index)
+        {
+            case 0: bg = BG_BLACK; fg = FG_BLACK; sym = PIXEL_SOLID; break;
+            case 1: bg = BG_BLACK; fg = FG_DARK_GREY; sym = PIXEL_QUARTER; break;
+            case 2: bg = BG_BLACK; fg = FG_DARK_GREY; sym = PIXEL_HALF; break;
+            case 3: bg = BG_BLACK; fg = FG_DARK_GREY; sym = PIXEL_THREEQUARTERS; break;
+            case 4: bg = BG_BLACK; fg = FG_DARK_GREY; sym = PIXEL_SOLID; break;
+            case 5: bg = FG_DARK_GREY; fg = FG_GREY; sym = PIXEL_QUARTER; break;
+            case 6: bg = FG_DARK_GREY; fg = FG_GREY; sym = PIXEL_HALF; break;
+            case 7: bg = FG_DARK_GREY; fg = FG_GREY; sym = PIXEL_THREEQUARTERS; break;
+            case 8: bg = FG_DARK_GREY; fg = FG_GREY; sym = PIXEL_SOLID; break;
+            case 9: bg = FG_GREY; fg = FG_WHITE; sym = PIXEL_QUARTER; break;
+            case 10: bg = FG_GREY; fg = FG_WHITE; sym = PIXEL_HALF; break;
+            case 11: bg = FG_GREY; fg = FG_WHITE; sym = PIXEL_THREEQUARTERS; break;
+            default: bg = FG_GREY; fg = FG_WHITE; sym = PIXEL_SOLID; break;
+        }
     }
 
     ~WebCam()
