@@ -16,7 +16,7 @@ private:
     SimpleCapParams capture;
     bool mirror = true;
     bool flip = false;
-    int mode = 2;
+    int mode = 3;
 
 public:
 
@@ -58,6 +58,10 @@ public:
         {
             mode = 2;
         }
+        if (GetKey('3').bPressed)
+        {
+            mode = 3;
+        }
 
         for (int y = 0; y < ScreenHeight(); y++)
         {
@@ -77,6 +81,9 @@ public:
                         break;
                     case 2:
                         Grayscale(r, g, b, sym, fg, bg);
+                        break;
+                    case 3:
+                        HSV(r, g, b, sym, fg, bg);
                         break;
                 }
                 Draw(x, y, sym, fg | bg);
@@ -112,6 +119,79 @@ public:
             case 10: bg = FG_GREY; fg = FG_WHITE; sym = PIXEL_HALF; break;
             case 11: bg = FG_GREY; fg = FG_WHITE; sym = PIXEL_THREEQUARTERS; break;
             default: bg = FG_GREY; fg = FG_WHITE; sym = PIXEL_SOLID; break;
+        }
+    }
+
+    void rgb2hsv(float r, float g, float b, float &h, float &s, float &v)
+    {
+        float Cmax = (r > g) ? ((r > b) ? r : b) : ((g > b) ? g : b);
+        float Cmin = (r < g) ? ((r < b) ? r : b) : ((g < b) ? g : b);
+        float delta = Cmax - Cmin;
+        if (delta == 0)
+        {
+            h = 0;
+        }
+        else if (Cmax == r)
+        {
+            h = 60.0f * (g - b) / delta;
+        }
+        else if (Cmax == g)
+        {
+            h = 60.0f * ((b - r) / delta + 2.0f);
+        }
+        else if (Cmax == b)
+        {
+            h = 60.0f * ((r - g) / delta + 4.0f);
+        }
+        h = fmod(h, 360.0f);
+        s = (Cmax != 0) ? (delta / Cmax) : 0;
+        v = Cmax;
+    }
+
+    void HSV(float r, float g, float b, short &sym, short &fg, short &bg)
+    {
+        float h, s, v;
+        rgb2hsv(r, g, b, h, s, v);
+
+        if (s < 0.2f)
+        {
+            Grayscale(r, g, b, sym, fg, bg);
+        }
+        else
+        {
+            short blend[5] = { PIXEL_QUARTER, PIXEL_HALF, PIXEL_THREEQUARTERS, PIXEL_SOLID };
+            int id = (int)(fmod(h, 60.0f) / 60.0f * 4.0f);
+            sym = blend[id];
+            if (h < 60.f)
+            {
+                bg = v < 0.5f ? BG_DARK_RED : BG_RED;
+                fg = v < 0.5f ? FG_DARK_YELLOW : FG_YELLOW;
+            }
+            else if (h < 160.f)
+            {
+                bg = v < 0.5f ? BG_DARK_YELLOW : BG_YELLOW;
+                fg = v < 0.5f ? FG_DARK_GREEN : FG_GREEN;
+            }
+            else if (h < 180.f)
+            {
+                bg = v < 0.5f ? BG_DARK_GREEN : BG_GREEN;
+                fg = v < 0.5f ? FG_DARK_CYAN : FG_CYAN;
+            }
+            else if (h < 240.f)
+            {
+                bg = v < 0.5f ? BG_DARK_CYAN : BG_CYAN;
+                fg = v < 0.5f ? FG_DARK_BLUE : FG_BLUE;
+            }
+            else if (h < 300.f)
+            {
+                bg = v < 0.5f ? BG_DARK_BLUE : BG_BLUE;
+                fg = v < 0.5f ? FG_DARK_MAGENTA : FG_MAGENTA;
+            }
+            else
+            {
+                bg = v < 0.5f ? BG_DARK_MAGENTA : BG_MAGENTA;
+                fg = v < 0.5f ? FG_DARK_RED : FG_RED;
+            }            
         }
     }
 
