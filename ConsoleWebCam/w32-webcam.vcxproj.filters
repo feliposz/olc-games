@@ -26,5 +26,8 @@
     <ClInclude Include="escapi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="olcConsoleGameEngine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
