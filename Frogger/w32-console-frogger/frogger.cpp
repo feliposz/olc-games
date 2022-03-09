@@ -1,4 +1,5 @@
-#include "olcConsoleGameEngine.h"
+#define OLC_PGE_APPLICATION
+#include "olcPixelGameEngine.h"
 #include <vector>
 #include <utility>
 
@@ -6,20 +7,20 @@ using namespace std;
 
 const int CellSize = 8;
 
-class FroggerGame : public olcConsoleGameEngine
+class FroggerGame : public olc::PixelGameEngine
 {
     vector<pair<float, string>> Lanes;
     wchar_t *Collision;
     float Time;
-    olcSprite sprBus;
-    olcSprite sprCar1;
-    olcSprite sprCar2;
-    olcSprite sprFrog;
-    olcSprite sprHome;
-    olcSprite sprLog;
-    olcSprite sprPavement;
-    olcSprite sprWall;
-    olcSprite sprWater;
+    olc::Sprite sprBus;
+    olc::Sprite sprCar1;
+    olc::Sprite sprCar2;
+    olc::Sprite sprFrog;
+    olc::Sprite sprHome;
+    olc::Sprite sprLog;
+    olc::Sprite sprPavement;
+    olc::Sprite sprWall;
+    olc::Sprite sprWater;
     float FrogX;
     float FrogY;
 
@@ -27,15 +28,15 @@ class FroggerGame : public olcConsoleGameEngine
     {
         FrogX = 8;
         FrogY = 9;
-        sprBus.Load(L"FroggerSprites/bus.spr");
-        sprCar1.Load(L"FroggerSprites/car1.spr");
-        sprCar2.Load(L"FroggerSprites/car2.spr");
-        sprFrog.Load(L"FroggerSprites/frog.spr");
-        sprHome.Load(L"FroggerSprites/home.spr");
-        sprLog.Load(L"FroggerSprites/log.spr");
-        sprPavement.Load(L"FroggerSprites/pavement.spr");
-        sprWall.Load(L"FroggerSprites/wall.spr");
-        sprWater.Load(L"FroggerSprites/water.spr");
+        sprBus.LoadFromFile("assets/bus.png");
+        sprCar1.LoadFromFile("assets/car1.png");
+        sprCar2.LoadFromFile("assets/car2.png");
+        sprFrog.LoadFromFile("assets/frog.png");
+        sprHome.LoadFromFile("assets/home.png");
+        sprLog.LoadFromFile("assets/log.png");
+        sprPavement.LoadFromFile("assets/pavement.png");
+        sprWall.LoadFromFile("assets/wall.png");
+        sprWater.LoadFromFile("assets/water.png");
 
         Lanes.push_back(make_pair(+0.0f, "wwhhwwwhhwwwhhwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww"));
         Lanes.push_back(make_pair(-2.0f, ",,<>,,,,<####>,,,,,,<#>,<>,,,<>,,,,,,,<>,,,<#>,,,,,,,,<>,,<>,,,,"));
@@ -56,7 +57,7 @@ class FroggerGame : public olcConsoleGameEngine
 
     virtual bool OnUserUpdate(float fElapsedTime) override
     {
-        Fill(0, 0, ScreenWidth(), ScreenHeight(), ' ');
+        Clear(olc::BLACK);
         Time += fElapsedTime;
         int nRow = 0;
         for (auto &l : Lanes) {
@@ -70,7 +71,7 @@ class FroggerGame : public olcConsoleGameEngine
                 }
                 int partial = (int)(realPos * CellSize) % CellSize;
 
-                olcSprite *sprite = nullptr;
+                olc::Sprite *sprite = nullptr;
                 int spriteTile = 0;
                 bool solid = true;
                 switch (l.second[pos]) {
@@ -106,10 +107,10 @@ class FroggerGame : public olcConsoleGameEngine
             nRow++;
         }
         
-        if (m_keys[VK_UP].bPressed && FrogY > 0) FrogY -= 1;
-        if (m_keys[VK_DOWN].bPressed && FrogY < 9) FrogY += 1;
-        if (m_keys[VK_LEFT].bPressed && FrogX > 0) FrogX -= 1;
-        if (m_keys[VK_RIGHT].bPressed && FrogX < 15) FrogX += 1;
+        if (GetKey(olc::UP).bPressed && FrogY > 0) FrogY -= 1;
+        if (GetKey(olc::DOWN).bPressed && FrogY < 9) FrogY += 1;
+        if (GetKey(olc::LEFT).bPressed && FrogX > 0) FrogX -= 1;
+        if (GetKey(olc::RIGHT).bPressed && FrogX < 15) FrogX += 1;
 
         if (FrogY < 4) {
              FrogX -= fElapsedTime * Lanes[(int)FrogY].first;
@@ -124,14 +125,18 @@ class FroggerGame : public olcConsoleGameEngine
             FrogY = 9;
         }
 
-        if (m_keys[VK_SPACE].bHeld) {
+        /*
+        if (GetKey(olc::SPACE].bHeld) {
             int size = ScreenWidth() * ScreenHeight();
             for (int i = 0; i < size; i++) {
                 m_bufScreen[i].Char.UnicodeChar = Collision[i];
             }
         }
+        */
 
+        SetPixelMode(olc::Pixel::MASK);
         DrawSprite(FrogX * CellSize, FrogY * CellSize, &sprFrog);
+        SetPixelMode(olc::Pixel::NORMAL);
 
         return true;
     }
@@ -140,8 +145,8 @@ class FroggerGame : public olcConsoleGameEngine
 int main()
 {
     FroggerGame game;
-    game.ConstructConsole(128, 80, 12, 12);
-    game.Start();
+    if (game.Construct(128, 80, 12, 12))
+       game.Start();
 
     return 0;
 }
