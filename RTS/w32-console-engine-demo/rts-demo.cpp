@@ -1,4 +1,5 @@
-#include "olcConsoleGameEngine.h"
+#define OLC_PGE_APPLICATION
+#include "olcPixelGameEngine.h"
 
 const int MAX_SOLDIERS = 20;
 
@@ -16,7 +17,7 @@ struct Soldier
     int m_state;
 };
 
-class Game : public olcConsoleGameEngine
+class Game : public olc::PixelGameEngine
 {
 private:
     float m_fPlayerX, m_fPlayerY, m_fSpeed;
@@ -40,8 +41,8 @@ public:
         m_fSpeed = 20.0f;
 
         for (auto &s : m_soldiers) {
-            s.m_x = rand() % m_nScreenWidth;
-            s.m_y = rand() % m_nScreenHeight;
+            s.m_x = rand() % ScreenWidth();
+            s.m_y = rand() % ScreenHeight();
             s.m_destX = s.m_x;
             s.m_destY = s.m_y;
             s.m_deltaX = 0;
@@ -55,10 +56,10 @@ public:
     virtual bool OnUserUpdate(float fElapsedTime) override
     {
 
-        Fill(0, 0, m_nScreenWidth, m_nScreenHeight, L' ', 0);
+        Clear(olc::BLACK);
 
         for (auto &s : m_soldiers) {
-            int color = FG_GREEN;
+            olc::Pixel color = olc::GREEN;
 
             // Move units
             if (s.m_state == SS_MOVING) {
@@ -75,35 +76,35 @@ public:
             }
 
             switch (s.m_state) {
-                case SS_IDLE: color = FG_GREEN; break;
-                case SS_SELECTED: color = FG_YELLOW; break;
-                case SS_MOVING: color = FG_RED; break;
+                case SS_IDLE: color = olc::GREEN; break;
+                case SS_SELECTED: color = olc::YELLOW; break;
+                case SS_MOVING: color = olc::RED; break;
             }
            
-            Draw(s.m_x, s.m_y-1, 'o', color);
-            Draw(s.m_x-1, s.m_y, '-', color);
-            Draw(s.m_x, s.m_y, '+', color);
-            Draw(s.m_x+1, s.m_y, '-', color);
-            Draw(s.m_x-1, s.m_y+1, '/', color);
-            Draw(s.m_x+1, s.m_y+1, '\\', color);
+            DrawCircle(s.m_x, s.m_y - 4, 2, color); // head
+            DrawLine(s.m_x, s.m_y - 2, s.m_x, s.m_y + 2, color); // body
+            DrawLine(s.m_x - 3, s.m_y, s.m_x + 3, s.m_y, color); // armgs
+            DrawLine(s.m_x, s.m_y + 2, s.m_x - 3, s.m_y + 5, color); // left leg
+            DrawLine(s.m_x, s.m_y + 2, s.m_x + 3, s.m_y + 5, color); // right leg
+
         }
         
         // Started dragging mouse
-        if (m_mouse[0].bPressed) {
-            m_startX = m_mousePosX;
-            m_startY = m_mousePosY;
+        if (GetMouse(0).bPressed) {
+            m_startX = GetMouseX();
+            m_startY = GetMouseY();
         }
 
         // Proper corners
-        int left = m_startX < m_mousePosX ? m_startX : m_mousePosX;
-        int right = m_startX > m_mousePosX ? m_startX : m_mousePosX;
-        int top = m_startY < m_mousePosY ? m_startY : m_mousePosY;
-        int bottom = m_startY > m_mousePosY ? m_startY : m_mousePosY;
+        int left = m_startX < GetMouseX() ? m_startX : GetMouseX();
+        int right = m_startX > GetMouseX() ? m_startX : GetMouseX();
+        int top = m_startY < GetMouseY() ? m_startY : GetMouseY();
+        int bottom = m_startY > GetMouseY() ? m_startY : GetMouseY();
 
-        if (m_mouse[0].bReleased) {
+        if (GetMouse(0).bReleased) {
 
             // Check for click first!
-            if (m_startX == m_mousePosX && m_startY == m_mousePosY) {
+            if (m_startX == GetMouseX() && m_startY == GetMouseY()) {
                 // Get the middle (average) point of selected units
                 float avgX = 0, avgY = 0;
                 int count = 0;
@@ -120,8 +121,8 @@ public:
                     // Set destination point relative to clicked destination and mid-point
                     for (auto &s : m_soldiers) {
                         if (s.m_state == SS_SELECTED) {
-                            s.m_destX = s.m_x + m_mousePosX - avgX;
-                            s.m_destY = s.m_y + m_mousePosY - avgY;
+                            s.m_destX = s.m_x + GetMouseX() - avgX;
+                            s.m_destY = s.m_y + GetMouseY() - avgY;
                             // Normalize movement vector
                             float distance = Distance(s.m_x, s.m_y, s.m_destX, s.m_destY);
                             s.m_deltaX = (s.m_destX - s.m_x) / distance;
@@ -143,19 +144,13 @@ public:
         }
 
         // Selection rectangle
-        if (m_mouse[0].bHeld) {
-            Fill(left, top, right + 1, top + 1, PIXEL_SOLID, FG_WHITE);
-            Fill(left, bottom, right + 1, bottom + 1, PIXEL_SOLID, FG_WHITE);
-            Fill(left, top, left + 1, bottom + 1, PIXEL_SOLID, FG_WHITE);
-            Fill(right, top, right + 1, bottom + 1, PIXEL_SOLID, FG_WHITE);
+        if (GetMouse(0).bHeld) {
+            DrawRect(left, top, right - left, bottom - top, olc::WHITE);
         }
 
         // Cursor
-        Draw(m_mousePosX - 1, m_mousePosY, PIXEL_SOLID, FG_YELLOW);
-        Draw(m_mousePosX + 1, m_mousePosY, PIXEL_SOLID, FG_YELLOW);
-        Draw(m_mousePosX, m_mousePosY - 1, PIXEL_SOLID, FG_YELLOW);
-        Draw(m_mousePosX, m_mousePosY + 1, PIXEL_SOLID, FG_YELLOW);
-        Draw(m_mousePosX, m_mousePosY, PIXEL_SOLID, FG_YELLOW);
+        DrawLine(GetMouseX() - 2, GetMouseY(), GetMouseX() + 2, GetMouseY(), olc::YELLOW);
+        DrawLine(GetMouseX(), GetMouseY() - 2, GetMouseX(), GetMouseY() + 2, olc::YELLOW);
 
         return true;
     }
@@ -166,9 +161,10 @@ int main()
 {
     srand(time(0));
     Game game;
-    game.ConstructConsole(160, 120, 8, 8);
-
-    game.Start();
+    if (game.Construct(160, 120, 8, 8))
+    {
+        game.Start();
+    }
 
     return 0;
 }
