@@ -1,6 +1,7 @@
 #include <vector>
 #include <utility>
-#include "olcConsoleGameEngine.h"
+#define OLC_PGE_APPLICATION
+#include "olcPixelGameEngine.h"
 using namespace std;
 
 const float PI = 3.1415926f;
@@ -8,8 +9,8 @@ const int MapWidth = 1024;
 const int MapHeight = 512;
 const float CameraSpeed = 400.0f;
 const float CameraFollowSpeed = 4.0f;
-const int TeamCount = 2;
-const int TeamSize = 1;
+const int TeamCount = 4;
+const int TeamSize = 4;
 const float MaxTimer = 16;
 const float MissileSpeed = 40.0f;
 const float Gravity = 2.0f;
@@ -30,6 +31,46 @@ float NormalizeAngle(float angle)
     return angle;
 }
 
+void DrawWireFrameModel(olc::PixelGameEngine * engine, const std::vector<std::pair<float, float>> &vecModelCoordinates, float x, float y, float r = 0.0f, float s = 1.0f, olc::Pixel col = olc::WHITE)
+{
+    // pair.first = x coordinate
+    // pair.second = y coordinate
+
+    // Create translated model vector of coordinate pairs
+    std::vector<std::pair<float, float>> vecTransformedCoordinates;
+    int verts = vecModelCoordinates.size();
+    vecTransformedCoordinates.resize(verts);
+
+    // Rotate
+    for (int i = 0; i < verts; i++)
+    {
+        vecTransformedCoordinates[i].first = vecModelCoordinates[i].first * cosf(r) - vecModelCoordinates[i].second * sinf(r);
+        vecTransformedCoordinates[i].second = vecModelCoordinates[i].first * sinf(r) + vecModelCoordinates[i].second * cosf(r);
+    }
+
+    // Scale
+    for (int i = 0; i < verts; i++)
+    {
+        vecTransformedCoordinates[i].first = vecTransformedCoordinates[i].first * s;
+        vecTransformedCoordinates[i].second = vecTransformedCoordinates[i].second * s;
+    }
+
+    // Translate
+    for (int i = 0; i < verts; i++)
+    {
+        vecTransformedCoordinates[i].first = vecTransformedCoordinates[i].first + x;
+        vecTransformedCoordinates[i].second = vecTransformedCoordinates[i].second + y;
+    }
+
+    // Draw Closed Polygon
+    for (int i = 0; i < verts + 1; i++)
+    {
+        int j = (i + 1);
+        engine->DrawLine((int)vecTransformedCoordinates[i % verts].first, (int)vecTransformedCoordinates[i % verts].second,
+            (int)vecTransformedCoordinates[j % verts].first, (int)vecTransformedCoordinates[j % verts].second, col);
+    }
+}
+
 class PhysicsObject {
 public:
     float px = 0, py = 0;
@@ -48,7 +89,7 @@ public:
         py = y;
     }
 
-    virtual void Draw(olcConsoleGameEngine *engine, float offsetX, float offsetY, bool zoom) = 0;
+    virtual void Draw(olc::PixelGameEngine *engine, float offsetX, float offsetY, bool zoom) = 0;
     virtual void OnCollision() = 0;
     virtual void TakeDamage(float damage) = 0;
 };
@@ -60,13 +101,13 @@ public:
     {
     }
 
-    virtual void Draw(olcConsoleGameEngine * engine, float offsetX, float offsetY, bool zoom) override
+    virtual void Draw(olc::PixelGameEngine * engine, float offsetX, float offsetY, bool zoom) override
     {
         if (zoom) {
-            engine->DrawWireFrameModel(model, px * ((float)engine->ScreenWidth() / MapWidth), py * ((float)engine->ScreenHeight() / MapHeight), atan2(vy, vx), radius * 0.5f);
+            DrawWireFrameModel(engine, model, px * ((float)engine->ScreenWidth() / MapWidth), py * ((float)engine->ScreenHeight() / MapHeight), atan2(vy, vx), radius * 0.5f);
         }
         else {
-            engine->DrawWireFrameModel(model, px - offsetX, py - offsetY, atan2(vy, vx), radius);
+            DrawWireFrameModel(engine, model, px - offsetX, py - offsetY, atan2(vy, vx), radius);
         }
     }
 
@@ -95,13 +136,13 @@ public:
         friction = 1.0f;
     }
 
-    virtual void Draw(olcConsoleGameEngine * engine, float offsetX, float offsetY, bool zoom) override
+    virtual void Draw(olc::PixelGameEngine * engine, float offsetX, float offsetY, bool zoom) override
     {
         if (zoom) {
-            engine->DrawWireFrameModel(model, px * ((float)engine->ScreenWidth() / MapWidth), py * ((float)engine->ScreenHeight() / MapHeight), atan2(vy, vx), radius * 0.5f, FG_DARK_GREEN);
+            DrawWireFrameModel(engine, model, px * ((float)engine->ScreenWidth() / MapWidth), py * ((float)engine->ScreenHeight() / MapHeight), atan2(vy, vx), radius * 0.5f, olc::DARK_GREEN);
         }
         else {
-            engine->DrawWireFrameModel(model, px - offsetX, py - offsetY, atan2(vy, vx), radius, FG_DARK_GREEN);
+            DrawWireFrameModel(engine, model, px - offsetX, py - offsetY, atan2(vy, vx), radius, olc::DARK_GREEN);
         }
     }
 
@@ -136,7 +177,7 @@ public:
         friction = 0.2f;
     }
 
-    virtual void Draw(olcConsoleGameEngine * engine, float offsetX, float offsetY, bool zoom) override
+    virtual void Draw(olc::PixelGameEngine * engine, float offsetX, float offsetY, bool zoom) override
     {
         const int spriteW = 8, spriteH = 8;
         const int offsetSpriteX = -3, offsetSpriteY = -3, offsetEnergyX = -3, offsetEnergyY = -8;
@@ -150,17 +191,19 @@ public:
             posY = py * ((float)engine->ScreenHeight() / MapHeight);
         }
 
+        engine->SetPixelMode(olc::Pixel::MASK);
         if (health > 0) {
-            engine->DrawPartialSprite(posX + offsetSpriteX, posY + offsetSpriteY, &spriteSheet, team * spriteW, 0, spriteW, spriteH);
-            engine->DrawLine(posX + offsetHealthX, posY + offsetHealthY, posX + offsetHealthX + (int)(spriteW * health), posY + offsetHealthY, PIXEL_SOLID, FG_BLUE);
+            engine->DrawPartialSprite(posX + offsetSpriteX, posY + offsetSpriteY, spriteSheet, team * spriteW, 0, spriteW, spriteH);
+            engine->DrawLine(posX + offsetHealthX, posY + offsetHealthY, posX + offsetHealthX + (int)(spriteW * health), posY + offsetHealthY, olc::BLUE);
             if (energizing) {
-                engine->DrawLine(posX + offsetEnergyX, posY + offsetEnergyY, posX + offsetEnergyX + (int)(spriteW * energy), posY + offsetEnergyY, PIXEL_SOLID, FG_RED);
-                engine->DrawLine(posX + offsetEnergyX, posY + offsetEnergyY + 1, posX + offsetEnergyX + (int)(spriteW * energy), posY + offsetEnergyY + 1, PIXEL_SOLID, FG_GREEN);
+                engine->DrawLine(posX + offsetEnergyX, posY + offsetEnergyY, posX + offsetEnergyX + (int)(spriteW * energy), posY + offsetEnergyY, olc::RED);
+                engine->DrawLine(posX + offsetEnergyX, posY + offsetEnergyY + 1, posX + offsetEnergyX + (int)(spriteW * energy), posY + offsetEnergyY + 1, olc::GREEN);
             }
         }
         else {
-            engine->DrawPartialSprite(posX + offsetSpriteX, posY + offsetSpriteY, &spriteSheet, team * spriteW, spriteH, spriteW, spriteH);
+            engine->DrawPartialSprite(posX + offsetSpriteX, posY + offsetSpriteY, spriteSheet, team * spriteW, spriteH, spriteW, spriteH);
         }
+        engine->SetPixelMode(olc::Pixel::NORMAL);
     }
 
     virtual void OnCollision()
@@ -178,8 +221,7 @@ public:
         }
     }
 
-private:
-    static olcSprite spriteSheet;
+    static olc::Sprite *spriteSheet;
 };
 
 class Team {
@@ -231,13 +273,13 @@ public:
         radius = 2.5f;
     }
 
-    virtual void Draw(olcConsoleGameEngine * engine, float offsetX, float offsetY, bool zoom) override
+    virtual void Draw(olc::PixelGameEngine * engine, float offsetX, float offsetY, bool zoom) override
     {
         if (zoom) {
-            engine->DrawWireFrameModel(model, px * ((float)engine->ScreenWidth() / MapWidth), py * ((float)engine->ScreenHeight() / MapHeight), atan2(vy, vx), radius * 0.5f, FG_YELLOW);
+            DrawWireFrameModel(engine, model, px * ((float)engine->ScreenWidth() / MapWidth), py * ((float)engine->ScreenHeight() / MapHeight), atan2(vy, vx), radius * 0.5f, olc::YELLOW);
         }
         else {
-            engine->DrawWireFrameModel(model, px - offsetX, py - offsetY, atan2(vy, vx), radius, FG_YELLOW);
+            DrawWireFrameModel(engine, model, px - offsetX, py - offsetY, atan2(vy, vx), radius, olc::YELLOW);
         }
     }
 
@@ -301,18 +343,18 @@ vector<pair<float, float>> DefineMissile()
     return model;
 }
 
-olcSprite DefineWorm()
+olc::Sprite *DefineWorm()
 {
-    olcSprite sprite(L"Sprites/worms1.spr");
+    olc::Sprite *sprite = new olc::Sprite("assets/worms1.png");
     return sprite;
 }
 
 vector<pair<float, float>> Dummy::model = DefineDummy();
 vector<pair<float, float>> Debris::model = DefineDebris();
 vector<pair<float, float>> Missile::model = DefineMissile();
-olcSprite Worm::spriteSheet = DefineWorm();
+olc::Sprite *Worm::spriteSheet = nullptr;
 
-class WormsGame : public olcConsoleGameEngine
+class WormsGame : public olc::PixelGameEngine
 {
     unsigned char *Map;
     float CameraX = 0.0f;
@@ -478,21 +520,21 @@ class WormsGame : public olcConsoleGameEngine
 
         // Debug Controls
 
-        if (m_keys[L'M'].bReleased) {
+        if (GetKey(olc::M).bReleased) {
             GenerateMap();
         }
 
-        if (m_mouse[2].bReleased) {
-            Objects.push_back(unique_ptr<Missile>(new Missile(m_mousePosX + CameraX, m_mousePosY + CameraY)));
+        if (GetMouse(2).bReleased) {
+            Objects.push_back(unique_ptr<Missile>(new Missile(GetMouseX() + CameraX, GetMouseY() + CameraY)));
         }
 
-        if (m_mouse[1].bReleased) {
-            Explosion(m_mousePosX + CameraX, m_mousePosY + CameraY, 10);
+        if (GetMouse(1).bReleased) {
+            Explosion(GetMouseX() + CameraX, GetMouseY() + CameraY, 10);
         }
 
         // Toggle zoom
 
-        if (m_keys[VK_TAB].bReleased) {
+        if (GetKey(olc::TAB).bReleased) {
             ZoomMode = !ZoomMode;
         }
 
@@ -505,16 +547,16 @@ class WormsGame : public olcConsoleGameEngine
             CameraY += (TargetCameraY - CameraY) * CameraFollowSpeed * fElapsedTime;
         }
 
-        if (m_mousePosX < CameraBorder) {
+        if (GetMouseX() < CameraBorder) {
             CameraX -= CameraSpeed * fElapsedTime;
         }
-        if (m_mousePosY < CameraBorder) {
+        if (GetMouseY() < CameraBorder) {
             CameraY -= CameraSpeed * fElapsedTime;
         }
-        if (m_mousePosX > ScreenWidth() - CameraBorder) {
+        if (GetMouseX() > ScreenWidth() - CameraBorder) {
             CameraX += CameraSpeed * fElapsedTime;
         }
-        if (m_mousePosY > ScreenHeight() - CameraBorder) {
+        if (GetMouseY() > ScreenHeight() - CameraBorder) {
             CameraY += CameraSpeed * fElapsedTime;
         }
 
@@ -536,12 +578,12 @@ class WormsGame : public olcConsoleGameEngine
         if (SelectedUnit && PlayerHasControl) {
             Worm *worm = (Worm *)SelectedUnit;
 
-            bool controlJump = m_keys[L'Z'].bPressed;
-            bool controlLeft = m_keys[L'A'].bHeld;
-            bool controlRight = m_keys[L'S'].bHeld;
-            bool controlShootPressed = m_keys[VK_SPACE].bPressed;
-            bool controlShootHeld = m_keys[VK_SPACE].bPressed;
-            bool controlShootReleased = m_keys[VK_SPACE].bReleased;
+            bool controlJump = GetKey(olc::Z).bPressed;
+            bool controlLeft = GetKey(olc::A).bHeld;
+            bool controlRight = GetKey(olc::S).bHeld;
+            bool controlShootPressed = GetKey(olc::SPACE).bPressed;
+            bool controlShootHeld = GetKey(olc::SPACE).bPressed;
+            bool controlShootReleased = GetKey(olc::SPACE).bReleased;
 
             if (PlayerAIControl) {
 
@@ -896,44 +938,34 @@ class WormsGame : public olcConsoleGameEngine
 
         // Draw terrain
         for (int y = 0; y < ScreenHeight(); y++) {
+            olc::Pixel ColorSky = olc::CYAN;
+            int mapY = (int)(CameraY + y);
+            if (ZoomMode)
+            {
+                mapY = (int)((float)y / ScreenHeight() * MapHeight);
+            }
+            ColorSky = PixelLerp(olc::DARK_BLUE, olc::CYAN, (float)mapY / MapHeight);
             for (int x = 0; x < ScreenWidth(); x++) {
-                short ColorTerrain = FG_DARK_GREEN;
-                short ColorSky = FG_CYAN;
-                short PixelTerrain = PIXEL_SOLID;
-                short PixelSky = PIXEL_SOLID;
+                olc::Pixel ColorTerrain = olc::DARK_GREEN;                
 
-                int mapY = (int)(CameraY + y);
                 int mapX = (int)(CameraX + x);
 
                 if (ZoomMode) {
-                    mapY = (int)((float)y / ScreenHeight() * MapHeight);
                     mapX = (int)((float)x / ScreenWidth() * MapWidth);
                 }
 
-                switch (mapY / 32) {
-                case 0: PixelSky = PIXEL_SOLID; ColorSky = FG_DARK_BLUE; break;
-                case 1: PixelSky = PIXEL_QUARTER; ColorSky = FG_BLUE | BG_DARK_BLUE; break;
-                case 2: PixelSky = PIXEL_HALF; ColorSky = FG_BLUE | BG_DARK_BLUE; break;
-                case 3: PixelSky = PIXEL_THREEQUARTERS; ColorSky = FG_BLUE | BG_DARK_BLUE; break;
-                case 4: PixelSky = PIXEL_SOLID; ColorSky = FG_BLUE; break;
-                case 5: PixelSky = PIXEL_QUARTER; ColorSky = FG_CYAN | BG_BLUE; break;
-                case 6: PixelSky = PIXEL_HALF; ColorSky = FG_CYAN | BG_BLUE; break;
-                case 7: PixelSky = PIXEL_THREEQUARTERS; ColorSky = FG_CYAN | BG_BLUE; break;
-                default: PixelSky = PIXEL_SOLID; ColorSky = FG_CYAN; break;
-                }
-
                 bool isTerrain = Map[mapY * MapWidth + mapX] > 0;
-                Draw(x, y, isTerrain ? PixelTerrain : PixelSky, isTerrain ? ColorTerrain : ColorSky);
+                Draw(x, y, isTerrain ? ColorTerrain : ColorSky);
             }
         }
 
         // Draw health bar
-        short barColor[4] = { FG_RED, FG_BLUE, FG_MAGENTA, FG_GREEN };
+        olc::Pixel barColor[4] = { olc::RED, olc::BLUE, olc::MAGENTA, olc::GREEN };
         int barY = 5;
         int teamIndex = 0;
         for (auto &t : Teams) {
             int barSize = (ScreenWidth() - 10) / TeamSize * t->TeamHealth();
-            Fill(5, barY, barSize + 5, barY + 3, PIXEL_SOLID, barColor[teamIndex % 4]);
+            FillRect(5, barY, 5, 3, barColor[teamIndex % 4]);
             barY += 5;
             teamIndex++;
         }
@@ -959,11 +991,11 @@ class WormsGame : public olcConsoleGameEngine
                 CrossHairX = SelectedUnit->px * ((float)ScreenWidth() / MapWidth) + cosf(worm->shootAngle) * 10.0f;
                 CrossHairY = SelectedUnit->py * ((float)ScreenHeight() / MapHeight) + sinf(worm->shootAngle) * 10.0f;
             }
-            Draw(CrossHairX, CrossHairY, PIXEL_SOLID, FG_BLACK);
-            Draw(CrossHairX - 1, CrossHairY, PIXEL_SOLID, FG_BLACK);
-            Draw(CrossHairX + 1, CrossHairY, PIXEL_SOLID, FG_BLACK);
-            Draw(CrossHairX, CrossHairY - 1, PIXEL_SOLID, FG_BLACK);
-            Draw(CrossHairX, CrossHairY + 1, PIXEL_SOLID, FG_BLACK);
+            Draw(CrossHairX, CrossHairY, olc::BLACK);
+            Draw(CrossHairX - 1, CrossHairY, olc::BLACK);
+            Draw(CrossHairX + 1, CrossHairY, olc::BLACK);
+            Draw(CrossHairX, CrossHairY - 1, olc::BLACK);
+            Draw(CrossHairX, CrossHairY + 1, olc::BLACK);
         }
 
         return true;
@@ -1067,7 +1099,7 @@ class WormsGame : public olcConsoleGameEngine
             int x = left + padSize;
             int y = top + row * segSize;
             if (segOn) {
-                DrawLine(x, y, x + segSize - 2 * padSize, y, PIXEL_SOLID, segOn ? FG_BLACK : FG_BLUE);
+                DrawLine(x, y, x + segSize - 2 * padSize, y, segOn ? olc::BLACK : olc::BLUE);
             }
         }
 
@@ -1078,7 +1110,7 @@ class WormsGame : public olcConsoleGameEngine
                 int x = left + col * segSize;
                 int y = top + padSize + row * segSize;
                 if (segOn) {
-                    DrawLine(x, y, x, y + segSize - 2 * padSize, PIXEL_SOLID, segOn ? FG_BLACK : FG_BLUE);
+                    DrawLine(x, y, x, y + segSize - 2 * padSize, segOn ? olc::BLACK : olc::BLUE);
                 }
             }
         }
@@ -1088,8 +1120,11 @@ class WormsGame : public olcConsoleGameEngine
 int main()
 {
     WormsGame game;
-    game.ConstructConsole(256, 160, 6, 6);
-    game.Start();
+    if (game.Construct(256, 160, 6, 6))
+    {
+        Worm::spriteSheet = DefineWorm();
+        game.Start();
+    }
 
     return 0;
 }
