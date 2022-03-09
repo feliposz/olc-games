@@ -1,4 +1,5 @@
-#include "olcConsoleGameEngine.h"
+#define OLC_PGE_APPLICATION
+#include "olcPixelGameEngine.h"
 #include <string>
 #include <list>
 using namespace std;
@@ -12,10 +13,10 @@ struct Object {
     float vx;
     float vy;
     bool bRemove;
-    olcSprite *sprite;
+    olc::Sprite *sprite;
 };
 
-class FPSGame : public olcConsoleGameEngine {
+class FPSGame : public olc::PixelGameEngine {
 private:
     string map;
     const int nMapWidth = 32;
@@ -25,9 +26,9 @@ private:
     float fPlayerA = 0.0f;
     float fFOV = PI / 4.0f;
     float *fDepthBuffer;
-    olcSprite sprWall;
-    olcSprite sprLamp;
-    olcSprite sprFireball;
+    olc::Sprite sprWall;
+    olc::Sprite sprLamp;
+    olc::Sprite sprFireball;
     list<Object> lstObjects;
 
 public:
@@ -67,9 +68,9 @@ public:
         map += "#..#..#..#.....#...........#####";
         map += "################################";
 
-        sprWall.Load(L"Sprites/fps_wall1.spr");
-        sprLamp.Load(L"Sprites/fps_lamp1.spr");
-        sprFireball.Load(L"Sprites/fps_fireball1.spr");
+        sprWall.LoadFromFile("assets/fps_wall1.png");
+        sprLamp.LoadFromFile("assets/fps_lamp1.png");
+        sprFireball.LoadFromFile("assets/fps_fireball1.png");
 
         lstObjects.push_back({ 1.5f, 2.5f, 0, 0, false, &sprLamp });
         lstObjects.push_back({ 2.5f, 3.5f, 0, 0, false, &sprLamp });
@@ -89,11 +90,11 @@ public:
         float fPlayerSpeed = 4.0f;
 
         // Player rotation
-        if (GetKey(VK_LEFT).bHeld) {
+        if (GetKey(olc::LEFT).bHeld) {
             fPlayerA -= fTurnSpeed * fElapsedTime;
         }
 
-        if (GetKey(VK_RIGHT).bHeld) {
+        if (GetKey(olc::RIGHT).bHeld) {
             fPlayerA += fTurnSpeed * fElapsedTime;
         }
 
@@ -108,27 +109,27 @@ public:
         float fDeltaY = 0.0f;
 
         // Player movement
-        if (GetKey(VK_UP).bHeld || GetKey('W').bHeld) {
+        if (GetKey(olc::UP).bHeld || GetKey(olc::W).bHeld) {
             fDeltaX += fPlayerSpeed * sinf(fPlayerA) * fElapsedTime;
             fDeltaY += fPlayerSpeed * cosf(fPlayerA) * fElapsedTime;
         }
 
-        if (GetKey(VK_DOWN).bHeld || GetKey('S').bHeld) {
+        if (GetKey(olc::DOWN).bHeld || GetKey(olc::S).bHeld) {
             fDeltaX -= fPlayerSpeed * sinf(fPlayerA) * fElapsedTime;
             fDeltaY -= fPlayerSpeed * cosf(fPlayerA) * fElapsedTime;
         }
 
-        if (GetKey('A').bHeld) {
+        if (GetKey(olc::A).bHeld) {
             fDeltaX += fPlayerSpeed * sinf(fPlayerA - PI_2) * fElapsedTime;
             fDeltaY += fPlayerSpeed * cosf(fPlayerA - PI_2) * fElapsedTime;
         }
 
-        if (GetKey('D').bHeld) {
+        if (GetKey(olc::D).bHeld) {
             fDeltaX += fPlayerSpeed * sinf(fPlayerA + PI_2) * fElapsedTime;
             fDeltaY += fPlayerSpeed * cosf(fPlayerA + PI_2) * fElapsedTime;
         }
 
-        if (GetKey(VK_SPACE).bPressed) {
+        if (GetKey(olc::SPACE).bPressed) {
             float fNoise = ((float)rand() / RAND_MAX - 0.5f) * 0.1f;
             Object oFireball = {
                 fPlayerX,
@@ -153,6 +154,8 @@ public:
 
         float fDepth = 16.0f;
 
+        SetPixelMode(olc::Pixel::NORMAL);
+
         for (int x = 0; x < ScreenWidth(); x++) {
 
             // Raytracing
@@ -168,7 +171,7 @@ public:
             float fSampleY = 0;
 
             while (!bHitWall && fDistanceToWall <= fDepth) {
-                fDistanceToWall += 0.01f;
+                fDistanceToWall += 0.1f;
                 int nTestX = (int)(fPlayerX + fEyeX * fDistanceToWall);
                 int nTestY = (int)(fPlayerY + fEyeY * fDistanceToWall);
                 if (nTestX < 0 || nTestX >= nMapWidth || nTestY < 0 || nTestY >= nMapHeight) {
@@ -206,66 +209,35 @@ public:
             int nCeiling = (ScreenHeight() - nWallHeight) / 2;
             int nFloor = ScreenHeight() - nCeiling;
 
-            wchar_t cShade = ' ';
-            short nColor = FG_BLACK;
+            olc::Pixel nColor = olc::BLACK;
 
             // Shade wall according to distance
-
-            if (fDistanceToWall < 0.2f * fDepth) {
-                cShade = PIXEL_SOLID;
-            }
-            else if (fDistanceToWall < 0.4f * fDepth) {
-                cShade = PIXEL_THREEQUARTERS;
-            }
-            else if (fDistanceToWall < 0.8f * fDepth) {
-                cShade = PIXEL_HALF;
-            }
-            else if (fDistanceToWall < 1.00f * fDepth) {
-                cShade = PIXEL_QUARTER;
-            }
-            else {
-                cShade = L' ';
-            }
+            float fShade = 1.0f - fDistanceToWall / fDepth;
 
             // Draw wall column
 
             for (int y = 0; y < ScreenHeight(); y++) {
-                float fFloorDist = 1.0f - ((float)y - ScreenHeight() / 2.0f) / (ScreenHeight() / 2.0f);
-                wchar_t cFloorShade = L' ';
-                if (fFloorDist < 0.2f) {
-                    cFloorShade = L'#';
-                }
-                else if (fFloorDist < 0.4f) {
-                    cFloorShade = L'x';
-                }
-                else if (fFloorDist < 0.6f) {
-                    cFloorShade = L':';
-                }
-                else if (fFloorDist < 0.8f) {
-                    cFloorShade = L',';
-                }
-                else {
-                    cFloorShade = L'.';
-                }
+                float fFloorDist = ((float)y - ScreenHeight() / 2.0f) / (ScreenHeight() / 2.0f);
 
                 if (y < nCeiling) {
-                    Draw(x, y, PIXEL_SOLID, FG_CYAN);
+                    Draw(x, y, olc::CYAN);
                 }
                 else if (y < nFloor) {
                     if (bHitWall) {
                         fSampleY = (float)(y - nCeiling) / (float)(nFloor - nCeiling);
-                        nColor = sprWall.GetColour(sprWall.nWidth * fSampleX, sprWall.nHeight * fSampleY);
+                        nColor = sprWall.Sample(fSampleX, fSampleY);
                     }
-                    Draw(x, y, cShade, nColor);
+                    Draw(x, y, PixelLerp(olc::BLACK, nColor, fShade));
                 }
                 else {
-                    Draw(x, y, cFloorShade, FG_DARK_GREEN);
+                    Draw(x, y, PixelLerp(olc::BLACK, olc::DARK_GREEN, fFloorDist));
                 }
             }
         }
 
         // Map display
 
+#if 0
         for (int x = 0; x < nMapWidth; x++) {
             for (int y = 0; y < nMapHeight; y++) {
                 wchar_t c = L' ';
@@ -296,7 +268,9 @@ public:
                 Draw(x, (nMapHeight - y - 1), c);
             }
         }
+#endif
 
+        SetPixelMode(olc::Pixel::MASK);
         for (auto &o : lstObjects) {
             // Update object position
             o.x += o.vx * fElapsedTime;
@@ -308,7 +282,7 @@ public:
                 continue; // Skip removed objects
             }
             // Place object on mini-map
-            Draw(o.x, (nMapHeight - o.y - 1), L'o');
+            //Draw(o.x, (nMapHeight - o.y - 1), L'o');
             // Check angle and distance from object
             float fVecX = o.x - fPlayerX;
             float fVecY = o.y - fPlayerY;
@@ -322,7 +296,7 @@ public:
                 int nObjectCeiling = (ScreenHeight() / 2.0f) - ScreenHeight() / fObjectDist;
                 int nObjectFloor = ScreenHeight() - nObjectCeiling;
                 int nObjectHeight = nObjectFloor - nObjectCeiling;
-                float fAspectRatio = (float)o.sprite->nWidth / o.sprite->nHeight;
+                float fAspectRatio = (float)o.sprite->width / o.sprite->height;
                 int nObjectWidth = nObjectHeight * fAspectRatio;
                 int nObjectMidX = (0.5f * (fObjectAngle / (fFOV / 2.0f)) + 0.5f) * (float)ScreenWidth();
                 for (int x = 0; x < nObjectWidth; x++) {
@@ -330,11 +304,11 @@ public:
                     // Use buffer to check if object is behind a wall
                     if (fObjectDist < fDepthBuffer[nDrawX]) {
                         for (int y = 0; y < nObjectHeight; y++) {
-                            short nGlyph = o.sprite->SampleGlyph((float)x / nObjectWidth, (float)y / nObjectHeight);
-                            short nColor = o.sprite->SampleColour((float)x / nObjectWidth, (float)y / nObjectHeight);
-                            if (nGlyph != L' ') { // Transparent
-                                Draw(nDrawX, nObjectCeiling + y, nGlyph, nColor);
-                            }
+                            //short nGlyph = o.sprite->SampleGlyph((float)x / nObjectWidth, (float)y / nObjectHeight);
+                            olc::Pixel nColor = o.sprite->Sample((float)x / nObjectWidth, (float)y / nObjectHeight);
+                            //if (nGlyph != L' ') { // Transparent
+                                Draw(nDrawX, nObjectCeiling + y, nColor); // nGlyph
+                            //}
                             fDepthBuffer[nDrawX] = fObjectDist;
                         }
                     }
@@ -351,8 +325,8 @@ public:
 int main()
 {
     FPSGame game;
-    game.ConstructConsole(160, 100, 8, 8);
-    game.Start();
+    if (game.Construct(320, 200, 4, 4))
+        game.Start();
 
     return 0;
 }
