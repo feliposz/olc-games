@@ -63,6 +63,7 @@ public:
             mode = 3;
         }
 
+        float inv255 = 1.0f / 255.0f;
         for (int y = 0; y < ScreenHeight(); y++)
         {
             for (int x = 0; x < ScreenWidth(); x++)
@@ -71,9 +72,9 @@ public:
                 int offsetY = (flip ? (capture.mHeight - y - 1) : y) * capture.mWidth;
                 Pixel *p = (Pixel *)capture.mTargetBuf + offsetX + offsetY;
                 short sym, fg, bg;
-                float r = p->c[2] / 255.0f;
-                float g = p->c[1] / 255.0f;
-                float b = p->c[0] / 255.0f;
+                float r = p->c[2] * inv255;
+                float g = p->c[1] * inv255;
+                float b = p->c[0] * inv255;
                 switch (mode)
                 {
                     case 1:
@@ -191,7 +192,7 @@ public:
             {
                 bg = v < 0.5f ? BG_DARK_MAGENTA : BG_MAGENTA;
                 fg = v < 0.5f ? FG_DARK_RED : FG_RED;
-            }            
+            }
         }
     }
 
