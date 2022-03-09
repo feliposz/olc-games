@@ -21,11 +21,19 @@ void sbxy(const char chr, int col, int row)
     sb[col + row * nScrWidth] = chr;
 }
 
-void draw_player(int x)
+void draw_player(int x, bool colliding)
 {
+    if (colliding)
+    {
+        printf("\x1B[1;31m");
+    }
     printxy("O-V-O", x, 3);
     printxy(" O-O ", x, 4);
     printxy("  V  ", x, 5);
+    if (colliding)
+    {
+        printf("\x1B[0m");
+    }
 }
 
 int main()
@@ -43,6 +51,10 @@ int main()
     SetConsoleScreenBufferSize(hStdOutput, { nScrWidth, nScrHeight });
     SMALL_RECT rect = { 0, 0, nScrWidth - 1, nScrHeight - 1 };
     SetConsoleWindowInfo(hStdOutput, true, &rect);
+
+    // HACK: Set buffer size a second time to fix aligment issues
+    SetConsoleScreenBufferSize(hStdOutput, { nScrWidth, nScrHeight });
+
 
     int nHealth = 1000;
     float fSpeed = 10.0f;
@@ -79,24 +91,30 @@ int main()
             fPosition += 40.0f * elapsed.count();
         }
 
+        bool colliding = false;
+
         // Collision left
         if (sb[(int)fPosition] == '#') {
             nHealth -= 3;
             fPosition += 1;
+            colliding = true;
         }
         else if (sb[(int)fPosition] == '.') {
             nHealth -= 10;
             fPosition += 2;
+            colliding = true;
         }
 
         // Collision right
         if (sb[(int)fPosition + 4] == '#') {
             nHealth -= 3;
             fPosition -= 1;
+            colliding = true;
         }
         else if (sb[(int)fPosition + 4] == '.') {
             nHealth -= 10;
             fPosition -= 2;
+            colliding = true;
         }
 
         fSpeed += elapsed.count() * fAccel;
@@ -124,14 +142,14 @@ int main()
         // Draw buffer to screen
         printxy(sb, 1, 1);
 
-        draw_player((int)fPosition);
+        draw_player((int)fPosition, colliding);
 
-        printxy("< Cave Diver > - ", 1, nScrHeight - 1);
-        printf("Health: %4d - Distance travelled: %.2f      ", nHealth, fDistance);
+        printxy("\x1B[1;36m< Cave Diver >\x1B[0m - ", 1, nScrHeight - 1);
+        printf("Health: \x1B[1;31m%4d\x1B[0m - Distance travelled: \x1B[1;33m%.2f\x1B[0m      ", nHealth, fDistance);
     }
 
-    printxy("Game Over! ", 1, nScrHeight);
-    printf("Distance travelled: %f.2\n", fDistance);
+    printxy("\x1B[1;31mGame Over!\x1B[0m ", 1, nScrHeight);
+    printf("Distance travelled: \x1B[1;32m%f.2\x1B[0m\n", fDistance);
 
     printf("Press ENTER to quit!");
     while (true) {
