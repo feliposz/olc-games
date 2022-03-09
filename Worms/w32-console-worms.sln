@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2042
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "w32-console-worms", "w32-console-worms\w32-console-worms.vcxproj", "{714868AE-76C3-4C21-BDEA-2B4967FC83BE}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "w32-console-worms", "w32-console-worms.vcxproj", "{714868AE-76C3-4C21-BDEA-2B4967FC83BE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
