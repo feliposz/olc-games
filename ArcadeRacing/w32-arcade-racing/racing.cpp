@@ -1,9 +1,10 @@
-#include "olcConsoleGameEngine.h"
+#define OLC_PGE_APPLICATION
+#include "olcPixelGameEngine.h"
 #include <vector>
 #include <utility>
 using namespace std;
 
-class RacingGame : public olcConsoleGameEngine
+class RacingGame : public olc::PixelGameEngine
 {
     float CarPos;
     float Distance;
@@ -41,7 +42,7 @@ class RacingGame : public olcConsoleGameEngine
 
     virtual bool OnUserUpdate(float fElapsedTime) override
     {
-        if (m_keys[VK_UP].bHeld) {
+        if (GetKey(olc::UP).bHeld) {
             Speed += 2.0f * fElapsedTime;
         }
         else {
@@ -54,12 +55,12 @@ class RacingGame : public olcConsoleGameEngine
 
         int CarDirection = 0;
 
-        if (m_keys[VK_LEFT].bHeld) {
+        if (GetKey(olc::LEFT).bHeld) {
             PlayerCurvature -= 0.7f * (1.0f - Speed / 2.0f) * fElapsedTime;
             CarDirection = -1;
         }
 
-        if (m_keys[VK_RIGHT].bHeld) {
+        if (GetKey(olc::RIGHT).bHeld) {
             PlayerCurvature += 0.7f * (1.0f - Speed / 2.0f) * fElapsedTime;
             CarDirection = 1;
         }
@@ -87,22 +88,23 @@ class RacingGame : public olcConsoleGameEngine
         }
 
         // Render Sky
+        olc::Pixel skyColor0 = olc::BLUE;
+        olc::Pixel skyColor1 = olc::DARK_BLUE;
         for (int y = 0; y < ScreenHeight() / 2; y++) {
-            short SkyShades[5] = { PIXEL_SOLID, PIXEL_THREEQUARTERS, PIXEL_HALF, PIXEL_QUARTER, ' ' };
-            int i = (int)y / (ScreenHeight() / 2 / 5);
-            Fill(0, y, ScreenWidth(), y + 1, SkyShades[i], FG_BLUE | BG_DARK_BLUE);
+            DrawLine(0, y, ScreenWidth(), y, olc::PixelLerp(skyColor0, skyColor1, y / (ScreenHeight() / 2.0)));
         }
 
         // Render Mountains
+        olc::Pixel mountainColor = olc::PixelLerp(olc::DARK_RED, olc::DARK_YELLOW, 0.5f);
         for (int x = 0; x < ScreenWidth(); x++) {
-            int MountainHeight = 10 + ScreenHeight() * 0.1f * (
-                0.5f * sinf(0.04f * (x + 50 * PlayerCurvature))
-                + 0.2f * sinf(0.12f * (x + 50 * PlayerCurvature))
-                + 0.3f * sinf(0.21f * (x + 50 * PlayerCurvature))
-                + 0.1f * sinf(0.07f * (x + 50 * PlayerCurvature))
+            int MountainHeight = 20 + ScreenHeight() * 0.1f * (
+                0.5f * sinf(0.04f * (x*0.5f + 50 * PlayerCurvature))
+                + 0.2f * sinf(0.12f * (x*0.5f + 50 * PlayerCurvature))
+                + 0.3f * sinf(0.21f * (x*0.5f + 50 * PlayerCurvature))
+                + 0.1f * sinf(0.07f * (x*0.5f + 50 * PlayerCurvature))
                 );
             if (MountainHeight > 0) {
-                Fill(x, ScreenHeight() / 2 - MountainHeight, x + 1, ScreenHeight() / 2, PIXEL_HALF, FG_DARK_RED | BG_DARK_YELLOW);
+                DrawLine(x, ScreenHeight() / 2 - MountainHeight, x, ScreenHeight() / 2, mountainColor);
             }
         }
 
@@ -111,7 +113,7 @@ class RacingGame : public olcConsoleGameEngine
             int row = y + ScreenHeight() / 2;
             float Perspective = 0.1f + 0.8f * ((float)y / ScreenHeight() * 2.0f);
             for (int x = 0; x < ScreenWidth(); x++) {
-                short color = 0;
+                olc::Pixel color = olc::BLACK;
 
                 float RoadCenter = 0.5f + Curvature * powf(1.0f - Perspective, 3);
                 float RoadWidth = 0.6f * Perspective;
@@ -123,8 +125,8 @@ class RacingGame : public olcConsoleGameEngine
                 int RightClip = (int)((RoadCenter + RoadWidth) * ScreenWidth());
                 int RightGrass = (int)((RoadCenter + RoadWidth + ClipWidth) * ScreenWidth());
 
-                short GrassColor = sinf(20.0f * powf(1.0f - Perspective, 3) + Distance * 0.1f) > 0 ? BG_GREEN : BG_DARK_GREEN;
-                short StripeColor = sinf(80.0f * powf(1.0f - Perspective, 2) + Distance) > 0 ? BG_RED : BG_WHITE;
+                olc::Pixel GrassColor = sinf(20.0f * powf(1.0f - Perspective, 3) + Distance * 0.1f) > 0 ? olc::GREEN : olc::DARK_GREEN;
+                olc::Pixel StripeColor = sinf(80.0f * powf(1.0f - Perspective, 2) + Distance) > 0 ? olc::RED : olc::WHITE;
 
                 if (x < LeftGrass) {
                     color = GrassColor;
@@ -139,50 +141,44 @@ class RacingGame : public olcConsoleGameEngine
                     color = StripeColor;
                 }
                 else if (CurrentSegment == 0) {
-                    color = ((x & 1) != (y & 1)) ? BG_WHITE : BG_DARK_GREY;
+                    color = ((x & 1) != (y & 1)) ? olc::WHITE : olc::DARK_GREY;
                 }
                 else {
-                    color = BG_DARK_GREY;
+                    color = olc::DARK_GREY;
                 }
 
-                Draw(x, row, ' ', color);
+                Draw(x, row, color);
 
             }
         }
 
         int CarCol = (int)(ScreenWidth() * (0.5f + CarPos) - 7);
-        int CarRow = 80;
-        short CarColor = FG_WHITE | BG_BLACK;
+        int CarRow = 140;
+        
+        olc::Pixel CarColor = olc::BLACK;
 
         // Render Car
-        if (CarDirection == -1) {
-            DrawStringAlpha(CarCol, CarRow+0, L"\\\\####\\\\     ", CarColor);
-            DrawStringAlpha(CarCol, CarRow+1, L"   ##          ", CarColor);
-            DrawStringAlpha(CarCol, CarRow+2, L"   ####        ", CarColor);
-            DrawStringAlpha(CarCol, CarRow+3, L"    ####       ", CarColor);
-            DrawStringAlpha(CarCol, CarRow+4, L"\\\\\\ ####   \\\\\\", CarColor);
-            DrawStringAlpha(CarCol, CarRow+5, L"\\O\\########\\\\\\", CarColor);
-            DrawStringAlpha(CarCol, CarRow+6, L"\\\\\\  ####  \\\\\\", CarColor);
+        if (CarDirection == -1)
+        {
+            DrawString(CarCol, CarRow + 0 * 8, "\\\\####\\\\  ", CarColor);
+            DrawString(CarCol, CarRow + 1 * 8, "   ##     ", CarColor);
+            DrawString(CarCol, CarRow + 2 * 8, "\\\\######\\\\", CarColor);
+            DrawString(CarCol, CarRow + 3 * 8, "\\\\######\\\\", CarColor);
         }
-        else if (CarDirection == 1) {
-            DrawStringAlpha(CarCol, CarRow+0, L"      //####//", CarColor);
-            DrawStringAlpha(CarCol, CarRow+1, L"         ##   ", CarColor);
-            DrawStringAlpha(CarCol, CarRow+2, L"       ####   ", CarColor);
-            DrawStringAlpha(CarCol, CarRow+3, L"      ####    ", CarColor);
-            DrawStringAlpha(CarCol, CarRow+4, L"///  ####  ///", CarColor);
-            DrawStringAlpha(CarCol, CarRow+5, L"///########/O/", CarColor);
-            DrawStringAlpha(CarCol, CarRow+6, L"///  ####  ///", CarColor);
+        else if (CarDirection == 1)
+        {
+            DrawString(CarCol, CarRow + 0 * 8, "  //####//", CarColor);
+            DrawString(CarCol, CarRow + 1 * 8, "     ##   ", CarColor);
+            DrawString(CarCol, CarRow + 2 * 8, "//######//", CarColor);
+            DrawString(CarCol, CarRow + 3 * 8, "//######//", CarColor);
         }
-        else {
-            DrawStringAlpha(CarCol, CarRow+0, L"   ||####||   ", CarColor);
-            DrawStringAlpha(CarCol, CarRow+1, L"      ##      ", CarColor);
-            DrawStringAlpha(CarCol, CarRow+2, L"     ####     ", CarColor);
-            DrawStringAlpha(CarCol, CarRow+3, L"     ####     ", CarColor);
-            DrawStringAlpha(CarCol, CarRow+4, L"|||  ####  |||", CarColor);
-            DrawStringAlpha(CarCol, CarRow+5, L"|||########|||", CarColor);
-            DrawStringAlpha(CarCol, CarRow+6, L"|||  ####  |||", CarColor);
+        else
+        {
+            DrawString(CarCol, CarRow + 0 * 8, " ||####|| ", CarColor);
+            DrawString(CarCol, CarRow + 1 * 8, "    ##    ", CarColor);
+            DrawString(CarCol, CarRow + 2 * 8, "||######||", CarColor);
+            DrawString(CarCol, CarRow + 3 * 8, "||######||", CarColor);
         }
-
 
         return true;
     }
@@ -191,8 +187,8 @@ class RacingGame : public olcConsoleGameEngine
 int main()
 {
     RacingGame game;
-    game.ConstructConsole(160, 100, 8, 8);
-    game.Start();
+    if (game.Construct(320, 200, 4, 4))
+        game.Start();
 
     return 0;
 }
