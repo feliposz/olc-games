@@ -1,4 +1,5 @@
-#include "olcConsoleGameEngine.h"
+#define OLC_PGE_APPLICATION
+#include "olcPixelGameEngine.h"
 #include <string>
 #include <vector>
 #include <utility>
@@ -8,7 +9,7 @@ struct Point {
     float x, y, length;
 };
 
-class CatmullRomSplines : public olcConsoleGameEngine
+class CatmullRomSplines : public olc::PixelGameEngine
 {
     const int MaxPoints = 10;
     const float ControlPointSpeed = 20.0f;
@@ -113,13 +114,13 @@ class CatmullRomSplines : public olcConsoleGameEngine
         }
 
         // Change selected control point
-        if (m_keys['Z'].bReleased) {
+        if (GetKey(olc::Z).bReleased) {
             Selected--;
             if (Selected < 0) {
                 Selected = MaxPoints - 1;
             }
         }
-        if (m_keys['X'].bReleased) {
+        if (GetKey(olc::X).bReleased) {
             Selected++;
             if (Selected >= MaxPoints) {
                 Selected = 0;
@@ -127,49 +128,51 @@ class CatmullRomSplines : public olcConsoleGameEngine
         }
 
         // Move selected control point
-        if (m_keys[VK_LEFT].bHeld) {
+        if (GetKey(olc::LEFT).bHeld) {
             Points[Selected].x -= ControlPointSpeed * fElapsedTime;
         }
-        if (m_keys[VK_RIGHT].bHeld) {
+        if (GetKey(olc::RIGHT).bHeld) {
             Points[Selected].x += ControlPointSpeed * fElapsedTime;
         }
-        if (m_keys[VK_UP].bHeld) {
+        if (GetKey(olc::UP).bHeld) {
             Points[Selected].y -= ControlPointSpeed * fElapsedTime;
         }
-        if (m_keys[VK_DOWN].bHeld) {
+        if (GetKey(olc::DOWN).bHeld) {
             Points[Selected].y += ControlPointSpeed * fElapsedTime;
         }
 
         UpdateLength();
 
         // Clear Screen
-        Fill(0, 0, ScreenWidth(), ScreenHeight(), ' ');
+        Clear(olc::BLACK);
 
         // Draw curve
         for (float t = 0; t < Points.size(); t += 0.001) {
             Point p = Interpolate(t);
-            Draw(p.x, p.y, PIXEL_SOLID, FG_WHITE);
+            Draw(p.x, p.y, olc::WHITE);
         }
 
         // Draw gradient
         float CurrentGradient = GetNormalizedOffset(CurrentOffset);
         Point p = Interpolate(CurrentGradient);
         Point g = Gradient(CurrentGradient);
-        DrawLine(p.x, p.y, p.x + 0.3f * g.x, p.y + 0.3f * g.y, PIXEL_SOLID, FG_BLUE);
-        Draw(p.x, p.y, PIXEL_SOLID, FG_GREEN);
+        DrawLine(p.x, p.y, p.x + 0.3f * g.x, p.y + 0.3f * g.y, olc::BLUE);
+        Draw(p.x, p.y, olc::GREEN);
 
         // Draw control points
         int n = 0;        
         for (auto p : Points) {
-            Fill(p.x-1, p.y-1, p.x + 2, p.y + 2, PIXEL_SOLID, n == Selected ? FG_YELLOW : FG_RED);
-            DrawString(p.x, p.y, to_wstring(n), FG_WHITE);
-            DrawString(p.x + 5, p.y, to_wstring(p.length), FG_MAGENTA);
+            FillRect(p.x-1, p.y-1, 2, 2, n == Selected ? olc::YELLOW : olc::RED);
+            DrawString(p.x + 3, p.y + 3, to_string(n), n == Selected ? olc::YELLOW : olc::RED);
+            DrawString(p.x + 18, p.y + 3, to_string(p.length), olc::MAGENTA);
             n++;
         }
 
-        DrawString(1, 1, L"Length: " + to_wstring(TotalLength), FG_WHITE);
-        DrawString(1, 2, L"Offset: " + to_wstring(CurrentOffset), FG_MAGENTA);
-        DrawString(1, 3, L"Point: " + to_wstring(CurrentGradient), FG_RED);
+        DrawString(0, 0, "Length: " + to_string(TotalLength), olc::WHITE);
+        DrawString(0, 8, "Offset: " + to_string(CurrentOffset), olc::MAGENTA);
+        DrawString(0, 16, "Point: " + to_string(CurrentGradient), olc::RED);
+        DrawString(0, ScreenHeight() - 32, "X Next point     -> Right ^ Up  ", olc::WHITE);
+        DrawString(0, ScreenHeight() - 16, "Z Previous point <- Left  v Down", olc::WHITE);
 
         return true;
     }
@@ -178,8 +181,8 @@ class CatmullRomSplines : public olcConsoleGameEngine
 int main()
 {
     CatmullRomSplines game;
-    game.ConstructConsole(120, 80, 10, 10);
-    game.Start();
+    if (game.Construct(320, 240, 4, 4))
+        game.Start();
 
     return 0;
 }
