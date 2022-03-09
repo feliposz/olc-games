@@ -119,7 +119,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="olcConsoleGameEngine.h" />
+    <ClInclude Include="olcPixelGameEngine.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="astar.cpp" />

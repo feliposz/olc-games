@@ -1,6 +1,7 @@
 #include <vector>
 #include <algorithm>
-#include "olcConsoleGameEngine.h"
+#define OLC_PGE_APPLICATION
+#include "olcPixelGameEngine.h"
 using namespace std;
 
 const int GridSize = 16;
@@ -20,7 +21,7 @@ struct Node
     Node *parent;
 };
 
-class AstarGame : public olcConsoleGameEngine
+class AstarGame : public olc::PixelGameEngine
 {
     Node *Nodes = nullptr;
     Node *StartNode = nullptr;
@@ -163,18 +164,18 @@ class AstarGame : public olcConsoleGameEngine
 
     virtual bool OnUserUpdate(float fElapsedTime) override
     {
-        Fill(0, 0, ScreenWidth(), ScreenHeight(), L' ');
+        Clear(olc::BLACK);
 
-        if (m_mouse[0].bReleased) {
-            int nodeX = (m_mousePosX - MarginTop) / (CellSize + CellSpace);
-            int nodeY = (m_mousePosY - MarginTop) / (CellSize + CellSpace);
+        if (GetMouse(0).bReleased) {
+            int nodeX = (GetMouseX() - MarginTop) / (CellSize + CellSpace);
+            int nodeY = (GetMouseY() - MarginTop) / (CellSize + CellSpace);
             if (nodeX >= 0 && nodeX < GridSize && nodeY >= 0 && nodeY <= GridSize) {
                 Node *n = &Nodes[nodeY * GridSize + nodeX];
-                if (m_keys[VK_SHIFT].bHeld && !n->obstacle) {
+                if (GetKey(olc::SHIFT).bHeld && !n->obstacle) {
                     StartNode = n;
                     AstarPath();
                 }
-                else if (m_keys[VK_CONTROL].bHeld && !n->obstacle) {
+                else if (GetKey(olc::CTRL).bHeld && !n->obstacle) {
                     EndNode = n;
                     AstarPath();
                 }
@@ -193,28 +194,28 @@ class AstarGame : public olcConsoleGameEngine
                 int y1 = MarginTop + (int)((Nodes[i].y) * (CellSize + CellSpace) + CellSize / 2);
                 int x2 = MarginLeft + (int)((n->x) * (CellSize + CellSpace) + CellSize / 2);
                 int y2 = MarginTop + (int)((n->y) * (CellSize + CellSpace) + CellSize / 2);
-                DrawLine(x1, y1, x2, y2, PIXEL_SOLID, FG_DARK_BLUE);
+                DrawLine(x1, y1, x2, y2, olc::DARK_BLUE);
             }
         }
 
         // Draw nodes
         for (int i = 0; i < GridSize * GridSize; i++) {
-            short color = FG_DARK_BLUE;
+            olc::Pixel color = olc::DARK_BLUE;
             if (Nodes[i].obstacle) {
-                color = FG_DARK_GREY;
+                color = olc::DARK_GREY;
             }
             if (Nodes[i].visited) {
-                color = FG_BLUE;
+                color = olc::BLUE;
             }
             if (&Nodes[i] == StartNode) {
-                color = FG_GREEN;
+                color = olc::GREEN;
             }
             if (&Nodes[i] == EndNode) {
-                color = FG_RED;
+                color = olc::RED;
             }
             int x = MarginLeft + (int)(Nodes[i].x * (CellSize + CellSpace));
             int y = MarginTop + (int)(Nodes[i].y * (CellSize + CellSpace));
-            Fill(x, y, x + CellSize, y + CellSize, Nodes[i].visited ? PIXEL_SOLID : PIXEL_HALF, color);
+            FillRect(x, y, CellSize, CellSize, PixelLerp(olc::BLACK, color, Nodes[i].visited ? 1.0f : 0.5f));
         }
         
         Node *Path = EndNode;
@@ -225,7 +226,7 @@ class AstarGame : public olcConsoleGameEngine
                 int y1 = MarginTop + (int)((Path->y) * (CellSize + CellSpace) + CellSize / 2);
                 int x2 = MarginLeft + (int)((Path->parent->x) * (CellSize + CellSpace) + CellSize / 2);
                 int y2 = MarginTop + (int)((Path->parent->y) * (CellSize + CellSpace) + CellSize / 2);
-                DrawLine(x1, y1, x2, y2, PIXEL_SOLID, FG_YELLOW);
+                DrawLine(x1, y1, x2, y2, olc::YELLOW);
             }
 
             Path = Path->parent;
@@ -238,8 +239,8 @@ class AstarGame : public olcConsoleGameEngine
 int main()
 {
     AstarGame game;
-    game.ConstructConsole(160, 160, 6, 6);
-    game.Start();
+    if (game.Construct(160, 160, 6, 6))
+        game.Start();
 
     return 0;
 }
