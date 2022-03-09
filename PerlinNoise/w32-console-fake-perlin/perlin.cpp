@@ -1,8 +1,9 @@
 #include <string>
-#include "olcConsoleGameEngine.h"
+#define OLC_PGE_APPLICATION
+#include "olcPixelGameEngine.h"
 using namespace std;
 
-class Game : public olcConsoleGameEngine
+class Game : public olc::PixelGameEngine
 {
     float *RandomSeed1D = nullptr;
     float *RandomNoise1D = nullptr;
@@ -33,45 +34,45 @@ class Game : public olcConsoleGameEngine
 
     virtual bool OnUserUpdate(float fElapsedTime) override
     {
-        Fill(0, 0, ScreenWidth(), ScreenHeight(), L' ');
+        Clear(olc::BLACK);
 
-        if (m_keys[L'1'].bReleased) {
+        if (GetKey(olc::K1).bReleased) {
             Mode = 1;
         }
 
-        if (m_keys[L'2'].bReleased) {
+        if (GetKey(olc::K2).bReleased) {
             Mode = 2;
         }
 
-        if (m_keys[VK_LEFT].bReleased && Octaves > 1) {
+        if (GetKey(olc::LEFT).bReleased && Octaves > 1) {
             Octaves--;
         }
 
-        if (m_keys[VK_RIGHT].bReleased && Octaves < 8) {
+        if (GetKey(olc::RIGHT).bReleased && Octaves < 8) {
             Octaves++;
         }
 
-        if (m_keys[VK_UP].bReleased && ScaleBias < 10.0f) {
+        if (GetKey(olc::UP).bReleased && ScaleBias < 10.0f) {
             ScaleBias += 0.2f;
         }
 
-        if (m_keys[VK_DOWN].bReleased && ScaleBias > 0.2f) {
+        if (GetKey(olc::DOWN).bReleased && ScaleBias > 0.2f) {
             ScaleBias -= 0.2f;
         }
 
         if (Mode == 1) {
-            if (m_keys[L'S'].bReleased) {
+            if (GetKey(olc::S).bReleased) {
                 FillRandomSeed(Size, RandomSeed1D);
             }
             PerlinNoise1D(Size, RandomSeed1D, Octaves, ScaleBias, RandomNoise1D);
 
             for (int x = 0; x < ScreenWidth(); x++) {
                 int y = (int)(RandomNoise1D[x] * ScreenHeight() / 2);
-                DrawLine(x, ScreenHeight() / 2 - y, x, ScreenHeight() / 2, PIXEL_SOLID, FG_GREEN);
+                DrawLine(x, ScreenHeight() / 2 - y, x, ScreenHeight() / 2, olc::GREEN);
             }
         }
         else {
-            if (m_keys[L'S'].bReleased) {
+            if (GetKey(olc::S).bReleased) {
                 FillRandomSeed(Width * Height, RandomSeed2D);
             }
             PerlinNoise2D(Width, Height, RandomSeed2D, Octaves, ScaleBias, RandomNoise2D);
@@ -79,32 +80,32 @@ class Game : public olcConsoleGameEngine
             for (int y = 0; y < ScreenHeight(); y++) {
                 for (int x = 0; x < ScreenWidth(); x++) {
                     int z = (int)(RandomNoise2D[y * ScreenWidth() + x] * 21);
-                    short c = L' ';
-                    short color = FG_BLACK;
+                    float blend = 0;
+                    olc::Pixel color = olc::BLACK;
                     switch (z) {
-                    case 0: c = PIXEL_SOLID; color = FG_BLACK; break;
-                    case 1: c = PIXEL_QUARTER; color = FG_BLUE; break;
-                    case 2: c = PIXEL_HALF; color = FG_BLUE; break;
-                    case 3: c = PIXEL_THREEQUARTERS; color = FG_BLUE; break;
-                    case 4: c = PIXEL_SOLID; color = FG_BLUE; break;
-                    case 5: c = PIXEL_QUARTER; color = FG_GREEN; break;
-                    case 6: c = PIXEL_HALF; color = FG_GREEN; break;
-                    case 7: c = PIXEL_THREEQUARTERS; color = FG_GREEN; break;
-                    case 8: c = PIXEL_SOLID; color = FG_GREEN; break;
-                    case 9: c = PIXEL_QUARTER; color = FG_YELLOW; break;
-                    case 10: c = PIXEL_HALF; color = FG_YELLOW; break;
-                    case 11: c = PIXEL_THREEQUARTERS; color = FG_YELLOW; break;
-                    case 12: c = PIXEL_SOLID; color = FG_YELLOW; break;
-                    case 13: c = PIXEL_QUARTER; color = FG_RED; break;
-                    case 14: c = PIXEL_HALF; color = FG_RED; break;
-                    case 15: c = PIXEL_THREEQUARTERS; color = FG_RED; break;
-                    case 16: c = PIXEL_SOLID; color = FG_RED; break;
-                    case 17: c = PIXEL_QUARTER; color = FG_WHITE; break;
-                    case 18: c = PIXEL_HALF; color = FG_WHITE; break;
-                    case 19: c = PIXEL_THREEQUARTERS; color = FG_WHITE; break;
-                    case 20: c = PIXEL_SOLID; color = FG_WHITE; break;
+                    case 0: blend = 1.00f; color = olc::BLACK; break;
+                    case 1: blend = 0.25f; color = olc::BLUE; break;
+                    case 2: blend = 0.50f; color = olc::BLUE; break;
+                    case 3: blend = 0.75f; color = olc::BLUE; break;
+                    case 4: blend = 1.00f; color = olc::BLUE; break;
+                    case 5: blend = 0.25f; color = olc::GREEN; break;
+                    case 6: blend = 0.50f; color = olc::GREEN; break;
+                    case 7: blend = 0.75f; color = olc::GREEN; break;
+                    case 8: blend = 1.00f; color = olc::GREEN; break;
+                    case 9: blend = 0.25f; color = olc::YELLOW; break;
+                    case 10: blend = 0.50f; color = olc::YELLOW; break;
+                    case 11: blend = 0.75f; color = olc::YELLOW; break;
+                    case 12: blend = 1.00f; color = olc::YELLOW; break;
+                    case 13: blend = 0.25f; color = olc::RED; break;
+                    case 14: blend = 0.50f; color = olc::RED; break;
+                    case 15: blend = 0.75f; color = olc::RED; break;
+                    case 16: blend = 1.00f; color = olc::RED; break;
+                    case 17: blend = 0.25f; color = olc::WHITE; break;
+                    case 18: blend = 0.50f; color = olc::WHITE; break;
+                    case 19: blend = 0.75f; color = olc::WHITE; break;
+                    case 20: blend = 1.00f; color = olc::WHITE; break;
                     }
-                    Draw(x, y, c, color);
+                    Draw(x, y, PixelLerp(olc::BLACK, color, blend));
                 }
             }
         }
@@ -172,8 +173,8 @@ class Game : public olcConsoleGameEngine
 int main()
 {
     Game game;
-    game.ConstructConsole(256, 256, 4, 4);
-    game.Start();
+    if (game.Construct(256, 256, 4, 4))
+        game.Start();
 
     return 0;
 }
