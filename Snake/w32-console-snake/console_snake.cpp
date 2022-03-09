@@ -28,6 +28,7 @@ int main()
     SMALL_RECT windowSize = { 0, 0, nScreenWidth - 1, nScreenHeight - 1 };
     SetConsoleScreenBufferSize(hStdOut, { nScreenWidth, nScreenHeight });
     SetConsoleWindowInfo(hStdOut, TRUE, &windowSize);
+    SetConsoleScreenBufferSize(hStdOut, { nScreenWidth, nScreenHeight }); // FIX: Resize buffer to fix aligment issues
 
     bool bContinue = true;
 
