@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2042
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "w32-console-engine-demo", "w32-console-engine-demo\w32-console-engine-demo.vcxproj", "{4672874B-905A-448A-9E11-B97E1772AEF8}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "w32-console-engine-demo", "w32-console-engine-demo.vcxproj", "{4672874B-905A-448A-9E11-B97E1772AEF8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
