@@ -1,13 +1,18 @@
-#include "olcConsoleGameEngine.h"
+#define OLC_PGE_APPLICATION
+#include "olcPixelGameEngine.h"
 
-class GameOfLife : public olcConsoleGameEngine {
+class GameOfLife : public olc::PixelGameEngine {
 
     int *m_state;
     int *m_output;
+    int m_nScreenWidth;
+    int m_nScreenHeight;
 
     // Inherited via olcConsoleGameEngine
     virtual bool OnUserCreate() override
     {
+        m_nScreenWidth = ScreenWidth();
+        m_nScreenHeight = ScreenHeight();
         int nSize = m_nScreenWidth * m_nScreenHeight;
         m_state = new int[nSize];
         m_output = new int[nSize];
@@ -27,7 +32,7 @@ class GameOfLife : public olcConsoleGameEngine {
         for (int i = 0; i < nSize; i++) {
             m_state[i] = m_output[i];
             if (rand() % (nSize*10) == 0) { // Random mutation!
-                m_state[i] = !m_state[i];
+               // m_state[i] = !m_state[i];
             }
         }
 
@@ -54,10 +59,10 @@ class GameOfLife : public olcConsoleGameEngine {
                 }
 
                 if (m_output[y * m_nScreenWidth + x] == m_state[y * m_nScreenWidth + x]) {
-                    Draw(x, y, PIXEL_SOLID, m_output[y * m_nScreenWidth + x] ? FG_WHITE : FG_BLACK);
+                    Draw(x, y, m_output[y * m_nScreenWidth + x] ? olc::WHITE : olc::BLACK);
                 }
                 else {
-                    Draw(x, y, PIXEL_SOLID, m_output[y * m_nScreenWidth + x] ? FG_YELLOW : FG_DARK_GREY);
+                    Draw(x, y, m_output[y * m_nScreenWidth + x] ? olc::YELLOW : olc::DARK_GREY);
                 }
             }
         }
@@ -69,8 +74,8 @@ class GameOfLife : public olcConsoleGameEngine {
 int main() 
 {
     GameOfLife game;
-    game.ConstructConsole(160, 100, 8, 8);
-    game.Start();
+    if (game.Construct(100, 100, 8, 8))
+        game.Start();
 
     return 0;
 }
