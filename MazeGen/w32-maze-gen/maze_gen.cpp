@@ -1,10 +1,11 @@
-#include "olcConsoleGameEngine.h"
+#define OLC_PGE_APPLICATION
+#include "olcPixelGameEngine.h"
 #include <stack>
 #include <utility>
 
 using namespace std;
 
-class MazeGen : public olcConsoleGameEngine
+class MazeGen : public olc::PixelGameEngine
 {
     int m_nMazeWidth;
     int m_nMazeHeight;
@@ -44,7 +45,7 @@ public:
         chrono::milliseconds sleep_time(5);
         chrono::duration<float> elapsed(fElapsedTime);
 
-        this_thread::sleep_for(sleep_time - elapsed);
+        //this_thread::sleep_for(sleep_time - elapsed);
         int nTopX = 0;
         int nTopY = 0;
 
@@ -106,23 +107,23 @@ public:
                 int nMazePos = y * m_nMazeWidth + x;
                 for (int py = 0; py < nBlockSize; py++) {
                     for (int px = 0; px < nBlockSize; px++) {
-                        short color = FG_DARK_BLUE;
+                        olc::Pixel color = olc::DARK_BLUE;
                         if (py == nBlockSize - 1 && px == nBlockSize - 1) {
-                            color = FG_BLACK;
+                            color = olc::BLACK;
                         }
                         else if (py == nBlockSize - 1 && !(m_maze[nMazePos] & MAZE_SOUTH)) {
-                            color = FG_BLACK;
+                            color = olc::BLACK;
                         }
                         else if (px == nBlockSize - 1 && !(m_maze[nMazePos] & MAZE_EAST)) {
-                            color = FG_BLACK;
+                            color = olc::BLACK;
                         }
                         else if (m_maze[nMazePos] & MAZE_VISITED) {
-                            color = (x == nTopX && y == nTopY) ? FG_GREEN : FG_WHITE;
+                            color = (x == nTopX && y == nTopY) ? olc::GREEN : olc::WHITE;
                         }
                         else {
-                            color = FG_DARK_BLUE;
+                            color = olc::DARK_BLUE;
                         }
-                        Draw(x * nBlockSize + px, y * nBlockSize + py, PIXEL_SOLID, color);
+                        Draw(x * nBlockSize + px, y * nBlockSize + py, color);
                     }
                 }
             }
@@ -135,8 +136,8 @@ public:
 int main()
 {
     MazeGen maze;
-    maze.ConstructConsole(160, 100, 8, 8);
-    maze.Start();
+    if (maze.Construct(160, 100, 8, 8))
+        maze.Start();
 
     return 0;
 }
