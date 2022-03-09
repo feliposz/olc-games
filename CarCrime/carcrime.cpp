@@ -63,8 +63,8 @@ public:
             }
         }
 
-        allTexture.LoadFromFile("City_Roads1_mip0.png");
-        car.LoadFromFile("car_top1.png");
+        allTexture.LoadFromFile("assets/City_Roads1_mip0.png");
+        car.LoadFromFile("assets/car_top1.png");
 
         // split road tiles into individual sprites
         int i = 0;
