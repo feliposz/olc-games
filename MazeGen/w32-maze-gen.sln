@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2042
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "w32-maze-gen", "w32-maze-gen\w32-maze-gen.vcxproj", "{2E9CA11F-BCDF-4BA6-9193-4C7DC3CD7EEC}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "w32-maze-gen", "w32-maze-gen.vcxproj", "{2E9CA11F-BCDF-4BA6-9193-4C7DC3CD7EEC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
