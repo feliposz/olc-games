@@ -1,5 +1,4 @@
 #include <string>
-// #include "olcConsoleGameEngine.h"
 #define OLC_PGE_APPLICATION
 #include "olcPixelGameEngine.h"
 using namespace std;
@@ -41,8 +40,8 @@ class PlatformerGame : public olc::PixelGameEngine
         Level += L".....................GGGGGGGGGGGGGGGGGG.........................";
         Level += L"................................................................";
 
-        sprLevel.LoadFromFile("Sprites/leveljario.png");
-        sprJario.LoadFromFile("Sprites/minijario.png");
+        sprLevel.LoadFromFile("assets/leveljario.png");
+        sprJario.LoadFromFile("assets/minijario.png");
 
         return true;
     }
@@ -57,22 +56,28 @@ class PlatformerGame : public olc::PixelGameEngine
 
         // Player movement
 
-        if (IsFocused()) {
-            if (GetKey(olc::LEFT).bHeld) {
+        if (IsFocused())
+        {
+            if (GetKey(olc::LEFT).bHeld)
+            {
                 PlayerVelX -= (PlayerOnGround ? 25.0f : 15.0f) * fElapsedTime;
                 PlayerFacingLeft = true;
             }
-            if (GetKey(olc::RIGHT).bHeld) {
+            if (GetKey(olc::RIGHT).bHeld)
+            {
                 PlayerVelX += (PlayerOnGround ? 25.0f : 15.0f) * fElapsedTime;
                 PlayerFacingLeft = false;
             }
-            if (GetKey(olc::UP).bHeld) {
+            if (GetKey(olc::UP).bHeld)
+            {
                 PlayerVelY -= 6.0f * fElapsedTime;
             }
-            if (GetKey(olc::DOWN).bHeld) {
+            if (GetKey(olc::DOWN).bHeld)
+            {
                 PlayerVelY += 6.0f * fElapsedTime;
             }
-            if (GetKey(olc::SPACE).bPressed && PlayerOnGround) { // Jump
+            if (GetKey(olc::SPACE).bPressed && PlayerOnGround)
+            { // Jump
                 PlayerVelY -= 12.0f;
             }
         }
@@ -81,9 +86,11 @@ class PlatformerGame : public olc::PixelGameEngine
 
         // Collisions
 
-        if (PlayerOnGround) {
+        if (PlayerOnGround)
+        {
             PlayerVelX += -3.0f * PlayerVelX * fElapsedTime;
-            if (fabs(PlayerVelX) < 0.01f) {
+            if (fabs(PlayerVelX) < 0.01f)
+            {
                 PlayerVelX = 0;
             }
         }
@@ -98,27 +105,35 @@ class PlatformerGame : public olc::PixelGameEngine
 
         // Pick up coins
 
-        if (GetTile(newPlayerPosX + 0, newPlayerPosY + 0) == L'o') {
+        if (GetTile(newPlayerPosX + 0, newPlayerPosY + 0) == L'o')
+        {
             SetTile(newPlayerPosX + 0, newPlayerPosY + 0, L'.');
         }
-        if (GetTile(newPlayerPosX + 0, newPlayerPosY + 1) == L'o') {
+        if (GetTile(newPlayerPosX + 0, newPlayerPosY + 1) == L'o')
+        {
             SetTile(newPlayerPosX + 0, newPlayerPosY + 1, L'.');
         }
-        if (GetTile(newPlayerPosX + 1, newPlayerPosY + 0) == L'o') {
+        if (GetTile(newPlayerPosX + 1, newPlayerPosY + 0) == L'o')
+        {
             SetTile(newPlayerPosX + 1, newPlayerPosY + 0, L'.');
         }
-        if (GetTile(newPlayerPosX + 1, newPlayerPosY + 1) == L'o') {
+        if (GetTile(newPlayerPosX + 1, newPlayerPosY + 1) == L'o')
+        {
             SetTile(newPlayerPosX + 1, newPlayerPosY + 1, L'.');
         }
 
-        if (PlayerVelX <= 0) {
-            if (GetTile(newPlayerPosX + 0.0f, PlayerPosY + 0.0f) != L'.' || GetTile(newPlayerPosX + 0.0f, PlayerPosY + 0.9f) != L'.') {
+        if (PlayerVelX <= 0)
+        {
+            if (GetTile(newPlayerPosX + 0.0f, PlayerPosY + 0.0f) != L'.' || GetTile(newPlayerPosX + 0.0f, PlayerPosY + 0.9f) != L'.')
+            {
                 newPlayerPosX = (int)newPlayerPosX + 1;
                 PlayerVelX = 0;
             }
         }
-        else {
-            if (GetTile(newPlayerPosX + 1.0f, PlayerPosY + 0.0f) != L'.' || GetTile(newPlayerPosX + 1.0f, PlayerPosY + 0.9f) != L'.') {
+        else
+        {
+            if (GetTile(newPlayerPosX + 1.0f, PlayerPosY + 0.0f) != L'.' || GetTile(newPlayerPosX + 1.0f, PlayerPosY + 0.9f) != L'.')
+            {
                 newPlayerPosX = (int)newPlayerPosX;
                 PlayerVelX = 0;
             }
@@ -126,14 +141,18 @@ class PlatformerGame : public olc::PixelGameEngine
 
         PlayerOnGround = false;
 
-        if (PlayerVelY <= 0) {
-            if (GetTile(newPlayerPosX + 0.0f, newPlayerPosY + 0.0f) != L'.' || GetTile(newPlayerPosX + 0.9f, newPlayerPosY + 0.0f) != L'.') {
+        if (PlayerVelY <= 0)
+        {
+            if (GetTile(newPlayerPosX + 0.0f, newPlayerPosY + 0.0f) != L'.' || GetTile(newPlayerPosX + 0.9f, newPlayerPosY + 0.0f) != L'.')
+            {
                 newPlayerPosY = (int)newPlayerPosY + 1;
                 PlayerVelY = 0;
             }
         }
-        else {
-            if (GetTile(newPlayerPosX + 0.0f, newPlayerPosY + 1.0f) != L'.' || GetTile(newPlayerPosX + 0.9f, newPlayerPosY + 1.0f) != L'.') {
+        else
+        {
+            if (GetTile(newPlayerPosX + 0.0f, newPlayerPosY + 1.0f) != L'.' || GetTile(newPlayerPosX + 0.9f, newPlayerPosY + 1.0f) != L'.')
+            {
                 newPlayerPosY = (int)newPlayerPosY;
                 PlayerVelY = 0;
                 PlayerOnGround = true;
@@ -159,34 +178,39 @@ class PlatformerGame : public olc::PixelGameEngine
         float tileOffsetX = (levelOffsetX - (int)levelOffsetX) * tileWidth;
         float tileOffsetY = (levelOffsetY - (int)levelOffsetY) * tileHeight;
 
-        for (int y = -1; y <= visibleTilesY + 1; y++) {
-            for (int x = -1; x <= visibleTilesX + 1; x++) {
+        Clear(olc::MAGENTA);
+
+        for (int y = -1; y <= visibleTilesY + 1; y++)
+        {
+            for (int x = -1; x <= visibleTilesX + 1; x++)
+            {
                 wchar_t tile = GetTile(x + levelOffsetX, y + levelOffsetY);
                 int tileX = x * tileWidth - tileOffsetX;
                 int tileY = y * tileHeight - tileOffsetY;
-                switch (tile) {
-                case L'.':
-                    FillRect(tileX, tileY, tileX + tileWidth, tileY + tileHeight, olc::CYAN);
-                    break;
-                case L'#':
-                    DrawPartialSprite(tileX, tileY, &sprLevel, 2 * tileWidth, 0 * tileHeight, tileWidth, tileHeight);
-                    break;
-                case L'o':
-                    FillRect(tileX, tileY, tileX + tileWidth, tileY + tileHeight, olc::CYAN);
-                    DrawPartialSprite(tileX, tileY, &sprLevel, 3 * tileWidth, 0 * tileHeight, tileWidth, tileHeight);
-                    break;
-                case L'B':
-                    DrawPartialSprite(tileX, tileY, &sprLevel, 0 * tileWidth, 1 * tileHeight, tileWidth, tileHeight);
-                    break;
-                case L'?':
-                    DrawPartialSprite(tileX, tileY, &sprLevel, 1 * tileWidth, 1 * tileHeight, tileWidth, tileHeight);
-                    break;
-                case L'G':                    
-                    DrawPartialSprite(tileX, tileY, &sprLevel, 0  * tileWidth, 0 * tileHeight, tileWidth, tileHeight);
-                    break;
-                default:
-                    DrawRect(tileX, tileY, tileX + tileWidth, tileY + tileHeight, olc::BLACK);
-                    break;
+                switch (tile)
+                {
+                    case L'.':
+                        FillRect(tileX, tileY, tileWidth, tileHeight, olc::CYAN);
+                        break;
+                    case L'#':
+                        DrawPartialSprite(tileX, tileY, &sprLevel, 2 * tileWidth, 0 * tileHeight, tileWidth, tileHeight);
+                        break;
+                    case L'o':
+                        FillRect(tileX, tileY, tileWidth, tileHeight, olc::CYAN);
+                        DrawPartialSprite(tileX, tileY, &sprLevel, 3 * tileWidth, 0 * tileHeight, tileWidth, tileHeight);
+                        break;
+                    case L'B':
+                        DrawPartialSprite(tileX, tileY, &sprLevel, 0 * tileWidth, 1 * tileHeight, tileWidth, tileHeight);
+                        break;
+                    case L'?':
+                        DrawPartialSprite(tileX, tileY, &sprLevel, 1 * tileWidth, 1 * tileHeight, tileWidth, tileHeight);
+                        break;
+                    case L'G':
+                        DrawPartialSprite(tileX, tileY, &sprLevel, 0 * tileWidth, 0 * tileHeight, tileWidth, tileHeight);
+                        break;
+                    default:
+                        DrawRect(tileX, tileY, tileWidth, tileHeight, olc::BLACK);
+                        break;
                 }
             }
         }
@@ -202,17 +226,20 @@ class PlatformerGame : public olc::PixelGameEngine
 
     wchar_t GetTile(int x, int y)
     {
-        if (x >= 0 && x < LevelWidth && y >= 0 && y < LevelHeight) {
+        if (x >= 0 && x < LevelWidth && y >= 0 && y < LevelHeight)
+        {
             return Level[y * LevelWidth + x];
         }
-        else {
+        else
+        {
             return L' ';
         }
     }
 
     void SetTile(int x, int y, wchar_t value)
     {
-        if (x >= 0 && x < LevelWidth && y >= 0 && y < LevelHeight) {
+        if (x >= 0 && x < LevelWidth && y >= 0 && y < LevelHeight)
+        {
             Level[y * LevelWidth + x] = value;
         }
     }
@@ -221,9 +248,11 @@ class PlatformerGame : public olc::PixelGameEngine
 int main()
 {
     PlatformerGame game;
-    game.Construct(256, 240, 4, 4);
-    game.SetPixelMode(olc::Pixel::MASK);
-    game.Start();
+    if (game.Construct(256, 240, 4, 4))
+    {
+        game.SetPixelMode(olc::Pixel::MASK);
+        game.Start();
+    }
 
     return 0;
 }
