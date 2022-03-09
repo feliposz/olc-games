@@ -60,7 +60,7 @@ namespace Rpg {
 
     MapVillage1::MapVillage1() : Map("Village")
     {
-        Create("rpgdata/map/village1.lvl", Assets::GetInstance().GetSprite("village"));
+        Create("assets/map/village1.lvl", Assets::GetInstance().GetSprite("village"));
     }
 
     bool MapVillage1::PopulateDynamics(std::list<Dynamic*>& ListDynamics)
@@ -90,7 +90,7 @@ namespace Rpg {
 
     MapHome1::MapHome1() : Map("Home")
     {
-        Create("rpgdata/map/home.lvl", Assets::GetInstance().GetSprite("hitech"));
+        Create("assets/map/home.lvl", Assets::GetInstance().GetSprite("hitech"));
     }
 
     bool MapHome1::PopulateDynamics(std::list<Dynamic*>& ListDynamics)

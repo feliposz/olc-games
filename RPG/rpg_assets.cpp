@@ -20,19 +20,19 @@ namespace Rpg {
     {
         auto loadSpriteData = [&](std::string name, std::string filename) {
             olc::Sprite *s = new olc::Sprite();
-            s->LoadFromPGESprFile(filename);
+            s->LoadFromFile(filename);
             m_sprites[name] = s;
         };
 
-        loadSpriteData("village", "rpgdata/gfx/toml_spritesheetdark.spr");
-        loadSpriteData("player", "rpgdata/gfx/toml_CharacterSprites.spr");
-        loadSpriteData("font", "rpgdata/gfx/javidx9_nesfont8x8.spr");
-        loadSpriteData("skelly", "rpgdata/gfx/toml_char001.png.spr");
-        loadSpriteData("hitech", "rpgdata/gfx/toml_modernish.spr");
-        loadSpriteData("purple", "rpgdata/gfx/toml_purple.spr");
-        loadSpriteData("health", "rpgdata/gfx/item_health.spr");
-        loadSpriteData("healthboost", "rpgdata/gfx/item_healthboost.spr");
-        loadSpriteData("sword", "rpgdata/gfx/weapon_basic_sword.spr");
+        loadSpriteData("village", "assets/gfx/toml_village.png");
+        loadSpriteData("player", "assets/gfx/toml_CharacterSprites.png");
+        loadSpriteData("font", "assets/gfx/javidx9_nesfont8x8.png");
+        loadSpriteData("skelly", "assets/gfx/toml_char001.png");
+        loadSpriteData("hitech", "assets/gfx/toml_modernish.png");
+        loadSpriteData("purple", "assets/gfx/toml_purple.png");
+        loadSpriteData("health", "assets/gfx/item_health.png");
+        loadSpriteData("healthboost", "assets/gfx/item_healthboost.png");
+        loadSpriteData("sword", "assets/gfx/weapon_basic_sword.png");
     }
 
     void Assets::LoadMaps()
