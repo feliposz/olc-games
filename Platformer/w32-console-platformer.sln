@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2042
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "w32-console-platformer", "w32-console-platformer\w32-console-platformer.vcxproj", "{1BCD1976-0AD3-40E9-8187-0FBE0003E8D3}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "w32-console-platformer", "w32-console-platformer.vcxproj", "{1BCD1976-0AD3-40E9-8187-0FBE0003E8D3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
