@@ -1,7 +1,8 @@
 #include <vector>
 #include <algorithm>
 #include <string>
-#include "olcConsoleGameEngine.h"
+#define OLC_PGE_APPLICATION
+#include "olcPixelGameEngine.h"
 
 using namespace std;
 
@@ -15,7 +16,7 @@ struct GameObject {
     bool active;
 };
 
-class AsteroidsGame : public olcConsoleGameEngine
+class AsteroidsGame : public olc::PixelGameEngine
 {
 private:
     int level;
@@ -64,23 +65,27 @@ public:
 
     virtual bool OnUserUpdate(float fElapsedTime) override
     {
-        Fill(0, 0, ScreenWidth(), ScreenHeight(), ' ', FG_BLACK);
+        Clear(olc::BLACK);
 
-        if (m_keys[VK_LEFT].bHeld) {
+        if (GetKey(olc::LEFT).bHeld) {
             player.angle -= 5.0f * fElapsedTime;
         }
 
-        if (m_keys[VK_RIGHT].bHeld) {
+        if (GetKey(olc::RIGHT).bHeld) {
             player.angle += 5.0f * fElapsedTime;
         }
 
-        if (m_keys[VK_UP].bHeld) {
-            player.dx += sin(player.angle) * 1.0f * fElapsedTime;
-            player.dy += -cos(player.angle) * 1.0f * fElapsedTime;
+        const float playerAccel = 0.1f;
+
+        if (GetKey(olc::UP).bHeld) {
+            player.dx += sin(player.angle) * playerAccel * fElapsedTime;
+            player.dy += -cos(player.angle) * playerAccel * fElapsedTime;
         }
 
-        if (m_keys[VK_SPACE].bReleased) {
-            bullets.push_back({ player.x, player.y, 1.0f * sin(player.angle), -1.0f * cos(player.angle), 0, 0.0f, true });
+        const float bulletSpeed = 0.2f;
+
+        if (GetKey(olc::SPACE).bReleased) {
+            bullets.push_back({ player.x, player.y, bulletSpeed * sin(player.angle), -bulletSpeed * cos(player.angle), 0, 0.0f, true });
         }
 
         player.x += player.dx;
@@ -95,7 +100,7 @@ public:
 
             WrapCoordinates(a.x, a.y, a.x, a.y);
 
-            DrawWireFrameModel(asteroidModel, a.x, a.y, a.angle, a.size, FG_YELLOW);
+            DrawWireFrameModel(asteroidModel, a.x, a.y, a.angle, a.size, olc::YELLOW);
 
             if (PointInsideCircle(player.x, player.y, a.x, a.y, a.size)) {
                 ResetGame();
@@ -105,7 +110,7 @@ public:
         vector<GameObject> newAsteroids;
 
         for (auto &b : bullets) {
-            Draw(b.x, b.y, PIXEL_SOLID, FG_RED);
+            Draw(b.x, b.y, olc::RED);
             b.x += b.dx;
             b.y += b.dy;
 
@@ -146,12 +151,12 @@ public:
 
         DrawWireFrameModel(playerModel, player.x, player.y, player.angle, player.size);
 
-        DrawString(2, 2, L"Score: " + to_wstring(score));
+        DrawString(0, 0, "Score: " + to_string(score));
 
         return true;
     }
 
-    void DrawWireFrameModel(vector<pair<float, float>> points, float x, float y, float angle, float scale, short color = 15)
+    void DrawWireFrameModel(vector<pair<float, float>> points, float x, float y, float angle, float scale, olc::Pixel color = olc::WHITE)
     {
         for (int i = 0; i < points.size(); i++) {
             int j = (i + 1) % points.size();
@@ -159,7 +164,7 @@ public:
             float y1 = y + scale * (points[i].first * sin(angle) + points[i].second * cos(angle));
             float x2 = x + scale * (points[j].first * cos(angle) - points[j].second * sin(angle));
             float y2 = y + scale * (points[j].first * sin(angle) + points[j].second * cos(angle));
-            DrawLine(x1, y1, x2, y2, PIXEL_SOLID, color);
+            DrawLine(x1, y1, x2, y2, color);
         }
     }
 
@@ -202,20 +207,20 @@ public:
         player.angle = 0;
     }
 
-    void Draw(int x, int y, short c = 0x2588, short col = 0x000F)
+    bool Draw(int x, int y, olc::Pixel col = olc::WHITE)
     {
         float fx = (float)x;
         float fy = (float)y;
         WrapCoordinates(fx, fy, fx, fy);
-        olcConsoleGameEngine::Draw((int)fx, (int)fy, c, col);
+        return olc::PixelGameEngine::Draw((int)fx, (int)fy, col);
     }
 };
 
 int main()
 {
     AsteroidsGame game;
-    game.ConstructConsole(160, 100, 8, 8);
-    game.Start();
+    if (game.Construct(160, 100, 8, 8))
+        game.Start();
 
     return 0;
 }

@@ -119,10 +119,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="olcConsoleGameEngine.h" />
+    <ClCompile Include="asteroids.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="asteroids.cpp" />
+    <ClInclude Include="olcPixelGameEngine.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
