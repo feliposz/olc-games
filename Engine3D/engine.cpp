@@ -509,16 +509,15 @@ public:
 
         };
 
-        ship.LoadFromOBJFile("VideoShip.obj");
-        teapot.LoadFromOBJFile("teapot.obj");
-        axis.LoadFromOBJFile("axis.obj");
-        mountains.LoadFromOBJFile("mountains.obj");
-        artisan.LoadFromOBJFile("Artisans Hub.obj", true);
+        ship.LoadFromOBJFile("assets/VideoShip.obj");
+        teapot.LoadFromOBJFile("assets/teapot.obj");
+        axis.LoadFromOBJFile("assets/axis.obj");
+        mountains.LoadFromOBJFile("assets/mountains.obj");
+        artisan.LoadFromOBJFile("assets/Artisans Hub.obj", true);
         artisanTexture = olc::Sprite();
-        artisanTexture.LoadFromFile("High.png");
-
+        artisanTexture.LoadFromFile("assets/High.png");
         cubeTexture = olc::Sprite();
-        cubeTexture.LoadFromPGESprFile("toml_modernish.spr");
+        cubeTexture.LoadFromFile("assets/toml_modernish.png");
 
         obj = &artisan;
         texture = &artisanTexture;
@@ -761,15 +760,17 @@ public:
             }
         }
 
-#if 0 // sorting not needed with depth buffer (except in case of transparency...)
-        // sort by the average z of the triangles
-        std::sort(renderTris.begin(), renderTris.end(), [](triangle a, triangle b)
+        // sorting not needed with depth buffer (except in case of transparency...)
+        if (texture == NULL)
         {
-            float za = (a.p[0].z + a.p[1].z + a.p[2].z) / 3.0f;
-            float zb = (b.p[0].z + b.p[1].z + b.p[2].z) / 3.0f;
-            return za > zb;
-        });
-#endif
+            // sort by the average z of the triangles
+            std::sort(renderTris.begin(), renderTris.end(), [](triangle a, triangle b)
+            {
+                float za = (a.p[0].z + a.p[1].z + a.p[2].z) / 3.0f;
+                float zb = (b.p[0].z + b.p[1].z + b.p[2].z) / 3.0f;
+                return za > zb;
+            });
+        }
 
         // clip triangles agains screen border "planes"
         vec3d planePos[4] = { {0, 0, 0}, { 0, ScreenHeight() - 1, 0 }, { 0, 0, 0 }, { ScreenWidth() - 1, 0, 0 } };
