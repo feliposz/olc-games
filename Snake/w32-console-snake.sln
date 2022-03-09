@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2042
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "w32-console-snake", "w32-console-snake\w32-console-snake.vcxproj", "{1F2DFC47-0AD4-4EB6-B5B8-694875EDE400}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "w32-console-snake", "w32-console-snake.vcxproj", "{1F2DFC47-0AD4-4EB6-B5B8-694875EDE400}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
