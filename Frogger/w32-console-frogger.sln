@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2042
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "w32-console-frogger", "w32-console-frogger\w32-console-frogger.vcxproj", "{D84AA906-6B60-4247-9123-E9ED4EA04161}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "w32-console-frogger", "w32-console-frogger.vcxproj", "{D84AA906-6B60-4247-9123-E9ED4EA04161}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
