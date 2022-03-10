@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2042
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "w32-sound-synth", "w32-sound-synth.vcxproj", "{685D65B5-148C-4521-BE46-81A81E1F7C52}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{685D65B5-148C-4521-BE46-81A81E1F7C52}.Debug|x64.ActiveCfg = Debug|x64
+		{685D65B5-148C-4521-BE46-81A81E1F7C52}.Debug|x64.Build.0 = Debug|x64
+		{685D65B5-148C-4521-BE46-81A81E1F7C52}.Debug|x86.ActiveCfg = Debug|Win32
+		{685D65B5-148C-4521-BE46-81A81E1F7C52}.Debug|x86.Build.0 = Debug|Win32
+		{685D65B5-148C-4521-BE46-81A81E1F7C52}.Release|x64.ActiveCfg = Release|x64
+		{685D65B5-148C-4521-BE46-81A81E1F7C52}.Release|x64.Build.0 = Release|x64
+		{685D65B5-148C-4521-BE46-81A81E1F7C52}.Release|x86.ActiveCfg = Release|Win32
+		{685D65B5-148C-4521-BE46-81A81E1F7C52}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B19B8D96-F08C-4AD7-9605-8A54B961C0BD}
+	EndGlobalSection
+EndGlobal
