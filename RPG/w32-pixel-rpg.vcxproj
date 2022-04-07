@@ -127,7 +127,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="rpg_item.h" />
-    <ClInclude Include="olcPixelGameEngine.h" />
+    <ClInclude Include="..\olcPixelGameEngine.h" />
     <ClInclude Include="rpg_assets.h" />
     <ClInclude Include="rpg_command.h" />
     <ClInclude Include="rpg_dynamic.h" />

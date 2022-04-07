@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <Windows.h>
 #include "escapi.h"
-#include "olcConsoleGameEngine.h"
+#include "../olcConsoleGameEngine.h"
 
 union Pixel
 {

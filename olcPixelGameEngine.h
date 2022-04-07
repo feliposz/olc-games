@@ -148,7 +148,7 @@
 	"olcPixelGameEngine.cpp" which includes the following:
 
 	#define OLC_PGE_APPLICATION
-	#include "olcPixelGameEngine.h"
+	#include "../olcPixelGameEngine.h"
 
 	That's all it should include. You can also include PGEX includes and 
 	defines in here too. With this in place, you dont need to 
@@ -195,7 +195,7 @@
 
 	Author
 	~~~~~~
-	David Barr, aka javidx9, ©OneLoneCoder 2018, 2019, 2020, 2021, 2022
+	David Barr, aka javidx9, ï¿½OneLoneCoder 2018, 2019, 2020, 2021, 2022
 */
 #pragma endregion
 
@@ -296,7 +296,7 @@
 /*
 
 #define OLC_PGE_APPLICATION
-#include "olcPixelGameEngine.h"
+#include "../olcPixelGameEngine.h"
 
 // Override base class with your custom functionality
 class Example : public olc::PixelGameEngine
@@ -4502,7 +4502,7 @@ namespace olc
 // Note you need to download the above file into your project folder, and
 // #define OLC_IMAGE_STB 
 // #define OLC_PGE_APPLICATION
-// #include "olcPixelGameEngine.h"
+// #include "../olcPixelGameEngine.h"
 
 #if defined(OLC_IMAGE_STB)
 #define STB_IMAGE_IMPLEMENTATION

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "olcPixelGameEngine.h"
+#include "../olcPixelGameEngine.h"
 #include "rpg_map.h"
 #include "rpg_assets.h"
 #include "rpg_dynamic.h"

@@ -1,7 +1,7 @@
 #include <vector>
 #include <algorithm>
 #define OLC_PGE_APPLICATION
-#include "olcPixelGameEngine.h"
+#include "../olcPixelGameEngine.h"
 using namespace std;
 
 const int GridSize = 16;

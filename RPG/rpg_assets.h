@@ -2,7 +2,7 @@
 
 #include <map>
 #include <string>
-#include "olcPixelGameEngine.h"
+#include "../olcPixelGameEngine.h"
 #include "rpg_map.h"
 #include "rpg_item.h"
 

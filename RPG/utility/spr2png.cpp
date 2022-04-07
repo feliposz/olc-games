@@ -1,6 +1,6 @@
 #define OLC_PGE_APPLICATION
-#include "olcPixelGameEngine.h"
-#include "olcConsoleGameEngine.h"
+#include "../olcPixelGameEngine.h"
+#include "../olcConsoleGameEngine.h"
 
 using namespace std;
 

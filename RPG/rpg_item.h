@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include "olcPixelGameEngine.h"
+#include "../olcPixelGameEngine.h"
 
 namespace Rpg {
 

@@ -21,7 +21,7 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="olcNoiseMaker.h">
+    <ClInclude Include="..\olcNoiseMaker.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

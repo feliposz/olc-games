@@ -1,5 +1,5 @@
 #define OLC_PGE_APPLICATION
-#include "olcPixelGameEngine.h"
+#include "../olcPixelGameEngine.h"
 
 const int MAX_SOLDIERS = 20;
 

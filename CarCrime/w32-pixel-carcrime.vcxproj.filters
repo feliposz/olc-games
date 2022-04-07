@@ -15,10 +15,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="olcPixelGameEngine.h">
+    <ClInclude Include="..\olcPixelGameEngine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="olcPGEX_Graphics3D.h">
+    <ClInclude Include="..\olcPGEX_Graphics3D.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

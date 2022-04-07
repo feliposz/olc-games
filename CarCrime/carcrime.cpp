@@ -1,7 +1,7 @@
 #include <unordered_set>
 #define OLC_PGE_APPLICATION
-#include "olcPixelGameEngine.h"
-#include "olcPGEX_Graphics3D.h"
+#include "../olcPixelGameEngine.h"
+#include "../olcPGEX_Graphics3D.h"
 
 struct MapCell
 {

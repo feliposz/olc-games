@@ -1,7 +1,7 @@
 #include <vector>
 #include <utility>
 #define OLC_PGE_APPLICATION
-#include "olcPixelGameEngine.h"
+#include "../olcPixelGameEngine.h"
 using namespace std;
 
 const float PI = 3.1415926f;

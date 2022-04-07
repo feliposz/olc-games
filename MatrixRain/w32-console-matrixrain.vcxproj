@@ -115,7 +115,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="olcConsoleGameEngine.h" />
+    <ClInclude Include="olcConsoleGameEngineCustom.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="matrixrain.cpp" />

@@ -1,5 +1,5 @@
 #define OLC_PGE_APPLICATION
-#include "olcPixelGameEngine.h"
+#include "../olcPixelGameEngine.h"
 #include <fstream>
 #include <strstream>
 #include <algorithm>
@@ -388,7 +388,8 @@ struct mesh
             vec3d v;
             vec2d t;
 
-            std::strstream ss(line, 256);
+            std::stringstream ss;
+            ss << line;
             ss >> prefix;
 
             if (prefix == 'v')

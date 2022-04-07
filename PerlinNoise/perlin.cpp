@@ -1,6 +1,6 @@
 #include <string>
 #define OLC_PGE_APPLICATION
-#include "olcPixelGameEngine.h"
+#include "../olcPixelGameEngine.h"
 using namespace std;
 
 class Game : public olc::PixelGameEngine

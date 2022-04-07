@@ -2,7 +2,7 @@
 //
 
 #include "stdafx.h"
-#include "olcNoiseMaker.h"
+#include "../olcNoiseMaker.h"
 #include <mutex>
 
 using namespace std;
